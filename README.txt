@@ -1,0 +1,1 @@
+This is the full implementation of Tyler Neylon's Locality-Specific Hashing algorithm.

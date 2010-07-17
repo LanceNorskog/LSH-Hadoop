@@ -1,0 +1,17 @@
+This project implements a new Locality-Specific Hashing technique for nearest-neighbor problems.
+http://en.wikipedia.org/wiki/Locality_sensitive_hashing
+http://en.wikipedia.org/wiki/Nearest_neighbor_search
+
+This paper explains the theory of this implementation:
+Abstract: 
+http://www.sciweavers.org/publications/locality-sensitive-hash-real-vectors
+
+Full paper: 
+http://siam.org/proceedings/soda/2010/SODA10_094_neylont.pdf
+
+The code for the LSH algorithm is all courtesy of examples and explanation from Tyler.
+
+The project has two parts: 
+lsh.ortho: 	the core implementation and a 
+lsh.hadoop:	map/reduce wrapper. 
+
