@@ -21,14 +21,16 @@ import java.util.Set;
 
 public class Lookup {
 	final Hasher hasher;
+	final Set<Point> points;
 	final Set<Corner> corners;
 	final Set<String> ids;
 	final Map<String,Point> id2point;
 	final Map<Corner, Set<Point>> corner2points;
 	final HashMap<Point, Set<Corner>> point2corners;
 	
-	public Lookup(Hasher hasher, boolean doCorners, boolean doIds, boolean doId2point, boolean doCorner2points, boolean doPoint2corners) {
+	public Lookup(Hasher hasher, boolean doPoints, boolean doCorners, boolean doIds, boolean doId2point, boolean doCorner2points, boolean doPoint2corners) {
 		this.hasher = hasher;
+		points = doPoints ? new HashSet<Point>() : null;
 		corners = doCorners ? new HashSet<Corner>() : null;
 		id2point = doId2point ? new HashMap<String,Point>() : null;
 		ids = doIds ? new HashSet<String>() : null;
@@ -37,7 +39,7 @@ public class Lookup {
 	}
 
 	private void load(Reader r) throws IOException {
-		Utils.corner_point(r, corners, ids, id2point, corner2points, point2corners);
+		Utils.load_corner_points_format(r, points, corners, ids, id2point, corner2points, point2corners);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {
@@ -64,7 +66,6 @@ public class Lookup {
 
 		
 		int dim = Integer.parseInt(args[2]);
-		double[] stretch = new double[dim];
 		double gridsize = Double.parseDouble(args[3]);
 		Hasher hasher = null;
 		if (args[1].startsWith("ortho")) {
@@ -73,7 +74,7 @@ public class Lookup {
 			hasher = new VertexTransitiveHasher(dim, gridsize);
 		} 
 
-		Lookup lookup = new Lookup(hasher, true, true, true, true, true);
+		Lookup lookup = new Lookup(hasher, true, true, true, true, true, true);
 		lookup.load(r);
 		if (args.length == 5) {
 			Collection<Corner> corners = lookup.getMatchingCorners(args[4]);
