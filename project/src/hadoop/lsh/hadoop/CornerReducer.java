@@ -25,11 +25,7 @@ public class CornerReducer extends
 
 		for(Text value: values) {
 			Point point = Point.newPoint(value.toString());
-			sb.append(point.id.toString());
-			for(int i = 0; i < point.values.length; i++) {
-				sb.append(',');
-				sb.append(point.values[i]);
-			}
+			sb.append(point.toString());
 			sb.append('|');
 		}
 		sb.setLength(sb.length() - 1);

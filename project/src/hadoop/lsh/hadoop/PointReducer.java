@@ -1,19 +1,19 @@
 package lsh.hadoop;
 
 import java.io.IOException;
-import lsh.core.Point;
+
+import lsh.core.Corner;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /*
- * Receive one point with a set of corners.
+ * Emit one point with a set of corners.
  * Key is the string printout of the id,double...double
- * NOT IMPLEMENTED YET
  */
 
 /*
- * Output format of "1,2,3 id,double...double|..."
+ * Output format of "id,double...double int,int,int|..."
  */
 
 public class PointReducer extends
@@ -25,12 +25,8 @@ public class PointReducer extends
 		StringBuilder sb = new StringBuilder();
 
 		for(Text value: values) {
-			Point point = Point.newPoint(value.toString());
-			sb.append(point.id.toString());
-			for(int i = 0; i < point.values.length; i++) {
-				sb.append(',');
-				sb.append(point.values[i]);
-			}
+			Corner corner = Corner.newCorner(value.toString());
+			sb.append(corner.toString());
 			sb.append('|');
 		}
 		sb.setLength(sb.length() - 1);
