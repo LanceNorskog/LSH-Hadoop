@@ -19,5 +19,5 @@ A Hasher translates between Grid and Point spaces. The simpler one, Orthonormal,
 
 sample/ contains SVG displays of the same point set, hashed with Orthonormal and VertexTransitive Hashers with a grid size of 2.
 
-The above "triangles" are in fact N-dimensional space-filling "simplices". In 3 dimensions, they are equal-sided quadrilaterals.
+The above "triangles" are in fact N-dimensional space-filling "simplices". In 3 dimensions, each simplex is an equal-sided tetrahedron.
 
