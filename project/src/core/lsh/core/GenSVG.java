@@ -368,7 +368,7 @@ public class GenSVG {
 		svg.createNewFile();
 		Writer w = new FileWriter(svg);
 		GenSVG gsvg = new GenSVG();
-		gsvg.hasher = new VertexTransitiveHasher(2, 2.0d);
+		gsvg.hasher = new OrthonormalHasher(2, 2.0d);
 		gsvg.makeSVG(r, w);
 	}
 

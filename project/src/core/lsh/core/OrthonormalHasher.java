@@ -55,5 +55,15 @@ public class OrthonormalHasher implements Hasher {
 		return hash + c;
 	}
 
-
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Orthonormal Hasher: dim (" + stretch.length + ") stretch = [" + stretch[0]);
+		for(int i = 1; i < stretch.length; i++) {
+			sb.append(',');
+			sb.append(stretch[i]);
+		}
+		sb.append("]");
+		return sb.toString();
+	}
 }

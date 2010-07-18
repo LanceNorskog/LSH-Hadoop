@@ -3,6 +3,7 @@ package lsh.core;
 /*
  * ID,vector
  * String representation: id,v0,v1,...vn
+ * ID is identity - there can be 2 points with same position
  */
 
 public class Point {
