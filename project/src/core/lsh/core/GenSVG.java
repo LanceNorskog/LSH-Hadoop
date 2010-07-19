@@ -34,6 +34,11 @@ public class GenSVG {
 	String thin = " stroke-width='0.01%' ";
 	String scrawny = " stroke-width='0.005%' ";
 	Hasher hasher = null;
+	final String style;
+
+	public GenSVG(String style) {
+		this.style = style;
+	}
 
 	void makeSVG(Reader r, Writer w) throws IOException {		                     
 		LineNumberReader lnr = new LineNumberReader(r);
@@ -46,24 +51,22 @@ public class GenSVG {
 		double[] pmin = new double[2];
 		double[] pmax = new double[2];
 		getMinMaxCorners(corners, gmin, gmax); // trim - or even remove?
-//		getMinMaxPoints(points, pmin, pmax);
-		// grid min/max
-//		int[] gmin = new int[2];
-//		int[] gmax = new int[2];
 		getGridSpace(gmin, gmax, pmin, pmax);
 		header(w, gmin, gmax);
 		labelGrid(w, pmin, pmax);
-//		pushGridSpace(w, gmin, gmax);
-//		frame(w, gmin, gmax);
-//		pop3(w);
 		pushPointSpace(w, pmin, pmax);
 		setMask(w, pmin, pmax);
 		frame(w, pmin, pmax);
 		drawGrid(w, gmin, gmax);
 		crossGrid(w, gmin, gmax);
-		drawCorners(w, corners);
-		drawPoints(w, points);
-		drawLines(w, ortho, pmin, pmax);
+		if (style.equals("counts")){
+			drawCounts(w, ortho);
+		} else {
+			drawCorners(w, corners);
+			drawPoints(w, points);
+			if (style.equals("lines"))
+				drawLines(w, ortho, pmin, pmax);
+		}
 		pop3(w);
 		tail(w);
 		w.close();
@@ -88,23 +91,6 @@ public class GenSVG {
 		hasher.unhash(gmax, pmax);
 	}
 
-//	private void getMinMaxPoints(Set<Point> points, double[] pmin, double[] pmax) {
-//		pmin[0] = Double.MAX_VALUE/2;
-//		pmax[0] = -pmin[0];
-//		pmin[1] = Double.MAX_VALUE/2;
-//		pmax[1] = -pmin[0];
-//		for(Point p: points) {
-//			if (pmin[0] > p.values[0])
-//				pmin[0] = p.values[0];
-//			if (pmax[0] < p.values[0])
-//				pmax[0] = p.values[0];
-//			if (pmin[1] > p.values[1])
-//				pmin[1] = p.values[1];
-//			if (pmax[1] < p.values[1])
-//				pmax[1] = p.values[1];
-//		}
-//	}
-
 	private void addPoint(Set<Point> points, Map<Corner, Set<Point>> ortho,
 			Corner corner, Point point) {
 		points.add(point);
@@ -115,7 +101,6 @@ public class GenSVG {
 		}
 		bag.add(point);
 	}
-
 
 	private void getMinMaxCorners(Set<Corner> corners, int hmin[], int hmax[]) {		
 		hmin[0] = Integer.MAX_VALUE;
@@ -143,23 +128,12 @@ public class GenSVG {
 				(pmax[0] - pmin[0]) + "' height='" + (pmax[1] - pmin[1]) + "'/>\n");
 		w.write("</g>\n");
 	}
-	// in grid space
-//	private void frame(Writer w, int[] gmin, int[] gmax) throws IOException {
-//		w.write("<!-- thick green frame -->\n");
-//		w.write("<g stroke='green' " + thin + ">\n");
-//		w.write("	<rect fill='none' rx='0.1%' x='" + 
-//				gmin[0] + "' y='" + gmin[1] + "' width='" + 
-//				((gmax[0] - gmin[0]) - 1) + "' height='" + ((gmax[1] - gmin[1]) - 1) + "'/>\n");
-//		w.write("</g>\n");
-//	}
 
 	private void drawGrid(Writer w, int[] gmin, int[] gmax) throws IOException {
 		int[] h = new int[2];
 		double[] p = new double[2];
 
 		w.write("<!-- thin grey grid -->\n");
-//		w.write("<g stroke='grey'" + thick + ">\n");
-//		// outer box
 //		w.write("<line x1='" + gmin[0] + "' y1='" + gmin[1] + "' x2='" + gmin[0] + "' y2='" + gmax[1] + "'/>\n");
 //		w.write("<line x1='" + gmax[0] + "' y1='" + gmin[1] + "' x2='" + gmax[0] + "' y2='" + gmax[1] + "'/>\n");
 //		w.write("<line x1='" + gmin[0] + "' y1='" + gmax[1] + "' x2='" + gmax[0] + "' y2='" + gmax[1] + "'/>\n");
@@ -265,6 +239,31 @@ public class GenSVG {
 		w.write("</g>\n");
 	}
 
+	private void drawCounts(Writer w, Map<Corner, Set<Point>> ortho) throws IOException {
+		int maxCount = getMaxCount(ortho);
+		int range = 5;		// five radii
+		double scale = 
+		w.write("<!-- blue corners, sized by count -->\n");
+		w.write("<g" + thin + "stroke='red'>\n");
+		for(Corner corner: ortho.keySet()) {
+			double[] p = new double[2];
+			hasher.unhash(corner.hashes, p);
+			double 
+			w.write("<circle cx='" + p[0] + "' cy='" + p[1] + "' r='0.01%'/>\n");
+		}
+		w.write("</g>\n");
+	}
+
+	private int getMaxCount(Map<Corner, Set<Point>> ortho) {
+		int max = 0;
+		for(Corner corner: ortho.keySet()) {
+			Set<Point> points = ortho.get(corner);
+			if (max < points.size())
+				max = points.size();
+		}
+		return max;
+	}
+
 	// draws in point space, not hash space, so has to convert inline
 	private void drawLines(Writer w, Map<Corner, Set<Point>> ortho, double[] pmin, double[] pmax) throws IOException {
 		w.write("<!-- lines from points to corners -->\n");
@@ -299,19 +298,6 @@ public class GenSVG {
 		w.write("<g transform='scale(" + (X-buffer*2)/(gmax[0] - gmin[0]) + "," + (Y-buffer*2)/(gmax[0] - gmin[0]) + ")'>\n");
 		w.write("<g transform='translate(" +(0 - gmin[0]) + "," + (0 - gmin[1]) + ")'>\n");
 	}
-
-	// same in point scale
-//	private void pushPointSpace(Writer w, int[] gmin, int[] gmax) throws IOException {
-//		double minx = gmin[0];
-//		double maxx = gmax[0];
-//		double miny = gmin[1];
-//		double maxy = gmax[1];
-//		String matrix = "1 0 0 -1 " + buffer + " " + (Y - buffer);
-//		w.write("<!-- push point space -->\n");
-//		w.write("<g transform='matrix(" + matrix + ")' fontsize='1' >\n");
-//		w.write("<g transform='scale(" + (X-buffer*2.0)/(maxx - minx) + "," + (Y-buffer*2.0)/(maxy - miny) + ")'>\n");
-//		w.write("<g transform='translate(" +(0 - minx) + "," + (0 - miny) + ")'" + CLIP + ">\n");	
-//	}
 
 	private void pushPointSpace(Writer w, double pmin[], double pmax[]) throws IOException {
 		String matrix = "1 0 0 -1 " + buffer + " " + (Y - buffer);
@@ -351,6 +337,11 @@ public class GenSVG {
 	 * @param args
 	 * @throws IOException 
 	 * 
+	 * Usage: input output [points/counts/lines] 
+	 * 		points - only points
+	 * 		lines - points + lines
+	 * 		counts - size corners by count, no points or lines
+	 * 
 	 * Load up output of hadoop job in /tmp/IN/pairwhatsit
 	 */
 	public static void main(String[] args) throws IOException {
@@ -358,10 +349,13 @@ public class GenSVG {
 		File data = new File(args[0]);
 		File svg = new File(args[1]);
 		Reader r = new FileReader(data);
+		String style = "lines";
+		if (args.length > 2) 
+			style = args[2];
 		svg.delete();
 		svg.createNewFile();
 		Writer w = new FileWriter(svg);
-		GenSVG gsvg = new GenSVG();
+		GenSVG gsvg = new GenSVG(style);
 		double[] stretch = {1.5d, 1.5d};
 		gsvg.hasher = new OrthonormalHasher(stretch);
 		gsvg.makeSVG(r, w);
