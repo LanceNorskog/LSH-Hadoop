@@ -7,7 +7,7 @@ package lsh.core;
 public interface Hasher {
 	// project point to lower corner
 	public int[] hash(double[] values);
-	// project point to lower corner
+	// project point to upper corner
 	public int[] hashUp(double[] values);
 	// project from corner to point
 	public void unhash(int[] hash, double[] p);

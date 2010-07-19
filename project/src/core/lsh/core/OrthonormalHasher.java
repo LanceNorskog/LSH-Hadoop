@@ -33,11 +33,16 @@ public class OrthonormalHasher implements Hasher {
 
 	@Override
 	public int[] hashUp(double[] values) {
-		double[] up = Arrays.copyOf(values, values.length);
+//		double[] up = Arrays.copyOf(values, values.length);
+//		for(int i = 0; i < values.length; i++) {
+//			up[i] += stretch[i]/0.9;
+//		}
+//		return hash(up);
+		int[] up = hash(values);
 		for(int i = 0; i < values.length; i++) {
-			up[i] += stretch[i]/0.9;
+			up[i]++;
 		}
-		return hash(up);
+		return up;
 	}
 	
 	@Override
