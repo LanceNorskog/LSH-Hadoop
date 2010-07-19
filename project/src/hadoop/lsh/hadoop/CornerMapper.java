@@ -34,10 +34,7 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 		while (itr.hasMoreTokens()) {
 			Point point = Point.newPoint(itr.nextToken().toString());
 			Set<Corner> hashes = cg.getHashSet(point);
-			System.out.println("-------------");
-			System.out.println(point.toString());
 			for(Corner corner: hashes) {
-				System.out.println("corner: " + corner.toString());
 				context.write(new Text(corner.toString()), new Text(point.toString()));
 			}
 		}

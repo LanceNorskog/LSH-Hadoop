@@ -1,7 +1,6 @@
 package lsh.hadoop;
 
 import java.io.IOException;
-import lsh.core.Point;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -21,7 +20,6 @@ public class CountReducer extends
 	@Override
 	public void reduce(Text key, Iterable<Text> values, Context context)
 	throws IOException, InterruptedException {
-		StringBuilder sb = new StringBuilder();
 		int count = 0;
 
 		for(Text value: values) {

@@ -28,8 +28,6 @@ public class OrthonormalHasher implements Hasher {
 		for(int i = 0; i < hashed.length; i++) {
 			hashed[i] = (int) Math.floor(values[i] / stretch[i]);
 		}
-		System.out.println("Hash:\t("+ values[0]+ "," + values[1]);
-		System.out.println("\t->:\t("+ hashed[0]+ "," + hashed[1]);
 		return hashed;
 	}
 
@@ -37,9 +35,8 @@ public class OrthonormalHasher implements Hasher {
 	public int[] hashUp(double[] values) {
 		double[] up = Arrays.copyOf(values, values.length);
 		for(int i = 0; i < values.length; i++) {
-			up[i] += stretch[i]/0.51;
+			up[i] += stretch[i]/0.9;
 		}
-		System.out.print("Up");
 		return hash(up);
 	}
 	

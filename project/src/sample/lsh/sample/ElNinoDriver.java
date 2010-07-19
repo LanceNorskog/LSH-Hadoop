@@ -1,6 +1,10 @@
-package lsh.hadoop;
+package lsh.sample;
 
 import java.io.File;
+
+import lsh.hadoop.CornerMapper;
+import lsh.hadoop.CornerReducer;
+import lsh.sample.ElNinoTextFormat;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -14,7 +18,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
  * Corner-collecting version- set of corners, each with points.
  */
 
-public class CornerDriver {
+public class ElNinoDriver {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
@@ -22,8 +26,9 @@ public class CornerDriver {
 			System.err.println("Usage: CornerDriver <in> <out>");
 			System.exit(2);
 		}
-		Job job = new Job(conf, "From Python 2d version");
+		Job job = new Job(conf, "El Nino mini");
 		//	    job.setJarByClass(CornerDriver.class);
+		job.setInputFormatClass(ElNinoTextFormat.class);
 		job.setMapperClass(CornerMapper.class);
 		job.setReducerClass(CornerReducer.class);
 		job.setOutputKeyClass(Text.class);

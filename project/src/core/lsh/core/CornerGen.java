@@ -27,7 +27,8 @@ import java.util.Set;
  */
 
 public class CornerGen {
-	Hasher hasher = new OrthonormalHasher(2, 2.0d);
+	double[] stretch = {1.5d, 1.5d};
+	Hasher hasher = new OrthonormalHasher(stretch);
 
 	public Set<Corner> getHashSet(Point point) {
 		Set<Corner> corners = new HashSet<Corner>();
