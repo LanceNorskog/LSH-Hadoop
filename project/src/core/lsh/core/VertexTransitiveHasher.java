@@ -28,15 +28,7 @@ public class VertexTransitiveHasher implements Hasher {
 	@Override
 	public int[] hash(double[] values) {
 		double[] projected = new double[values.length];
-		double sum = 0.0d;
-		for(int i = 0; i < projected.length; i++) {
-			projected[i] = values[i] / stretch[i];
-			sum += projected[i];
-		}
-		double musum = MU * sum;
-		for(int i = 0; i < projected.length; i++) {
-			projected[i] = (projected[i] / S3 + musum)/ SKEW;
-		}
+		project(values, projected);
 		int[] hashed = new int[values.length];
 		for(int i = 0; i < projected.length; i++) {
 			hashed[i] = (int) (projected[i]);
@@ -44,6 +36,18 @@ public class VertexTransitiveHasher implements Hasher {
 		System.out.println("Hash:\t("+ values[0]+ "," + values[1]);
 		System.out.println("\t->:\t("+ hashed[0]+ "," + hashed[1]);
 		return hashed;
+	}
+
+	public void project(double[] values, double[] gp) {
+		double sum = 0.0d;
+		for(int i = 0; i < gp.length; i++) {
+			gp[i] = values[i] / stretch[i];
+			sum += gp[i];
+		}
+		double musum = MU * sum;
+		for(int i = 0; i < gp.length; i++) {
+			gp[i] = (gp[i] / S3 + musum)/ SKEW;
+		}
 	}
 
 	@Override

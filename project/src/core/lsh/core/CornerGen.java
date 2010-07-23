@@ -27,7 +27,9 @@ import java.util.Set;
  */
 
 public class CornerGen {
-	double[] stretch = {1.5d, 1.5d};
+//	double[] stretch = {3d, 3d};  	// simple test
+//	double[] stretch = {0.01,20};	// El Nino test
+	double[] stretch = {1.5,1.5};		// census
 	Hasher hasher = new OrthonormalHasher(stretch);
 
 	public Set<Corner> getHashSet(Point point) {

@@ -9,6 +9,8 @@ public interface Hasher {
 	public int[] hash(double[] values);
 	// project point to upper corner
 	public int[] hashUp(double[] values);
+	// project point to grid space
+	public void project(double[] values, double[] gp);
 	// project from corner to point
 	public void unhash(int[] hash, double[] p);
 	// increment hash code

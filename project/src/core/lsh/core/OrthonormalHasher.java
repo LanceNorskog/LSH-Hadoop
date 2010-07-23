@@ -33,16 +33,17 @@ public class OrthonormalHasher implements Hasher {
 
 	@Override
 	public int[] hashUp(double[] values) {
-//		double[] up = Arrays.copyOf(values, values.length);
-//		for(int i = 0; i < values.length; i++) {
-//			up[i] += stretch[i]/0.9;
-//		}
-//		return hash(up);
 		int[] up = hash(values);
 		for(int i = 0; i < values.length; i++) {
 			up[i]++;
 		}
 		return up;
+	}
+	
+	@Override
+	public void project(double[] values, double[] gp) {
+		for(int i = 0; i < values.length; i++)
+			gp[i] = values[i] / stretch[i];
 	}
 	
 	@Override
@@ -68,4 +69,5 @@ public class OrthonormalHasher implements Hasher {
 		sb.append("]");
 		return sb.toString();
 	}
+
 }

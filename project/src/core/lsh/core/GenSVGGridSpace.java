@@ -17,16 +17,16 @@ import java.util.Set;
  * 
  * Painful, but finally understandable.
  * 
- * 3 layers:
+ * 2 layers:
  *    text labels: original screen space, upside doen
- *    hash value space: flipped/scaled/translated
- *    point value space: flipped/scaled/translated
+ *    grid value space: flipped/scaled/translated
+ *    All drawing is done in grid space to have tractable horiz/vert drawing stroke sizes
  */
 
-public class GenSVG {
+public class GenSVGGridSpace {
 	private static final String CLIP = " clip-path='url(#grid-path)'";
 //	private static final double STRETCH = 3d;
-	static 	double COUNT_RADIUS = 0.20;		// 1/4 of grid size
+	static 	double COUNT_RADIUS = 0.10;		// 1/4 of grid size
 	// outer frame
 	int X = 300;
 	int Y = 300;
@@ -38,7 +38,7 @@ public class GenSVG {
 	Hasher hasher = null;
 	final String style;
 
-	public GenSVG(String style) {
+	public GenSVGGridSpace(String style) {
 		this.style = style;
 	}
 
@@ -52,7 +52,7 @@ public class GenSVG {
 		int[] gmax = new int[2];
 		double[] pmin = new double[2];
 		double[] pmax = new double[2];
-		getMinMaxCorners(corners, gmin, gmax); // trim - or even remove?
+		getMinMaxCorners(corners, gmin, gmax);
 		getGridSpace(gmin, gmax, pmin, pmax);
 		header(w, gmin, gmax);
 		labelGrid(w, pmin, pmax);
@@ -250,19 +250,9 @@ public class GenSVG {
 			double[] p = new double[2];
 			hasher.unhash(corner.hashes, p);
 			double size = ortho.get(corner).size();
-			w.write("<circle cx='" + p[0] + "' cy='" + p[1] + "' r='" + dotSize(maxCount, avg, size) + "'/>\n");
+			w.write("<circle cx='" + p[0] + "' cy='" + p[1] + "' r='" + (avg * (size / maxCount)) + "'/>\n");
 		}
 		w.write("</g>\n");
-	}
-
-	private double dotSize(double maxCount, double avg, double size) {
-//		return (avg * (size / maxCount));
-		// log
-		double mm = Math.log(maxCount);
-		double ms = Math.log(size);
-//		double log = Math.log(size/maxCount);
-//		log = Math.log(1.0)/log;
-		return avg*(ms/mm);
 	}
 
 	private int getMaxCount(Map<Corner, Set<Point>> ortho) {
@@ -379,7 +369,6 @@ public class GenSVG {
 	 * Load up output of hadoop job in /tmp/IN/pairwhatsit
 	 */
 	public static void main(String[] args) throws IOException {
-
 		File data = new File(args[0]);
 		File svg = new File(args[1]);
 		Reader r = new FileReader(data);
@@ -389,10 +378,9 @@ public class GenSVG {
 		svg.delete();
 		svg.createNewFile();
 		Writer w = new FileWriter(svg);
-		GenSVG gsvg = new GenSVG(style);
+		GenSVGGridSpace gsvg = new GenSVGGridSpace(style);
 //		double[] stretch = {3d, 3d};	// simple test
-//		double[] stretch = {0.01, 20};	// El Nino
-		double[] stretch = {1.5, 1.5};	// Census
+		double[] stretch = {0.01, 20};	// El Nino
 		gsvg.hasher = new OrthonormalHasher(stretch);
 		gsvg.makeSVG(r, w);
 	}
