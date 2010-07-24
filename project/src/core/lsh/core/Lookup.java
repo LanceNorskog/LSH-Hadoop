@@ -20,13 +20,13 @@ import java.util.Set;
  */
 
 public class Lookup {
-	final Hasher hasher;
-	final Set<Point> points;
-	final Set<Corner> corners;
-	final Set<String> ids;
-	final Map<String,Point> id2point;
-	final Map<Corner, Set<Point>> corner2points;
-	final HashMap<Point, Set<Corner>> point2corners;
+	final public Hasher hasher;
+	final public Set<Point> points;
+	final public Set<Corner> corners;
+	final public Set<String> ids;
+	final public Map<String,Point> id2point;
+	final public Map<Corner, Set<Point>> corner2points;
+	final public HashMap<Point, Set<Corner>> point2corners;
 	
 	public Lookup(Hasher hasher, boolean doPoints, boolean doCorners, boolean doIds, boolean doId2point, boolean doCorner2points, boolean doPoint2corners) {
 		this.hasher = hasher;
@@ -38,8 +38,12 @@ public class Lookup {
 		point2corners = doPoint2corners ? new HashMap<Point, Set<Corner>>() : null;
 	}
 
-	private void load(Reader r) throws IOException {
+	public void loadCP(Reader r) throws IOException {
 		Utils.load_corner_points_format(r, points, corners, ids, id2point, corner2points, point2corners);
+	}
+
+	public void loadPC(Reader r) throws IOException {
+		Utils.load_point_corners_format(r, points, corners, ids, id2point, corner2points, point2corners);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {
@@ -75,7 +79,7 @@ public class Lookup {
 		} 
 
 		Lookup lookup = new Lookup(hasher, true, true, true, true, true, true);
-		lookup.load(r);
+		lookup.loadCP(r);
 		if (args.length == 5) {
 			Collection<Corner> corners = lookup.getMatchingCorners(args[4]);
 			printPoints(corners, args[4]);

@@ -4,10 +4,12 @@ package lsh.core;
  * Corner containing grid hashes and associated points
  * 
  * Native String representation- 0,1,2,3,...,n
+ * 
+ * Beginning to think this should be a static class and just toss int[] around?
  */
 
 public class Corner {
-	final int[] hashes;
+	public final int[] hashes;
 	
 	public Corner(int[] corner) {
 		this.hashes = corner;
@@ -15,12 +17,21 @@ public class Corner {
 	
 	@Override
 	public boolean equals(Object other) {
-		return hashes.equals(((Corner) other).hashes);
+		int[] ohash = ((Corner) other).hashes;
+		for(int i = 0; i < hashes.length; i++) {
+			if (hashes[i] != ohash[i])
+				return false;
+		}
+		return true;
 	}
 	
 	@Override
 	public int hashCode() {
-		return hashes.hashCode();
+		int sum = 0;
+		for(int i = 0; i < hashes.length; i++) {
+			sum += hashes[i]*i;
+		}
+		return sum;
 	}
 	
 	public String toString() {

@@ -390,9 +390,9 @@ public class GenSVG {
 		svg.createNewFile();
 		Writer w = new FileWriter(svg);
 		GenSVG gsvg = new GenSVG(style);
-//		double[] stretch = {3d, 3d};	// simple test
+		double[] stretch = {1d, 1d};	// simple test
 //		double[] stretch = {0.01, 20};	// El Nino
-		double[] stretch = {1.5, 1.5};	// Census
+//		double[] stretch = {1.5, 1.5};	// Census
 		gsvg.hasher = new OrthonormalHasher(stretch);
 		gsvg.makeSVG(r, w);
 	}

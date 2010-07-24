@@ -10,6 +10,7 @@ public class Point {
 	public final String id;
 	public final double[] values;
 	
+	
 	public Point(String id, int size) {
 		this.id = id;
 		values = new double[size];
