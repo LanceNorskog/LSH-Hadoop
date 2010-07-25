@@ -10,7 +10,9 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 /*
  * Import El Nino whale tracking data
+ * Hadoop reader
  * 
+ * format: id,,,,lat,long,,,...
  */
 
 public class ElNinoTextFormat extends TextInputFormat {
