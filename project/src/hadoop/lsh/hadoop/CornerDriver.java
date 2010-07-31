@@ -1,6 +1,8 @@
 package lsh.hadoop;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -17,6 +19,8 @@ import org.apache.hadoop.util.GenericOptionsParser;
 public class CornerDriver {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
+		InputStream is = new FileInputStream(args[0]);
+		conf.addResource(is);
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		if (otherArgs.length != 2) {
 			System.err.println("Usage: CornerDriver <in> <out>");

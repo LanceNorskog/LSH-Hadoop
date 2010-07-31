@@ -5,6 +5,7 @@ package lsh.core;
  */
 
 public interface Hasher {
+	public void setStretch(double[] stretch);
 	// project point to lower corner
 	public int[] hash(double[] values);
 	// project point to upper corner

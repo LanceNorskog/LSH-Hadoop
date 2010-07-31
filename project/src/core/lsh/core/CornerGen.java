@@ -30,7 +30,26 @@ public class CornerGen {
 	double[] stretch = {1d, 1d};  	// simple test
 //	double[] stretch = {0.01,20};	// El Nino test
 //	double[] stretch = {1.5,1.5};		// census
-	Hasher hasher = new OrthonormalHasher(stretch);
+	final Hasher hasher;
+	
+	public CornerGen() {
+		hasher = new OrthonormalHasher(this.stretch);
+	}
+
+	public CornerGen(String hashClass, String gridsize) throws Exception {
+		try {
+			hasher = (Hasher) Class.forName(hashClass).newInstance();
+		} catch (Exception e) {
+			System.err.println("Bogus classname: " + hashClass);
+			throw e;
+		}
+		String[] parts = gridsize.split("[ ,]");
+		double[] stretch = new double[parts.length];
+		for(int i = 0; i < parts.length; i++) {
+			stretch[i] = Double.parseDouble(parts[i]);
+		}
+		hasher.setStretch(stretch);
+	}
 
 	public Set<Corner> getHashSet(Point point) {
 		Set<Corner> corners = new HashSet<Corner>();
@@ -44,7 +63,8 @@ public class CornerGen {
 		}
 		int permuted[] = permute(remainder);
 		for(int dim = 0; dim < permuted.length; dim++) {
-			hash[permuted[dim]] = hasher.add(hash[permuted[dim]], 1);
+			hash[permuted[dim]]++;
+//			hash[permuted[dim]] = hasher.add(hash[permuted[dim]], 1);
 //			hash[permuted[dim]] = hash[permuted[dim]]++;
 			corners.add(new Corner(hash.clone()));
 		}

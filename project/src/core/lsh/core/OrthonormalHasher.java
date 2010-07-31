@@ -10,7 +10,7 @@ import java.util.Arrays;
  */
 
 public class OrthonormalHasher implements Hasher {
-	final double[] stretch;
+	double[] stretch;
 	
 	public OrthonormalHasher(int dim, double stretch) {
 		this.stretch = new double[dim];
@@ -19,6 +19,14 @@ public class OrthonormalHasher implements Hasher {
 	}
 
 	public OrthonormalHasher(double stretch[]) {
+		this.stretch = stretch;
+	}
+	
+	public OrthonormalHasher() {
+		
+	}
+	
+	public void setStretch(double[] stretch) {
 		this.stretch = stretch;
 	}
 

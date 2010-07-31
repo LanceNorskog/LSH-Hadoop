@@ -9,10 +9,13 @@ import java.util.Arrays;
  */
 
 public class VertexTransitiveHasher implements Hasher {
-	final double[] stretch;
+	double[] stretch;
 	static final double S3 = Math.sqrt(3.0d);
 	static final double MU = (1.0d - (1.0d/Math.sqrt(3.0d)))/2.0d;
 	static final double SKEW = 0.8d;
+	
+	public VertexTransitiveHasher() {
+	}
 	
 	public VertexTransitiveHasher(int dim, double stretch) {
 		this.stretch = new double[dim];
@@ -22,6 +25,11 @@ public class VertexTransitiveHasher implements Hasher {
 	}
 
 	public VertexTransitiveHasher(double stretch[]) {
+		this.stretch = stretch;
+	}
+	
+	@Override
+	public void setStretch(double[] stretch) {
 		this.stretch = stretch;
 	}
 

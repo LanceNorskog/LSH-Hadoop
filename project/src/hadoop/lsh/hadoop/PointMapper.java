@@ -8,6 +8,7 @@ import lsh.core.Corner;
 import lsh.core.CornerGen;
 import lsh.core.Point;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
@@ -16,7 +17,26 @@ import org.apache.hadoop.mapreduce.Mapper;
  */
 
 public class PointMapper extends Mapper<Object, Text, Text, Text> {
-	CornerGen cg = new CornerGen();
+	CornerGen cg;
+	
+	@Override
+	protected void setup(
+			org.apache.hadoop.mapreduce.Mapper<Object, Text, Text, Text>.Context context)
+			throws IOException, InterruptedException {
+		Configuration conf = context.getConfiguration();
+		String hasher = conf.get(LSHDriver.HASHER);
+		String gridsize = conf.get(LSHDriver.GRIDSIZE);
+
+		try {
+			cg = new CornerGen(hasher, gridsize);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			throw new InterruptedException(e.toString());
+		}
+	};
+
+
 
 	public void map(Object key, Text value, Context context)
 			throws IOException, InterruptedException {
