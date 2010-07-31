@@ -47,8 +47,10 @@ public class LSHDriver {
 		Job job = new Job(conf, "From Python 2d version");
 		//	    job.setJarByClass(LSHDriver.class);
 		job.setMapperClass((Class<? extends Mapper>) Class.forName(conf.get(MAPPER)));
-		job.setReducerClass((Class<? extends Reducer>) Class.forName(conf.get(REDUCE)));
-		job.setInputFormatClass((Class<? extends InputFormat>) Class.forName(conf.get(INPUT_FORMAT)));
+		if (null != conf.get(REDUCE))
+			job.setReducerClass((Class<? extends Reducer>) Class.forName(conf.get(REDUCE)));
+		if (null != conf.get(INPUT_FORMAT))
+			job.setInputFormatClass((Class<? extends InputFormat>) Class.forName(conf.get(INPUT_FORMAT)));
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(conf.get(IN)));
