@@ -1,10 +1,7 @@
 package lsh.hadoop;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 
-import lsh.sample.ElNinoTextFormat;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -15,7 +12,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
 
 /*
  * Drive LSH map-reduce jobs
@@ -51,6 +47,7 @@ public class LSHDriver {
 			job.setReducerClass((Class<? extends Reducer>) Class.forName(conf.get(REDUCE)));
 		if (null != conf.get(INPUT_FORMAT))
 			job.setInputFormatClass((Class<? extends InputFormat>) Class.forName(conf.get(INPUT_FORMAT)));
+
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(conf.get(IN)));

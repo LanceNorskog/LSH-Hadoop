@@ -40,7 +40,7 @@ public class CSVTextFormat extends FileInputFormat<LongWritable, Text> {
 	private static final String FORMAT_PATTERN2 = "mapreduce.csvinput.pattern2";
 	private static final String FORMAT_REPLACE1 = "mapreduce.csvinput.replace1";
 	private static final String FORMAT_REPLACE2 = "mapreduce.csvinput.replace2";
-	private static final String FORMAT_ORDER = "mapreduece.csvinput.order";
+	private static final String FORMAT_ORDER = "mapreduce.csvinput.order";
 
 	@Override
 	public RecordReader<LongWritable, Text> 
@@ -53,7 +53,7 @@ public class CSVTextFormat extends FileInputFormat<LongWritable, Text> {
 		String replace2 = conf.get(FORMAT_REPLACE2);
 		String order = conf.get(FORMAT_ORDER);
 		if (null == pattern1 || null == replace1 || null == order) {
-			throw new IOException("FlexibleTextFormat: missing parameter pattern1/replace1/order");
+			throw new IOException("CSVTextFormat: missing parameter pattern1/replace1/order");
 		}
 		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order);
 	}
