@@ -16,6 +16,14 @@
 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-net-1.4.1.jar"/>
 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-api-1.4.3.jar"/>
 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-log4j12-1.4.3.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/commons-codec-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/commons-httpclient-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/commons-io-1.4.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/geronimo-stax-api_1.0_spec-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/jcl-over-slf4j-1.5.5.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/slf4j-api-1.5.5.jar"/>
+	<classpathentry kind="lib" path="lib/solrj-lib/wstx-asl-3.2.7.jar"/>
+	<classpathentry kind="lib" path="lib/apache-solr-solrj-1.4.2-dev.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

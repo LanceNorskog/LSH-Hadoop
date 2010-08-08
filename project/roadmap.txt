@@ -1,0 +1,38 @@
+Open projects:
+	Solr:
+		SolrJ app: 
+			fetch all id/lat/long and build map
+			(implement limiting when available)
+			fetch record - lookup in map - reindex with extra field
+			Source of data:
+				existing csv files
+				2 pass, emit new file with multi-value field filled in
+				same with XML? oy
+				
+	LSH base:
+		Unit hasher- 
+		Geohash data format
+		LOD 
+			datastructure?
+			add to formats
+			implement mapred-in-place
+				limit distance
+				limit extra neighbors
+				
+		
+Needed for Solr upload:
+	clean LSH
+	explanation!
+	store grid space in documents?
+
+Needed for Mahout upload:
+	Mahout data management
+	Examples with large datasets
+	KNN recommender re-implementation
+	Test with standard sets
+	
+Demo:
+	NY cinema data?
+	how to show maps?
+	http://www.openlayers.org/dev/examples/  !!!!!
+	

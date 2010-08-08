@@ -1,40 +1,70 @@
 package org.apache.hadoop.mapreduce.lib.input;
 
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 /*
- * Flexible configurable line reader.
- * Why doesn't this exist?
+ * Configurable CSV line reader.
+ * Variant of TextInputReader that harvests fields from CSV input lines
+ * 
+ * Use case: 
+ *  text data files with one or more data items per line. 
+ *  This class rips apart the data items with regex patterns, then assembles a new value with 0 or more values.
+ *  Items have one common separator, or the first item has a different separator.
+ *  The output includes 1 or more items from the list, chosen by order.
+ *  The output items are separated by the given 'replace' fields- 
+ *  again, the first may be different than the rest.
+ *  
+ * 	pattern1/pattern2 are these separators - as Java Regex patterns
+ *  replace1/replace2 
+ *  order = n1,n2,n3...nn  
+ * 
+ *  See unit test for examples
  */
 
-public class FlexibleTextFormat extends TextInputFormat {
+public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 
-	private static final String FORMAT_PATTERN1 = "lsh.hadoop.FlexibleTextFormat.pattern1";
-	private static final String FORMAT_PATTERN2 = "lsh.hadoop.FlexibleTextFormat.pattern2";
-	private static final String FORMAT_REPLACE1 = "lsh.hadoop.FlexibleTextFormat.replace1";
-	private static final String FORMAT_REPLACE2 = "lsh.hadoop.FlexibleTextFormat.replace2";
-	private static final String FORMAT_ORDER = "lsh.hadoop.FlexibleTextFormat.order";
+	private static final String FORMAT_PATTERN1 = "mapreduce.csvinput.pattern1";
+	private static final String FORMAT_PATTERN2 = "mapreduce.csvinput.pattern2";
+	private static final String FORMAT_REPLACE1 = "mapreduce.csvinput.replace1";
+	private static final String FORMAT_REPLACE2 = "mapreduce.csvinput.replace2";
+	private static final String FORMAT_ORDER = "mapreduce.csvinput.order";
 
 	@Override
 	public RecordReader<LongWritable, Text> 
 	createRecordReader(InputSplit split,
-			TaskAttemptContext context) {
+			TaskAttemptContext context) throws IOException {
 		Configuration conf = context.getConfiguration();
 		String pattern1 = conf.get(FORMAT_PATTERN1);
 		String pattern2 = conf.get(FORMAT_PATTERN2);
 		String replace1 = conf.get(FORMAT_REPLACE1);
 		String replace2 = conf.get(FORMAT_REPLACE2);
 		String order = conf.get(FORMAT_ORDER);
+		if (null == pattern1 || null == replace1 || null == order) {
+			throw new IOException("CSVTextFormat: missing parameter pattern1/replace1/order");
+		}
 		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order);
 	}
 
+	  @Override
+	  protected boolean isSplitable(JobContext context, Path file) {
+	    CompressionCodec codec = 
+	      new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
+	    return codec == null;
+	  }
+	  
 	/**
 	 * @param args
 	 */
@@ -96,6 +126,7 @@ class FlexibleRecordReader extends LineRecordReader {
 		return new Text(unpackValue(value.toString()));
 	}
 
+	/*
 	String unpackValueSimple(String line) {
 		StringBuilder sb = new StringBuilder();
 		String tail = null;
@@ -122,6 +153,7 @@ class FlexibleRecordReader extends LineRecordReader {
 		sb.setLength(sb.length() - tail.length());
 		return sb.toString();
 	}
+	*/
 
 	String unpackValue(String line) {
 		try {
@@ -167,7 +199,8 @@ class FlexibleRecordReader extends LineRecordReader {
 				sb.append(out[out.length - 1]);
 			return sb.toString();
 		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new Error("Not enough values: " + e.toString());
+			// does this need a jobconf string also?
+			throw new Error("Not enough values: " + line);
 		}
 	}
 

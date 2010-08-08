@@ -27,12 +27,13 @@ import java.util.Set;
  */
 
 public class CornerGen {
-	double[] stretch = {1d, 1d};  	// simple test
-//	double[] stretch = {0.01,20};	// El Nino test
-//	double[] stretch = {1.5,1.5};		// census
-	final Hasher hasher;
+	public final double[] stretch;
+	public final Hasher hasher;
 	
 	public CornerGen() {
+		stretch = new double[2];
+		stretch[0] = 1.0d;
+		stretch[1] = 1.0d;
 		hasher = new OrthonormalHasher(this.stretch);
 	}
 
@@ -44,7 +45,7 @@ public class CornerGen {
 			throw e;
 		}
 		String[] parts = gridsize.split("[ ,]");
-		double[] stretch = new double[parts.length];
+		stretch = new double[parts.length];
 		for(int i = 0; i < parts.length; i++) {
 			stretch[i] = Double.parseDouble(parts[i]);
 		}
@@ -85,6 +86,14 @@ public class CornerGen {
 			permuted[dim] = pairs[dim].order;
 		}
 		return permuted;
+	}
+	
+	public double[] backproject(Corner corner) {
+		double[] inverse = new double[stretch.length];
+		for(int i = 0; i < stretch.length; i++) {
+			inverse[i] = corner.hashes[i] * stretch[i];
+		}
+		return inverse;
 	}
 	
 	static public void main(String[] args) {

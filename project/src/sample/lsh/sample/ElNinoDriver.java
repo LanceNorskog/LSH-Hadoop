@@ -10,7 +10,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.CSVTextFormat;
+import org.apache.hadoop.mapreduce.lib.input.CSVTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
@@ -28,7 +28,7 @@ public class ElNinoDriver {
 		}
 		Job job = new Job(conf, "El Nino mini");
 		//	    job.setJarByClass(CornerDriver.class);
-		job.setInputFormatClass(CSVTextFormat.class);
+		job.setInputFormatClass(CSVTextInputFormat.class);
 		job.setMapperClass(CornerMapper.class);
 		job.setReducerClass(CornerReducer.class);
 		job.setOutputKeyClass(Text.class);
