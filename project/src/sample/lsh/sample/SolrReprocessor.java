@@ -1,9 +1,7 @@
 package lsh.sample;
 
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -11,13 +9,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.SolrResponse;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.params.SolrParams;
 
 import lsh.core.Corner;
 import lsh.core.CornerGen;
@@ -33,7 +29,6 @@ public class SolrReprocessor {
 	final CommonsHttpSolrServer server;
 	final String NNPrefix;
 	final String idField = "id";
-//	final String pointField;
 	final String latField;
 	final String lonField;
 	final String[] neighborPointFields;
@@ -64,13 +59,12 @@ public class SolrReprocessor {
 		this.pointFields = new String[2];
 		this.pointFields[0] = this.latField;
 		this.pointFields[1] = this.lonField;
-//		this.pointField = null;
 		this.cg = new CornerGen("lsh.core.OrthonormalHasher",
 					distance.toString() + "," + distance.toString());
 		this.neighborIdFields = NNPrefix + idField + "s";
-		this.neighborPointFields = new String[1];
+		this.neighborPointFields = new String[2];
 		this.neighborPointFields[0] = NNPrefix + latField + "s";
-		this.neighborPointFields[1] = NNPrefix + latField + "s";
+		this.neighborPointFields[1] = NNPrefix + lonField + "s";
 	}
 
 	 SolrDocumentList getDocs() throws SolrServerException {
@@ -79,7 +73,6 @@ public class SolrReprocessor {
 		query.setRows(30);
 		QueryResponse response = server.query(query);
 		docs = response.getResults();
-		SolrDocument doc = docs.get(0);
 		return docs;
 	}
 	
@@ -130,16 +123,6 @@ public class SolrReprocessor {
 		 }	 
 	 }
 
-//	private void addPoint(Object nid, Object[] p, SolrDocument neighbor) {
-//		Collection<Object> npoints;
-//		Object point;
-//		npoints = neighbor.getFieldValues(neighborPointField);
-//		point = neighbor.getFieldValue(pointField);
-//		if (!p.equals(point) && ! npoints.contains(p)) {
-//			npoints.add(p);
-//		}
-//	}
-	 
 	Set<Corner> indexDocument(SolrDocument doc) {
 		double[] point = new double[2];
 		if (this.pointFields.length == 1) {
@@ -148,16 +131,25 @@ public class SolrReprocessor {
 			point[0] = Double.parseDouble(parts[0]);
 			point[1] = Double.parseDouble(parts[1]);
 		} else {
-			Object o = (Object) doc.getFieldValue(this.pointFields[0]);
-			point[0] = Double.parseDouble((String) o);
-			o = (Object) doc.getFieldValue(this.pointFields[1]);
-			point[1] = Double.parseDouble((String) o);
+			Object o0 = (Object) doc.getFieldValue(this.pointFields[0]);
+			Object o1 = (Object) doc.getFieldValue(this.pointFields[1]);
+			if (o0 instanceof String) {
+				point[0] = Double.parseDouble((String) o0);
+				point[1] = Double.parseDouble((String) o1);
+			} else if (o0 instanceof Float) { 
+				point[0] = new Double((Float) o0);
+				point[1] = new Double((Float) o1);
+			}else { 
+				point[0] = (Double) o0;
+				point[1] = (Double) o1;
+			}
+
 		}
 		return cg.getHashSet(new Point((String) doc.getFieldValue("id"), point));
 	}
 	
 	public static void main(String[] args) throws Exception {
-//		SolrReprocessor sr = new SolrReprocessor("lat", "lon", "neighbors", 0.5);
+//		SolrReprocessor sr = new SolrReprocessor("lat", "lng", "neighbors", 0.5);
 		SolrReprocessor sr = new SolrReprocessor("store", "neighbors", 0.5);
 		SolrDocumentList docs = sr.getDocs();
 		sr.processDocuments(docs);
@@ -168,38 +160,22 @@ public class SolrReprocessor {
 		for(SolrDocument doc: docs) {
 			Collection<Object> neighborIds = doc.getFieldValues(this.neighborIdFields);
 			System.out.println((String) doc.getFieldValue("id") + ": " + neighborIds.size());
-//			printFieldValues(doc, neighborIds);
-			Collection<Object>[] neighborPoints = new Collection[this.neighborPointFields.length];
+			List<Collection<Object>> neighborPoints = new ArrayList<Collection<Object>>();
+			Iterator<Object> itIds = neighborIds.iterator();
+			List<Iterator<Object>> itPoints = new ArrayList<Iterator<Object>>();
 			for(int i = 0; i < this.neighborPointFields.length; i++) {
-				neighborPoints[i] = doc.getFieldValues(this.neighborPointFields[i]);
+				neighborPoints.add(doc.getFieldValues(this.neighborPointFields[i]));
+				itPoints.add(neighborPoints.get(i).iterator());
 			}
-			Iterator<Object> it = neighborIds.iterator();
-			for(int neighbors = 0; neighbors < neighborIds.size(); neighbors++) {
-				System.out.print("\t" + it.next() + "\t");
-				for(int i = 0; i < this.neighborPointFields.length; i++) {
-					System.out.print(doc.getFieldValues(this.neighborPointFields[i]) + ",");
+			for(int i = 0; i < neighborIds.size(); i++) {
+				System.out.print("\t" + itIds.next() + "\t");
+				for(int j = 0; j < this.neighborPointFields.length; j++) {
+					System.out.print(itPoints.get(j).next() + ",");
 				}
+				System.out.println();
 			}
-			System.out.println();
+
 		}
 	}
-
-	private void printFieldValues(SolrDocument doc, Collection<Object> neighbors) {
-		System.out.println((String) doc.getFieldValue("id") + ": " + neighbors.size());
-		ArrayList<String> sortable = new ArrayList<String>();
-		for(Object o: neighbors) {
-			sortable.add((String) o);
-		}
-		Collections.sort(sortable);
-		for(String s: sortable) {
-			System.out.println("\t" + s);
-		}
-	}
-
-
-
-
-
-
 
 }
