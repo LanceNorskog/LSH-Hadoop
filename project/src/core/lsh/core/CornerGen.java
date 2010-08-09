@@ -37,19 +37,9 @@ public class CornerGen {
 		hasher = new OrthonormalHasher(this.stretch);
 	}
 
-	public CornerGen(String hashClass, String gridsize) throws Exception {
-		try {
-			hasher = (Hasher) Class.forName(hashClass).newInstance();
-		} catch (Exception e) {
-			System.err.println("Bogus classname: " + hashClass);
-			throw e;
-		}
-		String[] parts = gridsize.split("[ ,]");
-		stretch = new double[parts.length];
-		for(int i = 0; i < parts.length; i++) {
-			stretch[i] = Double.parseDouble(parts[i]);
-		}
-		hasher.setStretch(stretch);
+	public CornerGen(Hasher hasher, double[] stretch) throws Exception {
+		this.hasher = hasher;
+		this.stretch = stretch;
 	}
 
 	public Set<Corner> getHashSet(Point point) {
@@ -87,7 +77,7 @@ public class CornerGen {
 		}
 		return permuted;
 	}
-	
+	// does hasher do this?
 	public double[] backproject(Corner corner) {
 		double[] inverse = new double[stretch.length];
 		for(int i = 0; i < stretch.length; i++) {
