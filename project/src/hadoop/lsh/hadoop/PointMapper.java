@@ -6,6 +6,7 @@ import java.util.StringTokenizer;
 
 import lsh.core.Corner;
 import lsh.core.CornerGen;
+import lsh.core.Hasher;
 import lsh.core.Point;
 
 import org.apache.hadoop.conf.Configuration;
@@ -24,11 +25,18 @@ public class PointMapper extends Mapper<Object, Text, Text, Text> {
 			org.apache.hadoop.mapreduce.Mapper<Object, Text, Text, Text>.Context context)
 			throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
-		String hasher = conf.get(LSHDriver.HASHER);
+		String hasherClass = conf.get(LSHDriver.HASHER);
 		String gridsize = conf.get(LSHDriver.GRIDSIZE);
 
 		try {
-			cg = new CornerGen(hasher, gridsize);
+			Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
+			String parts[] = gridsize.split("[ ,]");
+			double[] stretch = new double[parts.length];
+			for(int i = 0; i < parts.length; i++) {
+				stretch[i] = Double.parseDouble(parts[i]);
+			}
+			hasher.setStretch(stretch);
+			cg = new CornerGen(hasher, stretch);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

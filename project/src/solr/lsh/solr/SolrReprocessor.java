@@ -15,6 +15,7 @@ import org.apache.solr.client.solrj.impl.CommonsHttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.params.SolrParams;
 
 import lsh.core.Corner;
 import lsh.core.CornerGen;
@@ -28,7 +29,6 @@ import lsh.core.Point;
  */
 
 public class SolrReprocessor {
-	 SolrServer server;
 	final String NNPrefix;
 	final String idField = "id";
 	final String[] neighborPointFields;
@@ -38,7 +38,7 @@ public class SolrReprocessor {
 	final Indexer indexer;
 
 	public SolrReprocessor(String idField, String[] pointFields, String NNPrefix,
-			Hasher hasher, double[] stretch, String prefix, SolrServer server) throws Exception {
+			Hasher hasher, double[] stretch, String prefix) throws Exception {
 		this.NNPrefix = NNPrefix;
 		this.pointFields = pointFields;
 		this.cg = new CornerGen(hasher, stretch);
@@ -48,13 +48,16 @@ public class SolrReprocessor {
 		for (int i = 0; i < pointFields.length; i++) {
 			this.neighborPointFields[0] = NNPrefix + pointFields[i] + "s";
 		}
-		this.server = server;
 	}
 
-	SolrDocumentList getDocs() throws SolrServerException {
-		SolrDocumentList docs = null;
-		SolrQuery query = new SolrQuery("store:[-180,-180 TO 180,180]");
-		query.setRows(30);
+	SolrDocumentList getDocs(SolrServer server, String queryString) throws SolrServerException {
+		SolrQuery query = new SolrQuery(queryString);
+		query.setRows(50);
+		return getDocs(server, query);
+	}
+
+	private SolrDocumentList getDocs(SolrServer server, SolrParams query) throws SolrServerException {
+		SolrDocumentList docs;
 		QueryResponse response = server.query(query);
 		docs = response.getResults();
 		return docs;
@@ -65,7 +68,7 @@ public class SolrReprocessor {
 		Map<Corner, List<Integer>> corner2ids = new HashMap<Corner, List<Integer>>();
 		for(int i = 0; i < docs.size(); i++) {
 			SolrDocument doc = docs.get(i);
-			Set<Corner> corners = indexDocumentGeo(doc);
+			Set<Corner> corners = cg.getHashSet(indexer.getCorners(doc, idField, pointFields)); //indexDocumentGeo(doc);
 			for(Corner corner: corners) {
 				List<Integer> ids = corner2ids.get(corner);
 				if (null == ids) {
@@ -108,7 +111,7 @@ public class SolrReprocessor {
 	}
 
 	// Only part that is hard-coded to geographic data- PointType or lat/lon fields
-	Set<Corner> indexDocumentGeo(SolrDocument doc) {
+	private Set<Corner> indexDocumentGeo(SolrDocument doc) {
 		double[] point = new double[2];
 		if (this.pointFields.length == 1) {
 			Object o = (Object) doc.getFieldValue(this.pointFields[0]);
@@ -135,14 +138,18 @@ public class SolrReprocessor {
 
 	public static void main(String[] args) throws Exception {
 		String idField = "id";
-		String pointFields[] = {"store" };
-		double[] stretch = {1.0, 1.0};
+//		String pointFields[] = {"store" };
+//		double[] stretch = {1.0, 1.0};
+		String pointFields[] = {"lat", "lng" };
+		double[] stretch = {0.1, 0.1};
 		String prefix = "neighbor";
 		Hasher hasher = new OrthonormalHasher(stretch);
-		String url = "http://localhost:8983/solr";
-		SolrServer server = new CommonsHttpSolrServer(url);
-		SolrReprocessor sr = new SolrReprocessor(idField, pointFields, prefix, hasher, stretch, prefix, server);
-		SolrDocumentList docs = sr.getDocs();
+		String url = "http://localhost:8983/solr/raw";
+		SolrServer rawserver = new CommonsHttpSolrServer(url);
+		url = "http://localhost:8983/solr/processed";
+		SolrServer processedserver = new CommonsHttpSolrServer(url);
+		SolrReprocessor sr = new SolrReprocessor(idField, pointFields, prefix, hasher, stretch, prefix);
+		SolrDocumentList docs = sr.getDocs(rawserver, "*:*");
 		sr.processDocuments(docs);
 		sr.printNeighbors(docs, true, false);		
 	}

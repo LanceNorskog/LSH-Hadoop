@@ -1,12 +1,14 @@
 package lsh.solr;
 
-import java.util.Set;
 
 import org.apache.solr.common.SolrDocument;
 
-import lsh.core.Corner;
 import lsh.core.CornerGen;
 import lsh.core.Point;
+
+/*
+ * Interpret input field values as lat/lon or 2D points.
+ */
 
 public class GeoIndexer implements Indexer {
 	final CornerGen cg;
