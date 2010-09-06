@@ -11,7 +11,8 @@
 	The resulting Solr index can find the neighbors of a document
 	via searching all of the grid values for the document.
 	TODO:
-	Map-reduce finding all of the neighbors like SolrReprocessor does. 
+	Map-reduce version of SolrReprocessor:
+		finding all of the neighbors and populating them in a field. 
 -->
 
 <configuration>
