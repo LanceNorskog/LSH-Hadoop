@@ -1,17 +1,13 @@
 package lsh.hadoop;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /*
- * Receive one corner with a set of points.
- * Key is the string printout of the Hash code (int,int,int,...int)
- */
-
-/*
- * Output format of "1,2,3 id,double...double|..."
+ * Give count of values for key
  */
 
 public class CountReducer extends
@@ -22,8 +18,10 @@ public class CountReducer extends
 	throws IOException, InterruptedException {
 		int count = 0;
 
-		for(Text value: values) {
+		Iterator<Text> it = values.iterator();
+		while(it.hasNext()){
 			count++;
+			it.next();
 		}
 		String value = Integer.toString(count);
 		context.write(new Text(key), new Text(value));

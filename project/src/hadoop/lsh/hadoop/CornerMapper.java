@@ -57,16 +57,13 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 	};
 
 	public void map(Object key, Text value, Context context)
-			throws IOException, InterruptedException {
-		StringTokenizer itr = new StringTokenizer(value.toString());
+	throws IOException, InterruptedException {
 
-		while (itr.hasMoreTokens()) {
-			Point point = Point.newPoint(itr.nextToken().toString());
-			Set<Corner> hashes = cg.getHashSet(point);
-			for (Corner corner : hashes) {
-				context.write(new Text(corner.toString()), new Text(point
-						.toString()));
-			}
+		Point point = Point.newPoint(value.toString());
+		Set<Corner> hashes = cg.getHashSet(point);
+		for (Corner corner : hashes) {
+			context.write(new Text(corner.toString()), new Text(point
+					.toString()));
 		}
 	}
 }

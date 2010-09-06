@@ -58,6 +58,7 @@ public class VertexTransitiveHasher implements Hasher {
 		}
 	}
 
+	/*
 	@Override
 	public int[] hashUp(double[] values) {
 		double[] up = Arrays.copyOf(values, values.length);
@@ -67,6 +68,7 @@ public class VertexTransitiveHasher implements Hasher {
 		System.out.print("Up");
 		return hash(up);
 	}	
+	*/
 
 	@Override
 	public void unhash(int[] hash, double[] values) {
@@ -82,8 +84,4 @@ public class VertexTransitiveHasher implements Hasher {
 		}
 	}
 
-	@Override
-	public int add(int hash, int c) {
-		return hash + (int)(c);
-	}
 }

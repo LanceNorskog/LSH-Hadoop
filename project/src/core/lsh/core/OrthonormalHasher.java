@@ -39,6 +39,7 @@ public class OrthonormalHasher implements Hasher {
 		return hashed;
 	}
 
+	/*
 	@Override
 	public int[] hashUp(double[] values) {
 		int[] up = hash(values);
@@ -47,6 +48,7 @@ public class OrthonormalHasher implements Hasher {
 		}
 		return up;
 	}
+	*/
 	
 	@Override
 	public void project(double[] values, double[] gp) {
@@ -59,11 +61,6 @@ public class OrthonormalHasher implements Hasher {
 		for (int i = 0; i < hash.length; i++) {
 			values[i] = hash[i] * stretch[i];
 		}
-	}
-
-	@Override
-	public int add(int hash, int c) {
-		return hash + c;
 	}
 
 	@Override

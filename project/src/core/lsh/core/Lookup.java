@@ -1,22 +1,20 @@
 package lsh.core;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /*
- * Read and store a dataset in corner->points format:
- * 	int,int,int\tid,double,double,double|[id...]
+ * Holds a dataset in either corner->points or point->corners
+ * formats.
+ * 
+ * Loose Collection-based implementation- does not scale
  */
 
 public class Lookup {

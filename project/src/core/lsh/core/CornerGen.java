@@ -55,8 +55,6 @@ public class CornerGen {
 		int permuted[] = permute(remainder);
 		for(int dim = 0; dim < permuted.length; dim++) {
 			hash[permuted[dim]]++;
-//			hash[permuted[dim]] = hasher.add(hash[permuted[dim]], 1);
-//			hash[permuted[dim]] = hash[permuted[dim]]++;
 			corners.add(new Corner(hash.clone()));
 		}
 		return corners;
@@ -78,13 +76,13 @@ public class CornerGen {
 		return permuted;
 	}
 	// does hasher do this?
-	public double[] backproject(Corner corner) {
-		double[] inverse = new double[stretch.length];
-		for(int i = 0; i < stretch.length; i++) {
-			inverse[i] = corner.hashes[i] * stretch[i];
-		}
-		return inverse;
-	}
+//	public double[] backproject(Corner corner) {
+//		double[] inverse = new double[stretch.length];
+//		for(int i = 0; i < stretch.length; i++) {
+//			inverse[i] = corner.hashes[i] * stretch[i];
+//		}
+//		return inverse;
+//	}
 	
 	static public void main(String[] args) {
 		List<Pair> points = new ArrayList<Pair>();
@@ -95,7 +93,7 @@ public class CornerGen {
 		points.hashCode();
 		CornerGen cg = new CornerGen();
 		double point[] = {1.1, 0.3};
-		Set<Corner> corners = cg.getHashSet(new Point("one", point));
+		Set<Corner> corners = cg.getHashSet(new Point("one", point, null));
 		corners.hashCode();
 	}
 

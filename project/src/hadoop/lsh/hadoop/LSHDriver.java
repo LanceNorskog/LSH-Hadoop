@@ -36,10 +36,6 @@ public class LSHDriver {
 			}
 		}
 
-		String x = conf.get(MAPPER);
-		x = conf.get(REDUCE);
-		x = conf.get(IN);
-		x = conf.get(OUT);
 		Job job = new Job(conf, "From Python 2d version");
 		//	    job.setJarByClass(LSHDriver.class);
 		job.setMapperClass((Class<? extends Mapper>) Class.forName(conf.get(MAPPER)));
