@@ -29,6 +29,8 @@ import lsh.core.Point;
  * Read all solr documents, generate neighbor id and point fields, and store them in neighbor documents.
  * Supports lat/lon fields or any "lat,lon" Point fields.
  * Saves lat/lon neighbor fields as neighborpoints field.
+ * 
+ * Does not scale.
  */
 
 public class SolrReprocessor {
@@ -121,32 +123,6 @@ public class SolrReprocessor {
 		}	 
 	}
 
-	// Only part that is hard-coded to geographic data- PointType or lat/lon fields
-	private Set<Corner> indexDocumentGeo(SolrDocument doc) {
-		double[] point = new double[2];
-		if (this.pointFields.length == 1) {
-			Object o = (Object) doc.getFieldValue(this.pointFields[0]);
-			String parts[] = ((String) o).split(",");
-			point[0] = Double.parseDouble(parts[0]);
-			point[1] = Double.parseDouble(parts[1]);
-		} else {
-			Object o0 = (Object) doc.getFieldValue(this.pointFields[0]);
-			Object o1 = (Object) doc.getFieldValue(this.pointFields[1]);
-			if (o0 instanceof String) {
-				point[0] = Double.parseDouble((String) o0);
-				point[1] = Double.parseDouble((String) o1);
-			} else if (o0 instanceof Float) { 
-				point[0] = new Double((Float) o0);
-				point[1] = new Double((Float) o1);
-			}else { 
-				point[0] = (Double) o0;
-				point[1] = (Double) o1;
-			}
-
-		}
-		return cg.getHashSet(new Point((String) doc.getFieldValue("id"), point));
-	}
-
 	public static void main(String[] args) throws Exception {
 		String idField = "id";
 //		String pointFields[] = {"store" };
@@ -170,7 +146,6 @@ public class SolrReprocessor {
 		for(SolrDocument doc: docs) {
 			Collection<Object> neighborIds = doc.getFieldValues(this.neighborIds);
 			System.out.println((String) doc.getFieldValue("id") + ": " + neighborIds.size());
-			List<Collection<Object>> nPoints = new ArrayList<Collection<Object>>();
 			Iterator<Object> itIds = neighborIds.iterator();
 			Iterator<Object> itPoints = doc.getFieldValues(this.neighborPoints).iterator();
 			for(int i = 0; i < neighborIds.size(); i++) {

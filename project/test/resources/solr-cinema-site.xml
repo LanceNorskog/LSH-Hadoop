@@ -1,11 +1,22 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
-	<!-- El Nino configuration  -->
+<!-- 
+	Given a CSV of Solr documents:
+	An id field and a location (comma-separated doubles) field.
+		Pipe separator for fields,
+		Ampersand separator for multi-valued fields
+	Do a map-reduce job that adds an amperand-separated list of 
+	grid values.
+	The resulting Solr index can find the neighbors of a document
+	via searching all of the grid values for the document.
+	TODO:
+	Map-reduce finding all of the neighbors like SolrReprocessor does. 
+-->
 
 <configuration>
 
-	<!--- job properties for corner-hashed -->
+	<!--- job properties for point-hashed -->
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>

@@ -2,7 +2,6 @@ package lsh.hadoop;
 
 import java.io.IOException;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 import lsh.core.Corner;
 import lsh.core.CornerGen;
