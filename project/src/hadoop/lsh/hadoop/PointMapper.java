@@ -50,15 +50,15 @@ public class PointMapper extends Mapper<Object, Text, Text, Text> {
 			throws IOException, InterruptedException {
 		StringTokenizer itr = new StringTokenizer(value.toString());
 
-		while (itr.hasMoreTokens()) {
-			Point point = Point.newPoint(itr.nextToken().toString());
+//		while (itr.hasMoreTokens()) {
+			Point point = Point.newPoint(value.toString());
 			Set<Corner> hashes = cg.getHashSet(point);
-			System.out.println("-------------");
-			System.out.println(point.toString());
+//			System.out.println("-------------");
+//			System.out.println(point.toString());
 			for(Corner corner: hashes) {
-				System.out.println("corner: " + corner.toString());
+//				System.out.println("corner: " + corner.toString());
 				context.write(new Text(point.toString()), new Text(corner.toString()));
 			}
-		}
+//		}
 	}
 }

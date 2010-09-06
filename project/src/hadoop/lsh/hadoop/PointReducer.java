@@ -13,7 +13,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  */
 
 /*
- * Output format of "id,double...double int,int,int|..."
+ * Output format of "id,double...double[*payload] int,int,int|..."
  */
 
 public class PointReducer extends

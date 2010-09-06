@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  */
 
 /*
- * Output format of "1,2,3 id,double...double|..."
+ * Output format of "1,2,3 id,double...double[*payload]|..."
  */
 
 public class CornerReducer extends

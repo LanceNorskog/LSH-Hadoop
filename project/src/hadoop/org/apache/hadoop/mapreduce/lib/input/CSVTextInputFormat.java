@@ -13,7 +13,6 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 /*
  * Configurable CSV line reader.
@@ -30,8 +29,10 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
  * 	pattern1/pattern2 are these separators - as Java Regex patterns
  *  replace1/replace2 
  *  order = n1,n2,n3...nn  
+ *  
+ *  pattern2/replace2 are not required
  * 
- *  See unit test for examples
+ *  See main() for examples
  */
 
 public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
@@ -41,6 +42,7 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 	private static final String FORMAT_REPLACE1 = "mapreduce.csvinput.replace1";
 	private static final String FORMAT_REPLACE2 = "mapreduce.csvinput.replace2";
 	private static final String FORMAT_ORDER = "mapreduce.csvinput.order";
+	private static final String FORMAT_PAYLOAD = "mapreduce.csvinput.payload";
 
 	@Override
 	public RecordReader<LongWritable, Text> 
@@ -52,10 +54,11 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 		String replace1 = conf.get(FORMAT_REPLACE1);
 		String replace2 = conf.get(FORMAT_REPLACE2);
 		String order = conf.get(FORMAT_ORDER);
+		String payload = conf.get(FORMAT_PAYLOAD);
 		if (null == pattern1 || null == replace1 || null == order) {
 			throw new IOException("CSVTextFormat: missing parameter pattern1/replace1/order");
 		}
-		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order);
+		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order, payload);
 	}
 
 	  @Override
@@ -67,27 +70,29 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 	  
 	/**
 	 * @param args
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		FlexibleRecordReader frr;
 
 		String test;
-		frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2");
-		/*
-		test = frr.unpackValue("a");
-		// "a"
-		test = frr.unpackValue("a::b");
-		// "a b"
-		test = frr.unpackValue("a::b::c");
-		// "a b,c"
-		 * */
+		frr = new FlexibleRecordReader("::", null, " ", null, "0,1", null);
+		test = frr.unpackValue("id::lat,long");
+		if (!test.equals("id lat,long")) {
+			throw new Exception("unpack multiple filled values failed");
+		}
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6");
-		test = frr.unpackValue("id,1,2,3,4,lat,long,7");
-		// "id,lat,long"
-		test = frr.unpackValue(",1,2,3,4,,long,7");
-		// ",,long"
-		test.hashCode();
+		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6","|");
+		String orig = "id,1,2,3,4,lat,long,7";
+		test = frr.unpackValue(orig);
+		if (!test.equals("id,lat,long")) {
+			throw new Exception("unpack multiple filled values failed");
+		}
+		orig = ",1,2,3,4,,long,7";
+		test = frr.unpackValue(orig);
+		if (!test.equals(",,long")) {
+			throw new Exception("unpack multiple empty values failed");
+		}
 	}
 }
 
@@ -95,14 +100,16 @@ class FlexibleRecordReader extends LineRecordReader {
 	final String pattern1, pattern2, replace1, replace2;
 	final int[] order;
 	final int[] reverse;
+	final String payload;
 
 	public FlexibleRecordReader(String pattern1, String pattern2,
-			String replace1, String replace2, String order) {
+			String replace1, String replace2, String order, String payload) {
 		super();
 		this.pattern1 = pattern1;
 		this.pattern2 = pattern2;
 		this.replace1 = replace1;
 		this.replace2 = replace2;
+		this.payload = payload;
 		String[] parts = order.split(",");
 		this.order = new int[parts.length];
 		int max = -1;
@@ -118,47 +125,30 @@ class FlexibleRecordReader extends LineRecordReader {
 		for(int i = 0; i < parts.length; i++) {
 			this.reverse[this.order[i]] = i;
 		}
+		this.hashCode();
 	}
 
 	@Override
 	public Text getCurrentValue() {
 		Text value = super.getCurrentValue();
-		return new Text(unpackValue(value.toString()));
-	}
-
-	/*
-	String unpackValueSimple(String line) {
-		StringBuilder sb = new StringBuilder();
-		String tail = null;
-		String[] first = line.split(pattern1);
-		sb.append(first[0]);
-		sb.append(replace1);
-		tail = replace1;
-		if (null != pattern2) {
-			for(int i = 1; i < first.length; i++) {
-				String[] second = first[i].split(pattern2);
-				for(String s: second) {
-					sb.append(s);
-					tail = (null != replace2) ? replace2 : replace1;
-					sb.append(tail);
-				}
-			}
+		String line = value.toString();
+		String unpacked = unpackValue(line);
+		if (null != payload) {
+			return new Text(unpacked + payload + line);
 		} else {
-			for(int i = 1; i < first.length; i++) {
-				sb.append(first[i]);
-				tail = (null != replace2) ? replace2 : replace1;
-				sb.append(tail);
-			}		
+			return new Text(unpacked);
 		}
-		sb.setLength(sb.length() - tail.length());
-		return sb.toString();
 	}
-	*/
 
 	String unpackValue(String line) {
 		try {
 			String out[] = new String[order.length];
 			String[] first = line.split(pattern1);
+			if (first.length == line.length() + 1) {
+				// it's a magic regex character
+				// and, yes, this could be done better
+				first = line.split("\\" + pattern1);
+			}
 			int max = 1;
 			if (null != pattern2) {
 				int offset = 1;
