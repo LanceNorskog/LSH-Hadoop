@@ -23,7 +23,6 @@ import lsh.core.Corner;
 import lsh.core.CornerGen;
 import lsh.core.Hasher;
 import lsh.core.OrthonormalHasher;
-import lsh.core.Point;
 
 /*
  * Read all solr documents, generate neighbor id and point fields, and store them in neighbor documents.

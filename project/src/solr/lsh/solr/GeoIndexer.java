@@ -41,6 +41,6 @@ public class GeoIndexer implements Indexer {
 			}
 		}
 //		return cg.getHashSet(new Point((String) doc.getFieldValue("id"), point));
-		return new Point((String) doc.getFieldValue("id"), point);
+		return new Point((String) doc.getFieldValue("id"), point, null);
 	}
 }

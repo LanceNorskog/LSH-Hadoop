@@ -11,7 +11,16 @@ http://siam.org/proceedings/soda/2010/SODA10_094_neylont.pdf
 
 The code for the LSH algorithm is all courtesy of examples and explanation from Tyler.
 
-The project has two parts: 
-lsh.ortho: 	the core implementation and a 
+The project has three parts: 
+lsh.ortho: 	the core implementation 
+lsh.solr:	Solr "reprocessor": download all docs, find neighbors, 
+		upload 
+		Map/reduce assistance for Solr doc m/r jobs
+		Contains an M/R algorithm that adds corners to all 
+		documents.
+		Both are tested with NY State cinema location data.
 lsh.hadoop:	map/reduce wrapper. 
+side utility:	Hadoop file reader which parses input csv lines and rearranges them.
 
+
+The core insight is to use equilateral triangles instead of squares to round off locations. That's it.

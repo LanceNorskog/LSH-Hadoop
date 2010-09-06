@@ -4,15 +4,17 @@ import junit.framework.TestCase;
 
 public class TestCSVTextFormat extends TestCase {
 	
+	// TODO: Add tests for payload management
+
 	public void testGood() {
 		FlexibleRecordReader frr;
 
-		frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2");
+		frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2", null);
 		assertEquals("a", frr.unpackValue("a"));
 		assertEquals("a b", frr.unpackValue( frr.unpackValue("a::b")));
 		assertEquals("a b,c", frr.unpackValue("a::b::c"));
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6");
+		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null);
 		assertEquals("id,lat,long", frr.unpackValue("id,1,2,3,4,lat,long,7"));
 		assertEquals("id,,long", frr.unpackValue("id,1,2,3,4,,,7"));
 		assertEquals(",lat,", frr.unpackValue(",1,2,3,4,lat,,7"));
@@ -23,7 +25,7 @@ public class TestCSVTextFormat extends TestCase {
 	public void testBad() {
 		FlexibleRecordReader frr;
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6");
+		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null);
 		try {
 			frr.unpackValue(null);
 		} catch(Exception e) {

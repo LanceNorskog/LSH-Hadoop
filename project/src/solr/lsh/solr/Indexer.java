@@ -1,7 +1,5 @@
 package lsh.solr;
 
-import java.util.Set;
-
 import org.apache.solr.common.SolrDocument;
 
 //import lsh.core.Corner;
