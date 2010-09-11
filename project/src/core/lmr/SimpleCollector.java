@@ -1,10 +1,15 @@
 package lmr;
 
-public class SimpleCollector<K> implements Collector<K> {
+public class SimpleCollector implements Collector {
 
 	@Override
-	public void collect(K key, Object o) {
-		System.out.println("Collector: key: " + key + ", collected: " + o);
+	public void collect(Object key, Object value) {
+		System.out.println("Collector: key: " + key + ", collected: " + value);
+	}
+
+	@Override
+	public void collect2(Object key, Object value) {
+		System.out.println("Collector: key: " + key + ", collected: " + value);		
 	}
 
 }

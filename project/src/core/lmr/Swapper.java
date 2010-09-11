@@ -1,12 +1,9 @@
 package lmr;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /*
  * Implement delivering keys to reducers.
@@ -25,18 +22,18 @@ public class Swapper<K, V> {
 	 * Called by emitter after any processing.
 	 */
 	public void fill(K key, V value) {
-		List<V> pile = values.get(key);
-		if (null == pile) {
-			pile = new ArrayList<V>();
-			values.put(key, pile);
+		List<V> stream = values.get(key);
+		if (null == stream) {
+			stream = new ArrayList<V>();
+			values.put(key, stream);
 		}
-		pile.add(value);
+		stream.add(value);
 	}
 	
 	/*
 	 * Called by Job for each key. Gives option of different collectors for different keys.
 	 */
-	public void drive(K key, Collector<K> collector) {
+	public void drive(K key, Collector collector) {
 		reducer.reduce(key, values.get(key), collector);
 	}
 	

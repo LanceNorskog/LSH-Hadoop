@@ -21,7 +21,7 @@ public class TestFullPass extends TestCase {
 	public void testIdentity() {
 		Mapper<Object, Object, Object, Object> mapper = new IdentityMapper<Object, Object, Object, Object>();
 		Reducer<Object, Object> reducer = new IdentityReducer<Object, Object>();
-		Collector<Object> collector = new SimpleCollector<Object>();
+		Collector collector = new SimpleCollector();
 		Swapper<Object, Object> swapper = new Swapper<Object, Object>(reducer);
 		Emitter<Object, Object> emitter = new SimpleEmitter<Object, Object>(
 				swapper);
@@ -41,7 +41,7 @@ public class TestFullPass extends TestCase {
 	public void testCounting() {
 		Mapper<Object, Integer, String, Integer> mapper = new IdentityMapper<Object, Integer, String, Integer>();
 		Reducer<String, Integer> reducer = new CountingReducer<String>();
-		Collector<String> collector = new SimpleCollector<String>();
+		Collector collector = new SimpleCollector();
 		Job<Object, Integer, String, Integer> job = new Job<Object, Integer, String, Integer>(mapper, reducer, collector);
 		job.input("A", 1);
 		job.input("A", 2);

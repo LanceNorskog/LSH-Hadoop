@@ -8,10 +8,10 @@ public class Job<IK,IV,K,V> {
 	public final Mapper<IK,IV,K,V> mapper;
 	public final Reducer<K,V> reducer;
 	public final Emitter<K,V> emitter;
-	public final Collector<K> collector;
+	public final Collector collector;
 	public final Swapper<K,V> swapper;
 
-	public Job(Mapper<IK,IV,K,V> mapper, Reducer<K,V> reducer, Emitter<K,V> emitter, Collector<K> collector, Swapper<K,V> swapper) {
+	public Job(Mapper<IK,IV,K,V> mapper, Reducer<K,V> reducer, Emitter<K,V> emitter, Collector collector, Swapper<K,V> swapper) {
 		if (null == mapper) {
 			mapper = new IdentityMapper<IK,IV,K,V>();
 		}
@@ -25,7 +25,7 @@ public class Job<IK,IV,K,V> {
 			emitter = new SimpleEmitter<K,V>(swapper);
 		}
 		if (null == collector) {
-			collector = new SimpleCollector<K>();
+			collector =  new SimpleCollector();
 		}
 		this.mapper = mapper;
 		this.reducer = reducer;
@@ -34,7 +34,7 @@ public class Job<IK,IV,K,V> {
 		this.swapper = swapper;
 	}
 	
-	public Job(Mapper<IK,IV,K,V> mapper, Reducer<K,V> reducer, Collector<K> collector) {
+	public Job(Mapper<IK,IV,K,V> mapper, Reducer<K,V> reducer, Collector collector) {
 		this(mapper,reducer,null,collector,null);
 	}
 	
@@ -50,3 +50,5 @@ public class Job<IK,IV,K,V> {
 	}
 	
 }
+
+
