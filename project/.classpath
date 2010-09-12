@@ -27,5 +27,8 @@
 	<classpathentry kind="lib" path="lib/apache-solr-solrj-1.4.2-dev.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
 	<classpathentry kind="lib" path="C:/cygwin/home/work/open/unified/lucene-solr/lucene/build/contrib/spatial/lucene-spatial-4.0-dev.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mahout-utils"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

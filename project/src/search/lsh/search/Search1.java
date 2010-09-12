@@ -125,7 +125,7 @@ public class Search1 {
 
 	private static void findNeighbors(Lookup l, String g32, double[] d32) {
 		{
-		Point p32 = new Point(g32, d32);
+		Point p32 = new Point(g32, d32, null);
 		Search1 sr1 = new Search1(l);
 		Set<Point> points = new HashSet<Point>();
 		int n = sr1.getNearestPoints(p32, points);

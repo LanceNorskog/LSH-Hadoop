@@ -1,6 +1,17 @@
 package lmr;
 
 import junit.framework.TestCase;
+import littlemr.Collector;
+import littlemr.CountingReducer;
+import littlemr.Emitter;
+import littlemr.IdentityMapper;
+import littlemr.IdentityReducer;
+import littlemr.Job;
+import littlemr.Mapper;
+import littlemr.Reducer;
+import littlemr.SimpleCollector;
+import littlemr.SimpleEmitter;
+import littlemr.Swapper;
 
 public class TestFullPass extends TestCase {
 
