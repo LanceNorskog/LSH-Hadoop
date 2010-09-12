@@ -34,7 +34,7 @@ import lsh.hadoop.LSHDriver;
  * 	map dimension, user/item/userrandom/itemrandom/pref
  */
 
-public class DimMapper extends
+public class UserItemPrefMapper extends
     Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 	
   public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
@@ -71,7 +71,7 @@ public class DimMapper extends
   public void map(LongWritable key,
                   Text value,
                   Context context) throws IOException, InterruptedException {
-    String[] tokens = DimMapper.DELIMITER.split(value.toString());
+    String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
     long userID = Long.parseLong(tokens[0]);
     long itemID = Long.parseLong(tokens[1]);
     if (itemKey ^ transpose) {

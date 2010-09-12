@@ -23,8 +23,8 @@ public class SVDriver {
 		}
 		Job job = new Job(conf, "word count");
 		job.setJarByClass(SVDriver.class);
-		job.setMapperClass(DimMapper.class);
-		job.setReducerClass(DimReducer.class);
+		job.setMapperClass(UserItemPrefMapper.class);
+		job.setReducerClass(UserItemPrefReducer.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(TupleWritable.class);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));

@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  * Write LSH format with index discriminators: U/I dim # spot
  */
 
-public class DimReducer extends
+public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
 	// shift preferences from 1.0/4.0 to 0 to 3
