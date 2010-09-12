@@ -13,13 +13,12 @@ import org.apache.hadoop.mapreduce.Reducer;
  * For each user+preference, pull the item towards the user.
  * The farther the item from the user, the harder the user pulls.
  * 
- * Write LSH format with index discriminators: _dimUindex/_dimIindex
+ * Write LSH format with index discriminators: U/I dim # spot
  */
 
 public class DimReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
-	public static final Integer DIM = 2;
 	public static final Float SCALE = 0.05f;
 
 	protected void reduce(
@@ -42,26 +41,37 @@ public class DimReducer extends
 			float nudge;
 			nudge = (userSpot - itemSpot) * pref;
 			itemSpot += nudge;
+			if (itemSpot < 0.0f)
+				itemSpot = 0.00000000001f;
+			if (itemSpot > 1.0f)
+				itemSpot = 0.99999999999f;
 			itemSpots.put(data.getItemID(), itemSpot);
 		}
+		
 		StringBuilder sb = new StringBuilder();
 		for(Long userID: userSpots.keySet()) {
 			sb.setLength(0);
-			sb.append('_');
+			sb.append("U");
+			sb.append(" ");
 			sb.append(dim.toString());
-			sb.append('U');
+			sb.append(' ');
 			sb.append(userID.toString());
 			Float spot = userSpots.get(userID);
-			context.write(new Text(sb.toString()), new Text(spot.toString()));
+			sb.append(' ');
+			sb.append(spot.toString());
+			context.write(null, new Text(sb.toString()));
 		}
 		for(Long itemID: itemSpots.keySet()) {
 			sb.setLength(0);
-			sb.append('_');
+			sb.append("I");
+			sb.append(" ");
 			sb.append(dim.toString());
-			sb.append('I');
+			sb.append(' ');
 			sb.append(itemID.toString());
 			Float spot = itemSpots.get(itemID);
-			context.write(new Text(sb.toString()), new Text(spot.toString()));
+			sb.append(' ');
+			sb.append(spot.toString());
+			context.write(null, new Text(sb.toString()));
 		}		
 	}
 }

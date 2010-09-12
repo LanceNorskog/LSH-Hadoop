@@ -9,26 +9,38 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>
-		<value>/tmp/GL_lsh</value>
+		<value>/tmp/GL_lsh_dual</value>
 		<description>Input directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.out</name>
-		<value>/tmp/GL_lsh_dual</value>
+		<value>/tmp/GL_lsh_corners</value>
 		<description>Output directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.mapper</name>
-		<value>semvec.lsh.UserItemMapper</value>
+		<value>lsh.hadoop.CornerMapper</value>
 		<description>Mapper class.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
-		<value>semvec.lsh.UserItemReducer</value>
+		<value>lsh.hadoop.CornerReducer</value>
 		<description>Reducer class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.hasher</name>
+		<value>lsh.core.OrthonormalHasher</value>
+		<description>Hasher class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.gridsize</name>
+		<value>0.01,0.01</value>
+		<description>Hasher grid size array.</description>
 	</property>
 
 	<property>

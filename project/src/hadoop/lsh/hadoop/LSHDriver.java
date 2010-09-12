@@ -1,6 +1,7 @@
 package lsh.hadoop;
 
 import java.io.File;
+import java.io.IOException;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,16 +28,21 @@ public class LSHDriver {
 	public static String REDUCE = "lsh.hadoop.LSHDriver.reducer";
 	public static String HASHER = "lsh.hadoop.LSHDriver.hasher";
 	public static String GRIDSIZE = "lsh.hadoop.LSHDriver.gridsize";
+	public static String DIMENSION = "lsh.hadoop.LSHDriver.dimension";
 	
 	public static void main(String[] args) throws Exception {
-		Configuration conf = new Configuration();
 		for(String xml: args) {
 			if (xml.endsWith(".xml")){
-				conf.addResource(new Path(args[0]));
+				LSHDriver.runJob(xml);
 			}
 		}
+	}
+	
+	public static void runJob(String xml) throws IOException, IllegalStateException, ClassNotFoundException, InterruptedException {
+		Job job = new Job();
+		Configuration conf = job.getConfiguration();
+		conf.addResource(new Path(xml));
 
-		Job job = new Job(conf, "From Python 2d version");
 		//	    job.setJarByClass(LSHDriver.class);
 		job.setMapperClass((Class<? extends Mapper>) Class.forName(conf.get(MAPPER)));
 		if (null != conf.get(REDUCE))

@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import lsh.hadoop.LSHDriver;
+
 /*
  * Read User/Item/Pref format, for all dimensions
  * 	map dimension, user/item/userrandom/itemrandom/pref
@@ -35,15 +37,14 @@ import java.util.regex.Pattern;
 public class DimMapper extends
     Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 	
-	public static final Integer DIM = 2;
-
   public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
 
   private static final Pattern DELIMITER = Pattern.compile("::");
 
   private boolean booleanData;
   private boolean transpose;
-  private final boolean itemKey = false;
+  private boolean itemKey = false;
+  private int dimension = -1;
   
   Random[] dimensionRandom;
 
@@ -56,8 +57,13 @@ public class DimMapper extends
     Configuration jobConf = context.getConfiguration();
     booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
     transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
-    dimensionRandom = new Random[DIM];
-    for(int dim = 0; dim < DIM; dim++)
+	String d = jobConf.get(LSHDriver.DIMENSION);
+	if (null == d)
+		dimension = 2;
+	else
+		dimension = Integer.parseInt(d);
+    dimensionRandom = new Random[dimension];
+    for(int dim = 0; dim < dimension; dim++)
     	dimensionRandom[dim] = new Random(dim);
   }
 
@@ -76,7 +82,7 @@ public class DimMapper extends
       userID = itemID;
       itemID = temp;
     }
-    for(int dim = 0; dim < DIM; dim++) {
+    for(int dim = 0; dim < dimension; dim++) {
 		float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
     	TupleWritable valueout = new TupleWritable(userID, itemID, 
     			dimensionRandom[dim].nextFloat(), dimensionRandom[dim].nextFloat(), prefValue);	
