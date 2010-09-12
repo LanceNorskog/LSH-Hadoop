@@ -2,16 +2,14 @@ package semvec.mahout;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /*
- * For a dimension, randomly project all users and items onto a dimension from 0 to 1.
+ * For a dimension, randomly project all users and items onto a line from 0 to 1.
  * For each user+preference, pull the item towards the user.
- * The farther the item from the user, the harder the user pulls.
  * 
  * Write LSH format with index discriminators: U/I dim # spot
  */
@@ -19,6 +17,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class DimReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
+	// shift preferences from 1.0/4.0 to 0 to 3
+	public static final Float BIAS = 1.0f;
+	// scaling for pref values
 	public static final Float SCALE = 0.05f;
 
 	protected void reduce(
@@ -37,10 +38,20 @@ public class DimReducer extends
 				userSpots.put(userID, data.getUserSpot());				
 			}
 			float userSpot = data.getUserSpot();
-			float pref = data.getPref() * SCALE;
-			float nudge;
-			nudge = (userSpot - itemSpot) * pref;
-			itemSpot += nudge;
+			// ??? draw it out
+			float pref = (data.getPref() + BIAS) * SCALE;
+			float delta = userSpot - itemSpot;
+			if (delta > 0) {
+				float nudge = pref;
+				itemSpot += nudge;
+				if (itemSpot > userSpot)
+					itemSpot = userSpot;
+			} else {
+				float nudge = pref;
+				itemSpot -= nudge;
+				if (itemSpot < userSpot)
+					itemSpot = userSpot;				
+			}
 			if (itemSpot < 0.0f)
 				itemSpot = 0.00000000001f;
 			if (itemSpot > 1.0f)

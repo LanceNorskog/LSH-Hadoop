@@ -27,7 +27,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
-		<value>lsh.hadoop.CornerReducer</value>
+		<value>semvec.lsh.UICornerReducer</value>
 		<description>Reducer class.</description>
 	</property>
 
