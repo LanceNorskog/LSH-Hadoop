@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
-	<!-- General job file for Semantic Vectors, grouplens example -->
+	<!-- Transform Semvec format (id,U/I/dim,spot) to LSH Point format -->
 
 <configuration>
 
@@ -9,43 +9,31 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>
-		<value>/tmp/GL_lsh_dual</value>
+		<value>/tmp/lsh_hadoop/GL_dual</value>
 		<description>Input directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.out</name>
-		<value>/tmp/GL_lsh_corners</value>
+		<value>/tmp/lsh_hadoop/GL_points</value>
 		<description>Output directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.mapper</name>
-		<value>lsh.hadoop.CornerMapper</value>
+		<value>semvec.mahout.SemvecMapper</value>
 		<description>Mapper class.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
-		<value>semvec.lsh.UICornerReducer</value>
+		<value>semvec.mahout.Semvec2PointReducer</value>
 		<description>Reducer class.</description>
 	</property>
 
 	<property>
-		<name>lsh.hadoop.LSHDriver.hasher</name>
-		<value>lsh.core.OrthonormalHasher</value>
-		<description>Hasher class.</description>
-	</property>
-
-	<property>
-		<name>lsh.hadoop.LSHDriver.gridsize</name>
-		<value>0.01,0.01</value>
-		<description>Hasher grid size array.</description>
-	</property>
-
-	<property>
 		<name>lsh.hadoop.LSHDriver.dimension</name>
-		<value>2</value>
+		<value>100</value>
 		<description># of dimensions.</description>
 	</property>
 

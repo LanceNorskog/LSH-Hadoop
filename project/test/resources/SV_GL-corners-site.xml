@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
-	<!-- GL format to dimension-expanded -->
+	<!-- General job file for Semantic Vectors, grouplens example -->
 
 <configuration>
 
@@ -9,40 +9,50 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>
-		<value>/tmp/lsh_hadoop/GL_10k</value>
+		<value>/tmp/lsh_hadoop/GL_points</value>
 		<description>Input directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.out</name>
-		<value>/tmp/lsh_hadoop/GL_dual</value>
+		<value>/tmp/lsh_hadoop/GL_corners</value>
 		<description>Output directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.mapper</name>
-		<value>semvec.mahout.UserItemPrefMapper</value>
+		<value>lsh.hadoop.CornerMapper</value>
 		<description>Mapper class.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
-		<value>semvec.mahout.UserItemPrefReducer</value>
+		<value>semvec.lsh.UICornerReducer</value>
 		<description>Reducer class.</description>
 	</property>
 
-
-
 	<property>
-		<name>lsh.hadoop.LSHDriver.outputKeyClass</name>
-		<value>org.apache.hadoop.io.LongWritable</value>
-		<description>Internal Key class.</description>
+		<name>lsh.hadoop.LSHDriver.hasher</name>
+		<value>lsh.core.OrthonormalHasher</value>
+		<description>Hasher class.</description>
 	</property>
 
 	<property>
-		<name>lsh.hadoop.LSHDriver.outputValueClass</name>
-		<value>semvec.mahout.TupleWritable</value>
-		<description>Internal value class.</description>
+		<name>lsh.hadoop.LSHDriver.gridsize</name>
+		<value>1.0</value>
+		<description>Hasher grid size array.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.minValue</name>
+		<value>0.000001</value>
+		<description>Minimum input value.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.maxValue</name>
+		<value>0.95</value>
+		<description>Maximum input value.</description>
 	</property>
 
 	<property>

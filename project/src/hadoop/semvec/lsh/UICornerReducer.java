@@ -1,12 +1,15 @@
 package semvec.lsh;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
 import lsh.core.Point;
 
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /*
@@ -16,11 +19,12 @@ import org.apache.hadoop.mapreduce.Reducer;
  */
 
 /*
+ * Receives corners from CornerMapper- with U/I as markers for user point or item grid
  * Output format of "1,2,3 id,double...double*U|...*I"
  */
 
 public class UICornerReducer extends
-		Reducer<Text, Text, Text, Text> {
+Reducer<Text, Text, Text, Text> {
 
 	// TODO - what a pain!
 	// and to unit test!
@@ -32,43 +36,53 @@ public class UICornerReducer extends
 	private boolean itemCorners = true;
 	private boolean userPoints = true;
 	private boolean itemPoints = true;
+	PrintWriter side = null;
+	float corners = 0;
+	float points = 0;
+	int rejects = 0;
+	
+@Override
+	protected void setup(
+			org.apache.hadoop.mapreduce.Reducer<Text, Text, Text, Text>.Context context)
+			throws IOException, InterruptedException {
+	
+		side = new PrintWriter(new File("/tmp/corners.log"));	
+	};
 	
 	@Override
 	public void reduce(Text key, Iterable<Text> values, Context context)
 	throws IOException, InterruptedException {
 		StringBuilder sb = new StringBuilder();
 		String corner = key.toString();
-		List<String> user = null;
-		List<String> item = null;
 
+		corners ++;
 		for(Text value: values) {
 			String point = value.toString();
 			if (point.charAt(point.length() -1) == 'U') {
-				if (null == user) 
-					user = new ArrayList<String>();
-				user.add(point);
+				side.print(corner);
+				side.println("\t" + value.toString());
 			} else if (point.charAt(point.length() -1) == 'I') {
-					if (null == item) 
-						item = new ArrayList<String>();
-					item.add(point);
+				sb.append(point);
+				sb.append('|');
 			} else {
 				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
 			}
 		}
-		if (null != user && user != item) {
-			for(String point: user) {
-				sb.append(point.toString());
-				sb.append('|');
-			}
-			for(String point: item) {
-				sb.append(point.toString());
-				sb.append('|');
-			}
-		}
+
 		sb.setLength(sb.length() - 1);
-		String value = sb.toString();
-		context.write(new Text(corner), new Text(value));
+		String points = sb.toString();
+		context.write(new Text(corner), new Text(points));
 	}
+	
+	@Override
+	protected void cleanup(
+			org.apache.hadoop.mapreduce.Reducer<Text, Text, Text, Text>.Context context)
+			throws IOException, InterruptedException {
+		side.flush();
+		side.close();
+		System.err.println("rejects: " + rejects + ", corners: " + corners + ", points: " + points + ", mean:" + (points / corners));
+	};
+	
 
 }
 

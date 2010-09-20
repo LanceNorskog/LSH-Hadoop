@@ -29,25 +29,62 @@ import lsh.hadoop.LSHDriver;
 
 public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 	CornerGen cg;
+	int minHash = Integer.MIN_VALUE;
+	int maxHash = Integer.MAX_VALUE;
 
 	@Override
 	protected void setup(
 			org.apache.hadoop.mapreduce.Mapper<Object, Text, Text, Text>.Context context)
-			throws IOException, InterruptedException {
+	throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
 		String hasherClass = conf.get(LSHDriver.HASHER);
 		String gridsize = conf.get(LSHDriver.GRIDSIZE);
+		String dimSize = conf.get(LSHDriver.DIMENSION);
+		String minValue = conf.get(LSHDriver.MINVALUE);
+		String maxValue = conf.get(LSHDriver.MAXVALUE);
 
 		try {
 			
 			Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
-			String parts[] = gridsize.split("[ ,]");
-			double[] stretch = new double[parts.length];
-			for(int i = 0; i < parts.length; i++) {
-				stretch[i] = Double.parseDouble(parts[i]);
+			int dimensions;
+			double[] stretch;
+			if (null != dimSize) {
+				dimensions = Integer.parseInt(dimSize);
+				double size = 1.0;
+				if (null != gridsize) {
+					size = Double.parseDouble(gridsize);
+				}
+				stretch = new double[dimensions];
+				for(int i = 0; i < stretch.length; i++) {
+					stretch[i] = size;
+				}
+			} else if (null != gridsize) {
+				String parts[] = gridsize.split("[ ,]");
+				stretch = new double[parts.length];
+				for(int i = 0; i < parts.length; i++) {
+					stretch[i] = Double.parseDouble(parts[i]);
+				}
+				dimensions = parts.length;
+			} else {
+				throw new IOException("CornerMapper: Need dimension or gridsize parameters.");
 			}
 			hasher.setStretch(stretch);
 			cg = new CornerGen(hasher, stretch);
+			double[] limit = new double[dimensions];
+			if (null != minValue) {
+				double d = Double.parseDouble(minValue);
+				for(int i = 0; i < limit.length; i++)
+					limit[i] = d;
+				int[] hashed = cg.hasher.hash(limit);
+				minHash = hashed[0];
+			}
+			if (null != maxValue) {
+				double d = Double.parseDouble(maxValue);
+				for(int i = 0; i < limit.length; i++)
+					limit[i] = d;
+				int[] hashed = cg.hasher.hash(limit);
+				maxHash = hashed[0];
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -61,8 +98,18 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 		Point point = Point.newPoint(value.toString());
 		Set<Corner> hashes = cg.getHashSet(point);
 		for (Corner corner : hashes) {
+			int i = 0;
+			for(; i < corner.hashes.length; i++) {
+				if (corner.hashes[i] < minHash)
+					break;
+				if (corner.hashes[i] > maxHash)
+					break;
+			}
+			if (i == corner.hashes.length) {
 			context.write(new Text(corner.toString()), new Text(point
 					.toString()));
+			}
 		}
+		hashes.clear();
 	}
 }
