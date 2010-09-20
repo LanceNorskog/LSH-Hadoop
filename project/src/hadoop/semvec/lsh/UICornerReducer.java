@@ -39,6 +39,7 @@ Reducer<Text, Text, Text, Text> {
 	PrintWriter side = null;
 	float corners = 0;
 	float points = 0;
+	float maxPoints = 0;
 	
 @Override
 	protected void setup(
@@ -72,6 +73,8 @@ Reducer<Text, Text, Text, Text> {
 			// only count points with item values
 			corners ++;
 			points += cpoints;
+			if (maxPoints < cpoints)
+				maxPoints = cpoints;
 			sb.setLength(sb.length() - 1);
 			String points = sb.toString();
 			context.write(new Text(corner), new Text(points));
@@ -84,7 +87,7 @@ Reducer<Text, Text, Text, Text> {
 			throws IOException, InterruptedException {
 		side.flush();
 		side.close();
-		System.err.println("corners: " + corners + ", points: " + points + ", mean:" + (points / corners));
+		System.err.println("corners: " + corners + ", maxPoints: " + maxPoints + ", points: " + points + ", mean:" + (points / corners));
 	};
 	
 

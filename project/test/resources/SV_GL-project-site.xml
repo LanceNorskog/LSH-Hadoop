@@ -9,13 +9,13 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>
-		<value>/tmp/lsh_hadoop/GL_100k</value>
+		<value>/tmp/lsh_hadoop/GL_10k</value>
 		<description>Input directory.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.out</name>
-		<value>/tmp/lsh_hadoop/GL_dual</value>
+		<value>/tmp/lsh_hadoop/GL_semvec</value>
 		<description>Output directory.</description>
 	</property>
 
@@ -31,8 +31,6 @@
 		<description>Reducer class.</description>
 	</property>
 
-
-
 	<property>
 		<name>lsh.hadoop.LSHDriver.outputKeyClass</name>
 		<value>org.apache.hadoop.io.LongWritable</value>
@@ -43,12 +41,6 @@
 		<name>lsh.hadoop.LSHDriver.outputValueClass</name>
 		<value>semvec.mahout.TupleWritable</value>
 		<description>Internal value class.</description>
-	</property>
-
-	<property>
-		<name>lsh.hadoop.LSHDriver.dimension</name>
-		<value>100</value>
-		<description># of dimensions.</description>
 	</property>
 
 </configuration>

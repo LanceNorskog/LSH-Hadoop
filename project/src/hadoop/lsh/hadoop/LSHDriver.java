@@ -2,6 +2,8 @@ package lsh.hadoop;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -38,24 +40,27 @@ public class LSHDriver {
 	public static final String GRIDSIZE = "lsh.hadoop.LSHDriver.gridsize";
 	public static final String DIMENSION = "lsh.hadoop.LSHDriver.dimension";
 	
+	// yeah yeah GenericOptionsParser
 	public static void main(String[] args) throws Exception {
 		boolean common = false;
 		String commonFile = null;
+		List<String> jobFiles = new ArrayList<String>();
 		for(String xml: args) {
 			if (common) {
 				commonFile = xml;
-				break;
-			}
-			if (xml.equals("-c")) {
+				common = false;
+			} else if (xml.equals("-c")) {
 				common = true;
+			} else {
+				jobFiles.add(xml);
 			}
 		}
-		for(String xml: args) {
-			if (xml.endsWith(".xml")){
+		for(String xml: jobFiles) {
+			if (xml.endsWith(".xml") && ! xml.equals(commonFile)){
 				LSHDriver.removeOutputDir(xml);
 			}
 		}
-		for(String xml: args) {
+		for(String xml: jobFiles) {
 			if (xml.endsWith(".xml")){
 				LSHDriver.runJob(commonFile, xml);
 			}
