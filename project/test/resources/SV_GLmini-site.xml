@@ -9,7 +9,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.in</name>
-		<value>/tmp/lsh_hadoop/GL_10k</value>
+		<value>/tmp/lsh_hadoop/GL_100k</value>
 		<description>Input directory.</description>
 	</property>
 

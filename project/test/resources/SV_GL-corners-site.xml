@@ -39,7 +39,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.gridsize</name>
-		<value>1.0</value>
+		<value>0.1</value>
 		<description>Hasher grid size array.</description>
 	</property>
 
