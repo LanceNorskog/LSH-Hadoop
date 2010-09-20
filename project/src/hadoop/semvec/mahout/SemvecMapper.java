@@ -19,7 +19,7 @@ public class SemvecMapper extends Mapper<LongWritable, Text, Text, Text> {
 		String full = value.toString();
 		int space = full.indexOf(' ');
 		String id = full.substring(0, space);
-		context.write(new Text(id), new Text(full.substring(space)));
+		context.write(new Text(id), new Text(full.substring(space+1)));
 	}
 
 }
