@@ -39,6 +39,17 @@ public class LSHDriver {
 	public static final String DIMENSION = "lsh.hadoop.LSHDriver.dimension";
 	
 	public static void main(String[] args) throws Exception {
+		boolean common = false;
+		String commonFile = null;
+		for(String xml: args) {
+			if (common) {
+				commonFile = xml;
+				break;
+			}
+			if (xml.equals("-c")) {
+				common = true;
+			}
+		}
 		for(String xml: args) {
 			if (xml.endsWith(".xml")){
 				LSHDriver.removeOutputDir(xml);
@@ -46,7 +57,7 @@ public class LSHDriver {
 		}
 		for(String xml: args) {
 			if (xml.endsWith(".xml")){
-				LSHDriver.runJob(xml);
+				LSHDriver.runJob(commonFile, xml);
 			}
 		}
 	}
@@ -61,9 +72,11 @@ public class LSHDriver {
 			throw new IOException("Cannot remove output dir: " + outputDir.toString());
 	}
 
-	public static void runJob(String siteFile) throws Exception {
+	public static void runJob(String commonFile, String siteFile) throws Exception {
 		Job job = new Job();
 		Configuration conf = job.getConfiguration();
+		if (null != commonFile) 
+			conf.addResource(new Path(commonFile));
 		conf.addResource(new Path(siteFile));
 
 		//	    job.setJarByClass(LSHDriver.class);

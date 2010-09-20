@@ -39,7 +39,6 @@ Reducer<Text, Text, Text, Text> {
 	PrintWriter side = null;
 	float corners = 0;
 	float points = 0;
-	int rejects = 0;
 	
 @Override
 	protected void setup(
@@ -54,24 +53,29 @@ Reducer<Text, Text, Text, Text> {
 	throws IOException, InterruptedException {
 		StringBuilder sb = new StringBuilder();
 		String corner = key.toString();
+		int cpoints = 0;
 
-		corners ++;
 		for(Text value: values) {
 			String point = value.toString();
 			if (point.charAt(point.length() -1) == 'U') {
 				side.print(corner);
 				side.println("\t" + value.toString());
 			} else if (point.charAt(point.length() -1) == 'I') {
+				cpoints++;
 				sb.append(point);
 				sb.append('|');
 			} else {
 				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
 			}
 		}
-
-		sb.setLength(sb.length() - 1);
-		String points = sb.toString();
-		context.write(new Text(corner), new Text(points));
+		if (sb.length() > 0) {
+			// only count points with item values
+			corners ++;
+			points += cpoints;
+			sb.setLength(sb.length() - 1);
+			String points = sb.toString();
+			context.write(new Text(corner), new Text(points));
+		}
 	}
 	
 	@Override
@@ -80,7 +84,7 @@ Reducer<Text, Text, Text, Text> {
 			throws IOException, InterruptedException {
 		side.flush();
 		side.close();
-		System.err.println("rejects: " + rejects + ", corners: " + corners + ", points: " + points + ", mean:" + (points / corners));
+		System.err.println("corners: " + corners + ", points: " + points + ", mean:" + (points / corners));
 	};
 	
 
