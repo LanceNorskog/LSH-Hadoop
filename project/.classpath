@@ -6,6 +6,7 @@
 	<classpathentry kind="src" path="src/sample"/>
 	<classpathentry kind="src" path="test/src"/>
 	<classpathentry kind="src" path="src/solr"/>
+	<classpathentry kind="src" path="src/mahout"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/junit-3.8.1.jar"/>
 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-cli-1.2.jar"/>
