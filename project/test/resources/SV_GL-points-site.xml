@@ -31,11 +31,5 @@
 		<description>Reducer class.</description>
 	</property>
 
-	<property>
-		<name>lsh.hadoop.LSHDriver.dimension</name>
-		<value>100</value>
-		<description># of dimensions.</description>
-	</property>
-
 </configuration>
 

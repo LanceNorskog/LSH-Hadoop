@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import lsh.hadoop.LSHDriver;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -26,16 +29,26 @@ public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
 	// shift preferences from 1 to 5 -> -2 to 2.
-	public static final Float BIAS = 3f;
+	public Float bias = 0f;
 	// scaling for pref values
-	public static final Float SCALE = 0.2f;
+	public Float scale = 0f;
 	
+	public int projections = 0;
 	public int trims = 0;
 	public int adjustments = 0;
-//	public double tug = 0;
 	public int users = 0;
 	public int items = 0;
+	public int pinned = 0;
 
+	@Override
+	protected void setup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
+		Configuration conf = context.getConfiguration();
+		String scaleString = conf.get(LSHDriver.SCALE);
+		String biasString = conf.get(LSHDriver.BIAS);
+		scale = Float.parseFloat(scaleString);
+		bias = Float.parseFloat(biasString);	
+	};
+	
 	protected void reduce(
 			LongWritable key,
 			Iterable<TupleWritable> values,
@@ -43,15 +56,21 @@ public class UserItemPrefReducer extends
 			throws java.io.IOException, InterruptedException {
 		float tug = 0;
 		int nitems = 0;
-//		Map<Long,Float> userSpots = new HashMap<Long,Float>();
 		Set<Long> users = new HashSet<Long>();
 		Map<Long,Float> itemSpots = new HashMap<Long,Float>();
 		Map<Long,ChemicalFloat> ratings = new HashMap<Long, ChemicalFloat>();
 		Long dim = key.get();
+		Float minUserSpot = Float.MIN_VALUE;
+		Float maxUserSpot = Float.MAX_VALUE;
 
 		StringBuilder sb = new StringBuilder();
 		for (TupleWritable data : values) {
 			if (! users.contains(data.getUserID())) {
+				Float spot = data.getUserSpot();
+				if (spot < minUserSpot)
+					minUserSpot = spot;
+				if (spot < maxUserSpot)
+					maxUserSpot = spot;
 				collectUser(context, dim, sb, data);
 				users.add(data.getUserID());
 			}
@@ -64,13 +83,13 @@ public class UserItemPrefReducer extends
 			} 
 			
 			// each user pulls the item towards himself
-			float pref = (data.getPref() - BIAS);
+			float pref = (data.getPref() - bias);
 			float delta = data.getUserSpot() - data.getItemSpot();
 			if (delta > 0)
 			{
-				pref = Math.min(pref * SCALE,delta);
+				pref = Math.min(pref * scale, delta);
 			} else {
-				pref = Math.min(pref * SCALE, -delta);
+				pref = Math.min(pref * scale, -delta);
 				pref = -pref;
 			}
 				
@@ -87,13 +106,17 @@ public class UserItemPrefReducer extends
 			sb.append(' ');
 			Float spot = itemSpots.get(itemID);
 			float bump = ratings.get(itemID).f;
-			spot += (bump * SCALE)/divisor;
+			spot += (bump * scale)/divisor;
+			pinned++;
 			if (spot >= 1.0)
-				spot = 0.9999999f;
-			if (spot <= 0.0)
-				spot = 0.00000001f;
+				spot = maxUserSpot;
+			else if (spot <= 0.0)
+				spot = minUserSpot;
+			else
+				pinned--;
 			sb.append(spot.toString());
 			context.write(null, new Text(sb.toString()));
+			projections++;
 		}		
 	}
 
@@ -113,6 +136,12 @@ public class UserItemPrefReducer extends
 		sb.append(spot.toString());
 		context.write(null, new Text(sb.toString()));
 	}
+	
+	@Override
+	protected void cleanup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
+		System.err.println("REPORT: # projections: " + projections + ", pinned: " + pinned);
+	};
+	
 }
 
 /*

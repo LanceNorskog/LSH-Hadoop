@@ -39,6 +39,8 @@ public class LSHDriver {
 	public static final String HASHER = "lsh.hadoop.LSHDriver.hasher";
 	public static final String GRIDSIZE = "lsh.hadoop.LSHDriver.gridsize";
 	public static final String DIMENSION = "lsh.hadoop.LSHDriver.dimension";
+	public static final String SCALE = "lsh.hadoop.LSHDriver.scale";
+	public static final String BIAS = "lsh.hadoop.LSHDriver.bias";
 	
 	// yeah yeah GenericOptionsParser
 	public static void main(String[] args) throws Exception {

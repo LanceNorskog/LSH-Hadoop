@@ -10,14 +10,16 @@ import java.util.Arrays;
 
 public class VertexTransitiveHasher implements Hasher {
 	double[] stretch;
+	private int dim;
 	static final double S3 = Math.sqrt(3.0d);
 	static final double MU = (1.0d - (1.0d/Math.sqrt(3.0d)))/2.0d;
-	static final double SKEW = 0.8d;
+	static final double SKEW = 1.0;
 	
 	public VertexTransitiveHasher() {
 	}
 	
 	public VertexTransitiveHasher(int dim, double stretch) {
+		this.dim = dim;
 		this.stretch = new double[dim];
 		for(int i = 0; i < dim; i++) {
 			this.stretch[i] = stretch;
@@ -25,11 +27,13 @@ public class VertexTransitiveHasher implements Hasher {
 	}
 
 	public VertexTransitiveHasher(double stretch[]) {
+		this.dim = stretch.length;
 		this.stretch = stretch;
 	}
 	
 	@Override
 	public void setStretch(double[] stretch) {
+		this.dim = stretch.length;
 		this.stretch = stretch;
 	}
 
@@ -41,8 +45,8 @@ public class VertexTransitiveHasher implements Hasher {
 		for(int i = 0; i < projected.length; i++) {
 			hashed[i] = (int) (projected[i]);
 		}
-		System.out.println("Hash:\t("+ values[0]+ "," + values[1]);
-		System.out.println("\t->:\t("+ hashed[0]+ "," + hashed[1]);
+//		System.out.println("Hash:\t("+ values[0]+ "," + values[1]);
+//		System.out.println("\t->:\t("+ hashed[0]+ "," + hashed[1]);
 		return hashed;
 	}
 
@@ -54,7 +58,7 @@ public class VertexTransitiveHasher implements Hasher {
 		}
 		double musum = MU * sum;
 		for(int i = 0; i < gp.length; i++) {
-			gp[i] = (gp[i] / S3 + musum)/ SKEW;
+			gp[i] = (gp[i] / S3 + musum)/ (SKEW );
 		}
 	}
 

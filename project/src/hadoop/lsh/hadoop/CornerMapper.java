@@ -29,8 +29,11 @@ import lsh.hadoop.LSHDriver;
 
 public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 	CornerGen cg;
-	int minHash = Integer.MIN_VALUE;
-	int maxHash = Integer.MAX_VALUE;
+	int minHash = Integer.MAX_VALUE;
+	int maxHash = Integer.MIN_VALUE;	
+	int minGeneratedHash = Integer.MAX_VALUE;
+	int maxGeneratedHash = Integer.MIN_VALUE;
+
 
 	@Override
 	protected void setup(
@@ -48,9 +51,9 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 			Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
 			int dimensions;
 			double[] stretch;
+			double size = 1.0;
 			if (null != dimSize) {
 				dimensions = Integer.parseInt(dimSize);
-				double size = 1.0;
 				if (null != gridsize) {
 					size = Double.parseDouble(gridsize);
 				}
@@ -71,19 +74,18 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 			hasher.setStretch(stretch);
 			cg = new CornerGen(hasher, stretch);
 			double[] limit = new double[dimensions];
-			if (null != minValue) {
+			if (null != minValue || null != maxValue) {
 				double d = Double.parseDouble(minValue);
 				for(int i = 0; i < limit.length; i++)
 					limit[i] = d;
 				int[] hashed = cg.hasher.hash(limit);
 				minHash = hashed[0];
-			}
-			if (null != maxValue) {
-				double d = Double.parseDouble(maxValue);
+				d = Double.parseDouble(maxValue);
 				for(int i = 0; i < limit.length; i++)
 					limit[i] = d;
-				int[] hashed = cg.hasher.hash(limit);
+				hashed = cg.hasher.hash(limit);
 				maxHash = hashed[0];
+				System.err.println("minhash: " + minHash + ", maxHash: " + maxHash);
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -100,6 +102,10 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 		for (Corner corner : hashes) {
 			int i = 0;
 			for(; i < corner.hashes.length; i++) {
+				if (corner.hashes[i] < minGeneratedHash)
+					minGeneratedHash = corner.hashes[i];
+				if (corner.hashes[i] > maxGeneratedHash)
+					maxGeneratedHash = corner.hashes[i];
 				if (corner.hashes[i] < minHash)
 					break;
 				if (corner.hashes[i] > maxHash)
@@ -112,4 +118,10 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 		}
 		hashes.clear();
 	}
+	
+	@Override
+	protected void cleanup(org.apache.hadoop.mapreduce.Mapper<Object,Text,Text,Text>.Context context) throws IOException ,InterruptedException {
+		System.err.println("REPORT: min generated hash:" + minGeneratedHash + ", max generated hash: " + maxGeneratedHash);
+	};
+	
 }

@@ -11,6 +11,7 @@ import lsh.core.Point;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 
 /*
  * Create point->corner output with User points and Item grids.
@@ -40,6 +41,7 @@ Reducer<Text, Text, Text, Text> {
 	float corners = 0;
 	float points = 0;
 	float maxPoints = 0;
+	StandardDeviation stddev = new StandardDeviation();
 	
 @Override
 	protected void setup(
@@ -75,6 +77,7 @@ Reducer<Text, Text, Text, Text> {
 			points += cpoints;
 			if (maxPoints < cpoints)
 				maxPoints = cpoints;
+			stddev.increment((double) cpoints);
 			sb.setLength(sb.length() - 1);
 			String points = sb.toString();
 			context.write(new Text(corner), new Text(points));
@@ -87,7 +90,8 @@ Reducer<Text, Text, Text, Text> {
 			throws IOException, InterruptedException {
 		side.flush();
 		side.close();
-		System.err.println("corners: " + corners + ", maxPoints: " + maxPoints + ", points: " + points + ", mean:" + (points / corners));
+		Double stddevres = stddev.getResult();
+		System.err.println("REPORT: corners: " + corners + ", maxPoints: " + maxPoints + ", points: " + points + ", mean:" + (points / corners) + ", stddev: " + stddevres.toString().substring(0, 4));
 	};
 	
 
