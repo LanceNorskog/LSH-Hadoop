@@ -38,9 +38,9 @@ Reducer<Text, Text, Text, Text> {
 	private boolean userPoints = true;
 	private boolean itemPoints = true;
 	PrintWriter side = null;
-	float corners = 0;
-	float points = 0;
-	float maxPoints = 0;
+	 float corners = 0;
+	 float points = 0;
+	 float maxPoints = 0;
 	StandardDeviation stddev = new StandardDeviation();
 	
 @Override
@@ -91,7 +91,7 @@ Reducer<Text, Text, Text, Text> {
 		side.flush();
 		side.close();
 		Double stddevres = stddev.getResult();
-		System.err.println("REPORT: corners: " + corners + ", maxPoints: " + maxPoints + ", points: " + points + ", mean:" + (points / corners) + ", stddev: " + stddevres.toString().substring(0, 4));
+		System.err.println("REPORT: corners: " + corners + ", maxPoints: " + maxPoints + ", points: " + points + ", mean:" + (points / corners) + ", stddev: " + stddevres.toString().substring(0, 3));
 	};
 	
 

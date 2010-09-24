@@ -26,6 +26,12 @@
 	</property>
 
 	<property>
+		<name>lsh.hadoop.LSHDriver.combiner</name>
+		<value>semvec.lsh.UICornerReducer</value>
+		<description>Combiner class.</description>
+	</property>
+
+	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
 		<value>semvec.lsh.UICornerReducer</value>
 		<description>Reducer class.</description>

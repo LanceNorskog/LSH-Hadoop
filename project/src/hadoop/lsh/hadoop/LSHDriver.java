@@ -35,6 +35,7 @@ public class LSHDriver {
 	public static final String OUTPUT_KEY = "lsh.hadoop.LSHDriver.outputKeyClass";
 	public static final String OUTPUT_VALUE = "lsh.hadoop.LSHDriver.outputValueClass";
 	public static final String MAPPER = "lsh.hadoop.LSHDriver.mapper";
+	public static final String COMBINER = "lsh.hadoop.LSHDriver.combiner";
 	public static final String REDUCE = "lsh.hadoop.LSHDriver.reducer";
 	public static final String HASHER = "lsh.hadoop.LSHDriver.hasher";
 	public static final String GRIDSIZE = "lsh.hadoop.LSHDriver.gridsize";
@@ -91,6 +92,8 @@ public class LSHDriver {
 		job.setMapperClass((Class<? extends Mapper>) Class.forName(mapper));
 		if (null != conf.get(REDUCE))
 			job.setReducerClass((Class<? extends Reducer>) Class.forName(conf.get(REDUCE)));
+//		if (null != conf.get(COMBINER))
+//			job.setCombinerClass((Class<? extends Reducer>) Class.forName(conf.get(COMBINER)));
 		if (null != conf.get(INPUT_FORMAT))
 			job.setInputFormatClass((Class<? extends InputFormat>) Class.forName(conf.get(INPUT_FORMAT)));
 		if (null != conf.get(OUTPUT_KEY))
