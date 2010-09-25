@@ -60,6 +60,9 @@ Reducer<Text, Text, Text, Text> {
 
 		for(Text value: values) {
 			String point = value.toString();
+			if (point.charAt(point.length() -1) == 'U') {
+				value.hashCode();
+			}
 //			if (point.charAt(point.length() -1) == 'U') {
 //				side.print(corner);
 //				side.println("\t" + value.toString());

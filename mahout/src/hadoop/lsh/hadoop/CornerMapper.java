@@ -112,8 +112,8 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 					break;
 			}
 			if (i == corner.hashes.length) {
-			context.write(new Text(corner.toString()), new Text(point
-					.toString()));
+				context.write(new Text(corner.toString()), new Text(point
+						.toString()));
 			}
 		}
 		hashes.clear();

@@ -127,7 +127,7 @@ public class SimplexSVTextDataModel extends AbstractDataModel {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		SimplexSVTextDataModel model = new SimplexSVTextDataModel();
+		SimplexSVTextDataModel model = new SimplexSVTextDataModel("/tmp/lsh_hadoop/short.csv");
 		model.hashCode();
 
 	}
