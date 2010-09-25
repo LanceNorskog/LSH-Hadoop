@@ -36,12 +36,12 @@ public class Lookup {
 		point2corners = doPoint2corners ? new HashMap<Point, Set<Corner>>() : null;
 	}
 
-	public void loadCP(Reader r) throws IOException {
-		Utils.load_corner_points_format(r, points, corners, ids, id2point, corner2points, point2corners);
+	public void loadCP(Reader r, String payload) throws IOException {
+		Utils.load_corner_points_format(r, points, corners, ids, id2point, corner2points, point2corners, payload);
 	}
 
-	public void loadPC(Reader r) throws IOException {
-		Utils.load_point_corners_format(r, points, corners, ids, id2point, corner2points, point2corners);
+	public void loadPC(Reader r, String payload) throws IOException {
+		Utils.load_point_corners_format(r, points, corners, ids, id2point, corner2points, point2corners, payload);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {
@@ -67,17 +67,11 @@ public class Lookup {
 		Reader r = new FileReader(svg);
 
 		
-		int dim = Integer.parseInt(args[2]);
-		double gridsize = Double.parseDouble(args[3]);
-		Hasher hasher = null;
-		if (args[1].startsWith("ortho")) {
-			hasher = new OrthonormalHasher(dim, gridsize);
-		} else if (args[1].startsWith("vertex")) {
-			hasher = new VertexTransitiveHasher(dim, gridsize);
-		} 
+		int dim = Integer.parseInt(args[1]);
+		double gridsize = Double.parseDouble(args[2]);
 
-		Lookup lookup = new Lookup(hasher, true, true, true, true, true, true);
-		lookup.loadCP(r);
+		Lookup lookup = new Lookup(null, true, true, true, true, true, true);
+		lookup.loadCP(r, null);
 		if (args.length == 5) {
 			Collection<Corner> corners = lookup.getMatchingCorners(args[4]);
 			printPoints(corners, args[4]);
@@ -107,4 +101,5 @@ public class Lookup {
 			System.out.println();
 		}
 	}
+
 }

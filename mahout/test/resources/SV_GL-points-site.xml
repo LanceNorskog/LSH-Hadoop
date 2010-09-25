@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+	<!-- Transform Semvec format (id,U/I/dim,spot) to LSH Point format -->
+
+<configuration>
+
+	<!--- job properties for corner-hashed -->
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.in</name>
+		<value>/tmp/lsh_hadoop/GL_semvec</value>
+		<description>Input directory.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.out</name>
+		<value>/tmp/lsh_hadoop/GL_points</value>
+		<description>Output directory.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.mapper</name>
+		<value>semvec.mahout.SemvecMapper</value>
+		<description>Mapper class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.reducer</name>
+		<value>semvec.mahout.Semvec2PointReducer</value>
+		<description>Reducer class.</description>
+	</property>
+
+</configuration>
+

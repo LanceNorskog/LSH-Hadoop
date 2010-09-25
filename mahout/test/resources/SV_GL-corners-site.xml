@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+	<!-- General job file for Semantic Vectors, grouplens example -->
+
+<configuration>
+
+	<!--- job properties for corner-hashed -->
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.in</name>
+		<value>/tmp/lsh_hadoop/GL_points</value>
+		<description>Input directory.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.out</name>
+		<value>/tmp/lsh_hadoop/GL_corners</value>
+		<description>Output directory.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.mapper</name>
+		<value>lsh.hadoop.CornerMapper</value>
+		<description>Mapper class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.combiner</name>
+		<value>semvec.lsh.UICornerReducer</value>
+		<description>Combiner class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.reducer</name>
+		<value>semvec.lsh.UICornerReducer</value>
+		<description>Reducer class.</description>
+	</property>
+
+
+
+</configuration>
+

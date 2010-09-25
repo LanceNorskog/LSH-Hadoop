@@ -60,16 +60,16 @@ Reducer<Text, Text, Text, Text> {
 
 		for(Text value: values) {
 			String point = value.toString();
-			if (point.charAt(point.length() -1) == 'U') {
-				side.print(corner);
-				side.println("\t" + value.toString());
-			} else if (point.charAt(point.length() -1) == 'I') {
+//			if (point.charAt(point.length() -1) == 'U') {
+//				side.print(corner);
+//				side.println("\t" + value.toString());
+//			} else if (point.charAt(point.length() -1) == 'I') {
 				cpoints++;
 				sb.append(point);
 				sb.append('|');
-			} else {
-				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
-			}
+//			} else {
+//				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
+//			}
 		}
 		if (sb.length() > 0) {
 			// only count points with item values

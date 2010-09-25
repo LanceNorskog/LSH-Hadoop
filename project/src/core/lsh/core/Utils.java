@@ -18,9 +18,11 @@ public class Utils {
 	// all structures are optional
 	// slower than could be but uses hashed everything
 
-	static public void load_corner_points_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, Map<String, Point> id2point, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners) throws IOException {
+	static public void load_corner_points_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, Map<String, Point> id2point, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners, String payload) throws IOException {
 		LineNumberReader lnr = new LineNumberReader(r);
 		String line;
+		int lines = 0;
+		System.err.println("Loading corners... ");
 		while (null != (line = lnr.readLine())) {
 			String parts[] = line.split("[ \t]");
 			String[] pipes = parts[1].split("\\|");
@@ -30,7 +32,15 @@ public class Utils {
 				corners.add(corner);
 			for(int i = 0; i < pipes.length; i++) {
 				Point point = Point.newPoint(pipes[i]);
-				addPair(ids, points, corners, id2point, corner2points, point2corners, corner, point);
+				if (null == payload || (null != point.payload) && payload.equals(point.payload)) {
+					addPair(ids, points, corners, id2point, corner2points, point2corners, corner, point);
+				} else {
+					payload.hashCode();
+				}
+			}
+			lines++;
+			if (lines % 1000 == 0) {
+				System.err.println("\t" + lines);
 			}
 		}		
 	}
@@ -38,13 +48,19 @@ public class Utils {
 	// all structures are optional
 	// slower than could be but uses hashed everything
 
-	static public void load_point_corners_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, Map<String, Point> id2points, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners) throws IOException {
+	static public void load_point_corners_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, Map<String, Point> id2points, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners, String payload) throws IOException {
 		LineNumberReader lnr = new LineNumberReader(r);
 		String line;
 		while (null != (line = lnr.readLine())) {
 			String parts[] = line.split("[ \t]");
 			String[] pipes = parts[1].split("\\|");
 			Point point = Point.newPoint(parts[0]);
+			if (null != payload ) { 
+				if (null == point.payload || !payload.equals(point.payload)) {
+					payload.hashCode();
+					continue;
+				}
+			}
 			if (null != ids)
 				ids.add(point.id);
 			if (null != points)

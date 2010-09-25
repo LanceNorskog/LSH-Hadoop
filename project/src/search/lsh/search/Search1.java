@@ -98,7 +98,7 @@ public class Search1 {
 		Hasher h = new OrthonormalHasher(2, 1d);
 		Lookup l = new Lookup(h, true, true, true, true, true, true);
 		Reader fr = new FileReader(args[0]);
-		l.loadCP(fr);
+		l.loadCP(fr, null);
 		String g32 = "fetch";
 		double[] d32 = new double[2];
 		if (args.length == 3) {

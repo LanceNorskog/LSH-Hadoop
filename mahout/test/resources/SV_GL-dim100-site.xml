@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+	<!-- Common file for 100 dimension job - appropriate tunings -->
+
+<configuration>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.hasher</name>
+		<value>lsh.core.VertexTransitiveHasher</value>
+		<description>Hasher class.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.gridsize</name>
+		<value>0.1</value>
+		<description>Hasher grid size array.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.minValue</name>
+		<value>0.000001</value>
+		<description>Minimum input value.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.maxValue</name>
+		<value>0.9999</value>
+		<description>Maximum input value.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.dimension</name>
+		<value>100</value>
+		<description># of dimensions.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.scale</name>
+		<value>0.4</value>
+		<description>rescaling constant for prefences in semantic vectors.</description>
+	</property>
+
+	<property>
+		<name>lsh.hadoop.LSHDriver.bias</name>
+		<value>3</value>
+		<description>bias factor for preferences in semantic vectors.</description>
+	</property>
+
+</configuration>
+
