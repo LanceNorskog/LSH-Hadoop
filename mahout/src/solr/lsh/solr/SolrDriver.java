@@ -1,35 +1,38 @@
-package lsh.hadoop;
+package lsh.solr;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+
+import lsh.hadoop.PointMapper;
+import lsh.hadoop.PointReducer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.CSVTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 /*
- * Corner-collecting version- set of corners, each with points.
+ * Solr cinema example
  */
 
-public class CornerDriver {
+public class SolrDriver {
 	public static void main(String[] args) throws Exception {
-		Configuration conf = new Configuration();
-		InputStream is = new FileInputStream(args[0]);
-		conf.addResource(is);
-		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		Job job = new Job( );
+		job.setJobName("Solr cinema");
+		Configuration conf = job.getConfiguration();
+		conf.addResource("solr-cinema-site.xml");
+		String[] otherArgs = new GenericOptionsParser(job.getConfiguration(), args).getRemainingArgs();
 		if (otherArgs.length != 2) {
-			System.err.println("Usage: CornerDriver <in> <out>");
+			System.err.println("Usage: SolrDriver <in> <out>");
 			System.exit(2);
 		}
-		Job job = new Job(conf, "From Python 2d version");
 		//	    job.setJarByClass(CornerDriver.class);
-		job.setMapperClass(CornerMapper.class);
-		job.setReducerClass(CornerReducer.class);
+		job.setInputFormatClass(CSVTextInputFormat.class);
+		job.setMapperClass(PointMapper.class);
+		job.setReducerClass(PointReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));

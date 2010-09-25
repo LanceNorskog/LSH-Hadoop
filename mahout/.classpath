@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/hadoop"/>
-	<classpathentry kind="src" path="src/lsh2"/>
+	<classpathentry kind="src" path="src/solr"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lsh"/>
