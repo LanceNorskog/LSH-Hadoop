@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import lsh.core.Corner;
+import lsh.core.CornerGen;
 import lsh.core.Hasher;
 import lsh.core.Point;
 import lsh.core.VertexTransitiveHasher;
@@ -31,14 +32,16 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  */
 public class GLSimplexRecommender implements Recommender {
 	final SimplexSVTextDataModel model;
+	final CornerGen cg;
 	final Distance distance;
 
-	public GLSimplexRecommender(SimplexSVTextDataModel model) {
-		this.model = model;
-		distance = new Distance();
-	}
+	//	public GLSimplexRecommender(SimplexSVTextDataModel model) {
+	//		this.model = model;
+	//		distance = new Distance();
+	//		cg = new CornerGen();
+	//	}
 
-	public GLSimplexRecommender(Configuration conf) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+	public GLSimplexRecommender(Configuration conf, String fileName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		String hasherClass = conf.get(LSHDriver.HASHER);
 		double gridsize = Double.parseDouble(conf.get(LSHDriver.GRIDSIZE));
 		int dimensions = Integer.parseInt(conf.get(LSHDriver.DIMENSION));
@@ -50,8 +53,8 @@ public class GLSimplexRecommender implements Recommender {
 			stretch[i] = gridsize;
 		}
 		hasher.setStretch(stretch);
-		model = new SimplexSVTextDataModel(hasher);
-		//		this.model = model;
+		model = new SimplexSVTextDataModel(fileName, hasher);
+		cg = new CornerGen(hasher, stretch);
 		distance = new Distance();
 	}
 
@@ -83,18 +86,40 @@ public class GLSimplexRecommender implements Recommender {
 		List<RecommendedItem> recs = new ArrayList<RecommendedItem>(howMany);
 		Point p = model.userDB.id2point.get(((Long) userID).toString());
 		int[] hashes = model.hasher.hash(p.values);
-		Corner c = new Corner(hashes);
+		Corner main = new Corner(hashes);
+		Set<Corner> all = cg.getHashSet(p);
 		// usePoints(howMany, recs, p, c);
-		Set<String> ids = model.itemDB.corner2ids.get(((Long) userID).toString());
-		if (null != ids) {
-			for(String id: ids) {
-				// TODO: should be distance of a hash
-				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), 1.0f);
-				recs.add(recco);
+		for(Corner c: all) {
+			Set<String> ids = model.itemDB.corner2ids.get(c);
+			if (null != ids) {
+				for(String id: ids) {
+					float dist = hamming(main, c);
+					RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), dist);
+					int j = 0;
+					for(; j < recs.size(); j++) {
+						if (dist < recs.get(j).getValue()) {
+							recs.add(j, recco);
+							break;
+						}
+					}
+					if (j == recs.size())
+						recs.add(recco);
+					if (recs.size() == howMany)
+						break;
+				}
 			}
 		}
 		return recs;
 	}
+
+	private float hamming(Corner main, Corner c) {
+		float sum = 0;
+		for(int i = 0; i < main.hashes.length; i++) {
+			sum += Math.abs(main.hashes[i] - c.hashes[i]);
+		}
+		return sum / main.hashes.length;
+	}
+
 
 	private void usePoints(int howMany, List<RecommendedItem> recs, Point p,
 			Corner c) {
@@ -162,26 +187,29 @@ public class GLSimplexRecommender implements Recommender {
 	 * @param args
 	 * @throws IOException 
 	 * @throws TasteException 
+	 * @throws ClassNotFoundException 
+	 * @throws IllegalAccessException 
+	 * @throws InstantiationException 
 	 */
-	public static void main(String[] args) throws IOException, TasteException {
-		double parsed = Double.parseDouble("1.5");
-		double raw = 1.5;
-		Hasher hasher = new VertexTransitiveHasher(100, parsed);
+	public static void main(String[] args) throws IOException, TasteException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		Configuration conf = new Configuration();
+		conf.set(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
+		conf.set(LSHDriver.DIMENSION, "100");
+		conf.set(LSHDriver.GRIDSIZE, "0.6");
 		String file = args.length > 0 ? args[0] : "/tmp/lsh_hadoop/short.csv";
-		SimplexSVTextDataModel model = new SimplexSVTextDataModel(file, hasher);
-		GLSimplexRecommender rec = new GLSimplexRecommender(model);
-//		LongPrimitiveIterator lpi = model.getUserIDs();
-//		System.out.println("User IDs:");
-//		while (lpi.hasNext()) {
-//			System.out.println("\t" + lpi.next());
-//		}
-//		lpi.hashCode();
-//		System.out.println("Item IDs:");
-//		lpi = model.getItemIDs();
-//		while (lpi.hasNext()) {
-//			System.out.println("\t" + lpi.next());
-//		}
-//		lpi.hashCode();
+		GLSimplexRecommender rec = new GLSimplexRecommender(conf, args[0]);
+		//		LongPrimitiveIterator lpi = model.getUserIDs();
+		//		System.out.println("User IDs:");
+		//		while (lpi.hasNext()) {
+		//			System.out.println("\t" + lpi.next());
+		//		}
+		//		lpi.hashCode();
+		//		System.out.println("Item IDs:");
+		//		lpi = model.getItemIDs();
+		//		while (lpi.hasNext()) {
+		//			System.out.println("\t" + lpi.next());
+		//		}
+		//		lpi.hashCode();
 
 		LongPrimitiveIterator it = rec.model.getUserIDs();
 		while(it.hasNext()) {
@@ -192,7 +220,7 @@ public class GLSimplexRecommender implements Recommender {
 			if (null != recs) {
 				for(RecommendedItem recco: recs) {
 					recco.hashCode();
-					System.out.println("\t" + recco.getItemID());
+					System.out.println("\t" + recco.getItemID() + "\t" + recco.getValue());
 				}
 			}
 		}

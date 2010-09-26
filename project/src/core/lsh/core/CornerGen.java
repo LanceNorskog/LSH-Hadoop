@@ -38,7 +38,7 @@ public class CornerGen {
 		hasher = new OrthonormalHasher(this.stretch);
 	}
 
-	public CornerGen(Hasher hasher, double[] stretch) throws Exception {
+	public CornerGen(Hasher hasher, double[] stretch) {
 		this.hasher = hasher;
 		this.stretch = stretch;
 	}
