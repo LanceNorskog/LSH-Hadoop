@@ -30,13 +30,14 @@ Reducer<Text, Text, Text, Text> {
 	// TODO - what a pain!
 	// and to unit test!
 	// what limiter
-	private boolean requireUser = true;
-	private boolean requireItem = true;
+//	private boolean requireUser = true;
+//	private boolean requireItem = true;
 	// what to save
-	private boolean userCorners = true;
-	private boolean itemCorners = true;
-	private boolean userPoints = true;
-	private boolean itemPoints = true;
+//	private boolean userCorners = true;
+//	private boolean itemCorners = true;
+//	private boolean userPoints = true;
+//	private boolean itemPoints = true;
+	boolean requireBoth = true;
 	PrintWriter side = null;
 	 float corners = 0;
 	 float points = 0;
@@ -57,12 +58,17 @@ Reducer<Text, Text, Text, Text> {
 		StringBuilder sb = new StringBuilder();
 		String corner = key.toString();
 		int cpoints = 0;
+		int items = 0;
+		int users = 0;
 
 		for(Text value: values) {
+			if (items + users > 20)
+				break;
 			String point = value.toString();
 			if (point.charAt(point.length() -1) == 'U') {
-				value.hashCode();
-			}
+				users++;
+			} else
+				items++;
 //			if (point.charAt(point.length() -1) == 'U') {
 //				side.print(corner);
 //				side.println("\t" + value.toString());
@@ -74,6 +80,8 @@ Reducer<Text, Text, Text, Text> {
 //				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
 //			}
 		}
+		if (requireBoth && (users == 0 || items ==0))
+			return;
 		if (sb.length() > 0) {
 			// only count points with item values
 			corners ++;

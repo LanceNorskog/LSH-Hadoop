@@ -26,6 +26,7 @@ import java.util.Set;
  * Generate set of Corners from input point and given hasher.
  */
 
+// TODO: move all random prop stuff to here out of CornerMapper
 public class CornerGen {
 	public final double[] stretch;
 	public final Hasher hasher;

@@ -53,6 +53,9 @@ public class Point {
 		return sb.toString();
 	}
 	
+	// assumes other point is in same ID space as this
+	// blows up with separate user/item spaces
+	
 	@Override
 	public boolean equals(Object other) {
 		// ignore vector & payload
