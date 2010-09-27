@@ -3,10 +3,12 @@
  */
 package org.apache.mahout.cf.taste.impl.model;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import lsh.core.Corner;
@@ -41,10 +43,10 @@ public class GLSimplexRecommender implements Recommender {
 	//		cg = new CornerGen();
 	//	}
 
-	public GLSimplexRecommender(Configuration conf, String fileName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
-		String hasherClass = conf.get(LSHDriver.HASHER);
-		double gridsize = Double.parseDouble(conf.get(LSHDriver.GRIDSIZE));
-		int dimensions = Integer.parseInt(conf.get(LSHDriver.DIMENSION));
+	public GLSimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+		String hasherClass = props.getProperty(LSHDriver.HASHER);
+		double gridsize = Double.parseDouble(props.getProperty(LSHDriver.GRIDSIZE));
+		int dimensions = Integer.parseInt(props.getProperty(LSHDriver.DIMENSION));
 
 		Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
 		double[] stretch;
@@ -53,7 +55,7 @@ public class GLSimplexRecommender implements Recommender {
 			stretch[i] = gridsize;
 		}
 		hasher.setStretch(stretch);
-		model = new SimplexSVTextDataModel(fileName, hasher);
+		model = new SimplexSVTextDataModel(dataFile, hasher);
 		cg = new CornerGen(hasher, stretch);
 		distance = new Distance();
 	}
@@ -192,12 +194,12 @@ public class GLSimplexRecommender implements Recommender {
 	 * @throws InstantiationException 
 	 */
 	public static void main(String[] args) throws IOException, TasteException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		Configuration conf = new Configuration();
-		conf.set(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		conf.set(LSHDriver.DIMENSION, "100");
-		conf.set(LSHDriver.GRIDSIZE, "0.6");
+		Properties props = new Properties();
+		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
+		props.setProperty(LSHDriver.DIMENSION, "100");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.6");
 		String file = args.length > 0 ? args[0] : "/tmp/lsh_hadoop/short.csv";
-		GLSimplexRecommender rec = new GLSimplexRecommender(conf, args[0]);
+		GLSimplexRecommender rec = new GLSimplexRecommender(props, args[0]);
 		//		LongPrimitiveIterator lpi = model.getUserIDs();
 		//		System.out.println("User IDs:");
 		//		while (lpi.hasNext()) {
