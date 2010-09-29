@@ -1,5 +1,6 @@
 package org.apache.mahout.cf.taste.impl.model;
 
+import lsh.core.CornerGen;
 import lsh.core.Hasher;
 import lsh.core.Lookup;
 import java.io.File;
@@ -23,13 +24,16 @@ public class SimplexSVTextDataModel extends AbstractDataModel {
 	final Lookup userDB;
 	final Lookup itemDB;
 	final Hasher hasher;
+	final CornerGen cg;
+
 	
 	public SimplexSVTextDataModel(Hasher hasher) throws IOException {
-		this("/tmp/lsh_hadoop/short.csv",  hasher);
+		this("/tmp/lsh_hadoop/short.csv",  hasher, null);
 	}
 
-	public SimplexSVTextDataModel(String cornersFile, Hasher hasher) throws IOException {
+	public SimplexSVTextDataModel(String cornersFile, Hasher hasher, CornerGen cg) throws IOException {
 		this.hasher = hasher;
+		this.cg = cg;
 		userDB = new Lookup(null, true, true, true, true, false, false);
 		itemDB = new Lookup(null, true, true, true, true, false, false);
 		Reader f;
@@ -40,7 +44,7 @@ public class SimplexSVTextDataModel extends AbstractDataModel {
 		userDB.loadCP(f, "U");
 		f.close();
 	}
-
+	
 	@Override
 	public LongPrimitiveIterator getItemIDs() throws TasteException {
 		return new LPI(itemDB.ids.iterator());
@@ -127,7 +131,7 @@ public class SimplexSVTextDataModel extends AbstractDataModel {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		SimplexSVTextDataModel model = new SimplexSVTextDataModel("/tmp/lsh_hadoop/short.csv", null);
+		SimplexSVTextDataModel model = new SimplexSVTextDataModel("/tmp/lsh_hadoop/short.csv", null, null);
 		model.hashCode();
 	}
 

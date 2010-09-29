@@ -7,6 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -33,31 +34,30 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  *
  */
 public class GLSimplexRecommender implements Recommender {
+	List<RecommendedItem> NORECS = Collections.emptyList();
 	final SimplexSVTextDataModel model;
-	final CornerGen cg;
 	final Distance distance;
 
-	//	public GLSimplexRecommender(SimplexSVTextDataModel model) {
-	//		this.model = model;
-	//		distance = new Distance();
-	//		cg = new CornerGen();
-	//	}
-
 	public GLSimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+		model = createDataModel(props, dataFile);
+		distance = new Distance();
+	}
+
+	public static SimplexSVTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+		Hasher hasher;
 		String hasherClass = props.getProperty(LSHDriver.HASHER);
 		double gridsize = Double.parseDouble(props.getProperty(LSHDriver.GRIDSIZE));
 		int dimensions = Integer.parseInt(props.getProperty(LSHDriver.DIMENSION));
 
-		Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
+		hasher = (Hasher) Class.forName(hasherClass).newInstance();
 		double[] stretch;
 		stretch = new double[dimensions];
 		for(int i = 0; i < stretch.length; i++) {
 			stretch[i] = gridsize;
 		}
 		hasher.setStretch(stretch);
-		model = new SimplexSVTextDataModel(dataFile, hasher);
-		cg = new CornerGen(hasher, stretch);
-		distance = new Distance();
+		CornerGen cg = new CornerGen(hasher, stretch);
+		return new SimplexSVTextDataModel(dataFile, hasher, cg);
 	}
 
 
@@ -87,9 +87,11 @@ public class GLSimplexRecommender implements Recommender {
 	throws TasteException {
 		List<RecommendedItem> recs = new ArrayList<RecommendedItem>(howMany);
 		Point p = model.userDB.id2point.get(((Long) userID).toString());
+		if (null == p) 
+			return NORECS;
 		int[] hashes = model.hasher.hash(p.values);
 		Corner main = new Corner(hashes);
-		Set<Corner> all = cg.getHashSet(p);
+		Set<Corner> all = model.cg.getHashSet(p);
 		// usePoints(howMany, recs, p, c);
 		for(Corner c: all) {
 			Set<String> ids = model.itemDB.corner2ids.get(c);
@@ -152,8 +154,7 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public List<RecommendedItem> recommend(long userID, int howMany,
 			IDRescorer rescorer) throws TasteException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	/* (non-Javadoc)
@@ -162,8 +163,7 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public void removePreference(long userID, long itemID)
 	throws TasteException {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException();
 	}
 
 	/* (non-Javadoc)
@@ -172,8 +172,7 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public void setPreference(long userID, long itemID, float value)
 	throws TasteException {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException();
 	}
 
 	/* (non-Javadoc)
@@ -181,8 +180,7 @@ public class GLSimplexRecommender implements Recommender {
 	 */
 	@Override
 	public void refresh(Collection<Refreshable> alreadyRefreshed) {
-		// TODO Auto-generated method stub
-
+		throw new UnsupportedOperationException();
 	}
 
 	/**
