@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -25,6 +26,8 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.recommender.GenericRecommendedItem;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.model.Preference;
+import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
@@ -36,11 +39,9 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 public class GLSimplexRecommender implements Recommender {
 	List<RecommendedItem> NORECS = Collections.emptyList();
 	final SimplexSVTextDataModel model;
-	final Distance distance;
 
 	public GLSimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		model = createDataModel(props, dataFile);
-		distance = new Distance();
 	}
 
 	public static SimplexSVTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
@@ -67,7 +68,14 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public float estimatePreference(long userID, long itemID)
 	throws TasteException {
-		throw new UnsupportedOperationException();
+		PreferenceArray prefs = model.getPreferencesFromUser(userID);
+		Iterator<Preference> it = prefs.iterator();
+		while(it.hasNext()) {
+			Preference pref = it.next();
+			if (pref.getItemID() == itemID)
+				return pref.getValue();
+		}
+		return Float.NaN;
 	}
 
 	/* (non-Javadoc)
@@ -81,6 +89,8 @@ public class GLSimplexRecommender implements Recommender {
 	/* (non-Javadoc)
 	 * @see org.apache.mahout.cf.taste.recommender.Recommender#recommend(long, int)
 	 * Return all in same and neighboring hashes.
+	 * 
+	 * TODO: push this down into datamodel as much as possible
 	 */
 	@Override
 	public List<RecommendedItem> recommend(long userID, int howMany)
@@ -91,59 +101,35 @@ public class GLSimplexRecommender implements Recommender {
 			return NORECS;
 		int[] hashes = model.hasher.hash(p.values);
 		Corner main = new Corner(hashes);
+		getRecommendations(howMany, recs, main, main);
 		Set<Corner> all = model.cg.getHashSet(p);
 		// usePoints(howMany, recs, p, c);
 		for(Corner c: all) {
-			Set<String> ids = model.itemDB.corner2ids.get(c);
-			if (null != ids) {
-				for(String id: ids) {
-					float dist = hamming(main, c);
-					RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), dist);
-					int j = 0;
-					for(; j < recs.size(); j++) {
-						if (dist < recs.get(j).getValue()) {
-							recs.add(j, recco);
-							break;
-						}
-					}
-					if (j == recs.size())
-						recs.add(recco);
-					if (recs.size() == howMany)
-						break;
-				}
-			}
+			getRecommendations(howMany, recs, main, c);
 		}
 		return recs;
 	}
 
-	private float hamming(Corner main, Corner c) {
-		float sum = 0;
-		for(int i = 0; i < main.hashes.length; i++) {
-			sum += Math.abs(main.hashes[i] - c.hashes[i]);
-		}
-		return sum / main.hashes.length;
-	}
-
-
-	private void usePoints(int howMany, List<RecommendedItem> recs, Point p,
-			Corner c) {
-		Set<Point> points = model.itemDB.corner2points.get(c);
-		if (null != points) {
-			for(Point ip: points) {
-				double dist = (float) distance.manhattan(p, ip);
-				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(ip.id), (float) dist);
+	private void getRecommendations(int howMany, List<RecommendedItem> recs,
+			Corner main, Corner c) {
+		Set<String> ids = model.itemDB.corner2ids.get(c);
+		if (null != ids) {
+			for(String id: ids) {
+				float rating = (float) (model.distance2rating(model.euclid(main.hashes, c.hashes)));
+				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), rating);
 				int j = 0;
 				for(; j < recs.size(); j++) {
-					if (dist < recs.get(j).getValue()) {
-						recs.add(j, recco);
+					if (rating < recs.get(j).getValue()) {
+						if (!recs.contains(recco)) {
+							recs.add(j, recco);
+						}
 						break;
 					}
 				}
-				if (j == recs.size())
+				if (j == recs.size() && !recs.contains(recco))
 					recs.add(recco);
 				if (recs.size() == howMany)
 					break;
-				recco.hashCode();
 			}
 		}
 	}
@@ -227,16 +213,3 @@ public class GLSimplexRecommender implements Recommender {
 	}
 
 }
-
-class Distance {
-
-	// manhattan because i'm lazy
-	public double manhattan(Point a, Point b) {
-		double dist = 0;
-		for(int i = 0; i < a.values.length; i++) {
-			dist += Math.abs(a.values[i] - b.values[i]);
-		}
-		return dist;
-	}
-}
-

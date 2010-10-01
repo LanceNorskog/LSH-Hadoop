@@ -4,6 +4,11 @@ package lsh.core;
  * return a set of dimension d array indexes given a point.
  */
 
+// TODO: should this have a policy about how near a another hash value is?
+// is it different with VT?
+// or just use unhash
+
+
 public interface Hasher {
 	public void setStretch(double[] stretch);
 	// project point to lower corner

@@ -80,8 +80,11 @@ Reducer<Text, Text, Text, Text> {
 //				throw new InterruptedException("UICornerReduce: where are the User/Item markers?");
 //			}
 		}
-		if (requireBoth && (users == 0 || items ==0))
+		if (requireBoth && (users == 0 || items ==0)) {
+			if (users == 1) 
+				side.println(key);
 			return;
+		}
 		if (sb.length() > 0) {
 			// only count points with item values
 			corners ++;

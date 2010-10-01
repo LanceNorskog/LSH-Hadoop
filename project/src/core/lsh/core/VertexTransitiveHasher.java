@@ -13,7 +13,6 @@ public class VertexTransitiveHasher implements Hasher {
 	private int dim;
 	static final double S3 = Math.sqrt(3.0d);
 	static final double MU = (1.0d - (1.0d/Math.sqrt(3.0d)))/2.0d;
-	static final double SKEW = 1.0;
 	
 	public VertexTransitiveHasher() {
 	}
@@ -58,22 +57,11 @@ public class VertexTransitiveHasher implements Hasher {
 		}
 		double musum = MU * sum;
 		for(int i = 0; i < gp.length; i++) {
-			gp[i] = (gp[i] / S3 + musum)/ (SKEW );
+			gp[i] = (gp[i] / S3 + musum);
 		}
 	}
 
-	/*
-	@Override
-	public int[] hashUp(double[] values) {
-		double[] up = Arrays.copyOf(values, values.length);
-		for(int i = 0; i < values.length; i++) {
-			up[i] += stretch[i]/0.51;
-		}
-		System.out.print("Up");
-		return hash(up);
-	}	
-	*/
-
+	// TODO: THIS IS WRONG! get tyler to tell me how to do it right
 	@Override
 	public void unhash(int[] hash, double[] values) {
 		double sum = 0;
@@ -83,7 +71,7 @@ public class VertexTransitiveHasher implements Hasher {
 		}	
 		double musum = MU * sum;
 		for (int i = 0; i < hash.length; i++) {
-			values[i] = S3 * (values[i] - musum) * SKEW;
+			values[i] = S3 * (values[i] - musum);
 			values[i] *= stretch[i];
 		}
 	}
