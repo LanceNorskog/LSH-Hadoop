@@ -37,7 +37,7 @@ Reducer<Text, Text, Text, Text> {
 //	private boolean itemCorners = true;
 //	private boolean userPoints = true;
 //	private boolean itemPoints = true;
-	boolean requireBoth = true;
+	boolean requireBoth = false;
 	PrintWriter side = null;
 	 float corners = 0;
 	 float points = 0;
