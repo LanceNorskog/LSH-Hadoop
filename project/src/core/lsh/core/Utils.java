@@ -28,7 +28,9 @@ public class Utils {
 		System.err.println("Loading corners... ");
 		while (null != (line = lnr.readLine())) {
 			String parts[] = line.split("[ \t]");
-			String[] pipes = parts[1].split("\\|");
+			String[] pipes = new String[0];
+			if (parts.length > 1)
+				pipes = parts[1].split("\\|");
 			String id = parts[0];
 			Corner corner = Corner.newCorner(id);
 			if (null != corners)
@@ -54,7 +56,7 @@ public class Utils {
 	static public void load_point_corners_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, 
 			Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners, 
 			String payload) throws IOException {
-//		LineNumberReader lnr = new LineNumberReader(r);
+		//		LineNumberReader lnr = new LineNumberReader(r);
 		BufferedReader lnr = new BufferedReader(r);
 
 		String line;
@@ -68,13 +70,7 @@ public class Utils {
 					continue;
 				}
 			}
-			if (null != ids)
-				ids.add(point.id);
-			if (null != points)
-				points.add(point);
-			if (null != id2point) {
-				id2point.put(point.id, point);
-			}
+			addPoint(ids, points, id2point, point);
 			for(int i = 0; i < pipes.length; i++) {
 				Corner corner = Corner.newCorner(pipes[i]);
 				addPair(ids, points, corners, id2point, corner2ids, corner2points, point2corners, corner, point);
@@ -82,7 +78,28 @@ public class Utils {
 		}		
 	}
 
-	static public void addPair(Set<String> ids, Set<Point> points, Set<Corner> corners, Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points,
+	// load in various data structures from the point->corners format
+	// all structures are optional
+	// slower than could be but uses hashed everything
+
+	static public void load_point(Reader r, Set<Point> points, Set<String> ids,
+			Map<String, Point> id2point, String payload) throws IOException {
+		BufferedReader lnr = new BufferedReader(r);
+
+		String line;
+		while (null != (line = lnr.readLine())) {
+			Point point = Point.newPoint(line);
+			if (null != payload ) { 
+				if (null == point.payload || !payload.equals(point.payload)) {
+					continue;
+				}
+			}
+			addPoint(ids, points, id2point, point);
+		}		
+	}
+
+	static public void addPair(Set<String> ids, Set<Point> points, Set<Corner> corners, 
+			Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points,
 			Map<Point, Set<Corner>> point2corners, Corner corner, Point point) {
 		if (null != ids)
 			ids.add(point.id);
@@ -116,6 +133,16 @@ public class Utils {
 			}
 			bag.add(corner);			
 		}
+	}
+
+	static public void addPoint(Set<String> ids, Set<Point> points, Map<String, Point> id2point, 
+			Point point) {
+		if (null != ids)
+			ids.add(point.id);
+		if (null != points)
+			points.add(point);
+		if (null != id2point)
+			id2point.put(point.id, point);
 	}
 
 }

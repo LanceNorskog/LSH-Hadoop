@@ -47,6 +47,10 @@ public class Lookup {
 		Utils.load_point_corners_format(r, points, corners, ids, id2point, corner2ids, corner2points, point2corners, payload);
 	}
 
+	public void loadPoints(Reader r, String payload) throws IOException {
+		Utils.load_point(r, points, ids, id2point, payload);
+	}
+
 	private Collection<Corner> getMatchingCorners(String id) {
 		Set<Corner> found = new HashSet<Corner>();
 		for(Corner corner: corners) {
