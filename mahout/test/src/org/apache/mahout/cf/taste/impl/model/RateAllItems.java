@@ -45,15 +45,18 @@ public class RateAllItems {
 	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
+	 * 
+	 * Usage: rateall ratings.dat corners points
 	 */
 	public static void main(String[] args) throws IOException, TasteException,
 	InstantiationException, IllegalAccessException,
 	ClassNotFoundException {
 		DataModel glModel = new GroupLensDataModel(new File(args[0]));
+		glModel = new PointTextDataModel(args[2]);
 		Recommender recco;
-		//		 recco = doReccoGL(glModel);
+				 recco = doReccoGL(glModel);
 		//		recco = doReccoKNN_LL_NegQO(glModel);
-		recco = doReccoGLSimplex(args);
+//		recco = doReccoGLSimplex(args);
 		//		recco = doReccoPearsonItem(glModel);
 
 		printAllRecommendations(recco);
