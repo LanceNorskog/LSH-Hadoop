@@ -40,15 +40,15 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	// corner-generator - does LSH projection
 	final CornerGen cg;
 	// real 1.0 = hash(1.0) * variance
-	final double varianceEuclid;
-	final double varianceManhattan = Double.NaN;
+	double varianceHash;
+	double varianceManhattan;
 	// real 1.0 dist 
 	final double diagonal;
 	// project ratings from 0->1 into 1...5
 	final double scale = 4;
 	final double offset = 1;
-	
-	final boolean doPoints = true;
+
+	final boolean doPoints = false;
 
 	public SimplexTextDataModel(String cornersFile, Hasher hasher, CornerGen cg) throws IOException {
 		this.hasher = hasher;
@@ -69,11 +69,24 @@ public class SimplexTextDataModel extends AbstractDataModel {
 				unit[i] = 1.0;
 			double[] projected = new double[dimension];
 			hasher.project(unit, projected);
-			double dist = manhattanD(unit, projected);
-			varianceEuclid = 1.0 / dist;
-			System.out.println("Variance: " + varianceEuclid);
+			varianceHash = 1.0;
+			double dist = euclidD(unit, projected);
+			varianceHash = 1.0 / dist;
+			System.out.println("Variance: " + varianceHash);
 		} else
-			varianceEuclid = 1.0;
+			varianceHash = Double.NaN;
+
+		double[] zero = new double[dimension];
+		for(int i = 0; i < zero.length; i++)
+			zero[i] = 0.0;
+		double[] unit = new double[dimension];
+		for(int i = 0; i < unit.length; i++)
+			unit[i] = 1.0;
+		varianceManhattan = 1.0;
+		double dist = manhattanD(zero, unit);
+		varianceManhattan = 1/dist;
+		System.out.println("Variance: " + varianceManhattan);
+
 		diagonal = 1/Math.sqrt(dimension);
 	}
 
@@ -115,7 +128,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	throws TasteException {
 		return getPreferenceValuePoint(userID, itemID);
 	}
-	
+
 	private Float getPreferenceValueCorner(long userID, long itemID)
 	throws TasteException {
 		Point userP = userDB.id2point.get((userID) + "");
@@ -129,7 +142,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	private Float getPreferenceValuePoint(long userID, long itemID) {
 		Point userP = userDB.id2point.get((userID) + "");
 		Point itemP = itemDB.id2point.get((itemID) + "");
-		double distance = euclidD(itemP.values, userP.values);
+		double distance = manhattanD(itemP.values, userP.values);
 		return (float) distance2rating(distance);
 	}
 
@@ -187,7 +200,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		PreferenceArray prefs = new GenericUserPreferenceArray(itemDB.ids.size());
 		for(String item: itemDB.ids) {
 			Point ip = itemDB.id2point.get(item);
-			float dist = (float) distance2rating(euclidD(up.values, ip.values));
+			float dist = (float) distance2rating(manhattanD(up.values, ip.values));
 			prefs.setUserID(prefIndex, userID);
 			prefs.setItemID(prefIndex, Long.parseLong(item));
 			prefs.setValue(prefIndex, dist);
@@ -196,22 +209,22 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		prefs.sortByItem();
 		return prefs;
 	}
-	
-//	??? hash distance. really f'ud
-	double manhattan(int[] a, int[] b) {
-		float sum = 0;
-		for(int i = 0; i < a.length; i++) {
-			sum += Math.abs(a[i] - b[i]);
-		}
-		return (sum / a.length) * varianceManhattan;
-	}
+
+	//	??? hash distance. really f'ud
+	//	double manhattan(int[] a, int[] b) {
+	//		float sum = 0;
+	//		for(int i = 0; i < a.length; i++) {
+	//			sum += Math.abs(a[i] - b[i]);
+	//		}
+	//		return (sum / a.length) * varianceManhattan;
+	//	}
 
 	double manhattanD(double[] a, double[] b) {
 		double sum = 0;
 		for(int i = 0; i < a.length; i++) {
 			sum += Math.abs(a[i] - b[i]);
 		}
-		return sum / a.length;
+		return sum * varianceManhattan;
 	}
 
 	// hash distance - not correct!
@@ -220,7 +233,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		for(int i = 0; i < a.length; i++) {
 			sum += (a[i] - b[i]) * (a[i] - b[i]);
 		}			
-		return Math.sqrt(sum) * varianceEuclid;
+		return Math.sqrt(sum) * varianceHash;
 	}
 
 	// rectangular distance
@@ -233,7 +246,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	}
 
 	double distance2rating(double d) {
-		double e = (1 - d) * scale + offset;
+		double e = (1-d) * scale + offset;
 		return e;
 	}
 

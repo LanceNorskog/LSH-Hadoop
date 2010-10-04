@@ -29,9 +29,9 @@ public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
 	// shift preferences from 1 to 5 -> -2 to 2.
-	public Float bias = 0f;
+	public Float bias = -3f;
 	// scaling for pref values
-	public Float scale = 0f;
+	public Float scale = 0.04f;
 	
 	public int projections = 0;
 	public int trims = 0;

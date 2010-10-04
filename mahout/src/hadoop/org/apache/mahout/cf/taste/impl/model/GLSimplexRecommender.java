@@ -68,13 +68,6 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public float estimatePreference(long userID, long itemID)
 	throws TasteException {
-//		PreferenceArray prefs = model.getPreferencesFromUser(userID);
-//		Iterator<Preference> it = prefs.iterator();
-//		while(it.hasNext()) {
-//			Preference pref = it.next();
-//			if (pref.getItemID() == itemID)
-//				return pref.getValue();
-//		}
 		return model.getPreferenceValue(userID, itemID);
 	}
 
@@ -105,9 +98,34 @@ public class GLSimplexRecommender implements Recommender {
 		Set<Corner> all = model.cg.getHashSet(p);
 		// usePoints(howMany, recs, p, c);
 		for(Corner c: all) {
-			getRecommendations(howMany, recs, main, c);
+			getRecommendationsHash(howMany, recs, main, c);
 		}
 		return recs;
+	}
+
+	private void getRecommendationsHash(int howMany, List<RecommendedItem> recs,
+			Corner main, Corner c) {
+		((Object) null).hashCode();
+		Set<String> ids = model.itemDB.corner2ids.get(c);
+		if (null != ids) {
+			for(String id: ids) {
+				float rating = (float) (model.distance2rating(model.euclid(main.hashes, c.hashes)));
+				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), rating);
+				int j = 0;
+				for(; j < recs.size(); j++) {
+					if (rating < recs.get(j).getValue()) {
+						if (!recs.contains(recco)) {
+							recs.add(j, recco);
+						}
+						break;
+					}
+				}
+				if (j == recs.size() && !recs.contains(recco))
+					recs.add(recco);
+				if (recs.size() == howMany)
+					break;
+			}
+		}
 	}
 
 	private void getRecommendations(int howMany, List<RecommendedItem> recs,

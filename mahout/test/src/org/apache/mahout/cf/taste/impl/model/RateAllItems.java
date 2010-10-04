@@ -51,16 +51,16 @@ public class RateAllItems {
 	ClassNotFoundException {
 		DataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender recco;
-//		 recco = doReccoGL(glModel);
-//		recco = doReccoKNN_LL_NegQO(glModel);
-//		recco = doReccoGLSimplex(args);
-		recco = doReccoPearsonItem(glModel);
+		//		 recco = doReccoGL(glModel);
+		//		recco = doReccoKNN_LL_NegQO(glModel);
+		recco = doReccoGLSimplex(args);
+		//		recco = doReccoPearsonItem(glModel);
 
 		printAllRecommendations(recco);
 	}
 
 	private static Recommender doReccoPearsonItem(DataModel glModel)
-			throws TasteException {
+	throws TasteException {
 		Recommender recco;
 		ItemSimilarity similarity = new PearsonCorrelationSimilarity(glModel);
 		recco = new GenericItemBasedRecommender(glModel, similarity);
@@ -68,11 +68,10 @@ public class RateAllItems {
 	}
 
 	private static Recommender doReccoGLSimplex(String[] args)
-			throws TasteException {
+	throws TasteException {
 		Recommender recco;
 		GLSimplexRecommenderBuilder.init(args[1]);
-		GLSimplexRecommenderBuilder recb = new GLSimplexRecommenderBuilder();
-		recco = recb.buildRecommender(null);
+		recco = GLSimplexRecommenderBuilder.recommender;
 		return recco;
 	}
 
@@ -80,12 +79,12 @@ public class RateAllItems {
 		Recommender recco;
 		ItemSimilarity similarity = new LogLikelihoodSimilarity(glModel);
 		Optimizer optimizer = new NonNegativeQuadraticOptimizer();
-		 recco = new KnnItemBasedRecommender(glModel, similarity, optimizer, 6040);
-		 return recco;
+		recco = new KnnItemBasedRecommender(glModel, similarity, optimizer, 6040);
+		return recco;
 	}
 
 	private static GroupLensRecommender doReccoGL(DataModel glModel)
-			throws TasteException {
+	throws TasteException {
 		return new GroupLensRecommender(glModel);
 	}
 
@@ -113,7 +112,9 @@ public class RateAllItems {
 			String rating = (sum > 0 && count > 0) ? Double.toString(sum / count) : "0";
 			String stdstr = (stddev.getResult()) > 0 ? Double.toString(stddev.getResult()) : "0";
 			System.out.println(itemID + "," + count + "," + stdstr + "," + rating);
+			System.out.flush();
 		}
+		items.hashCode();
 	}
 
 }
