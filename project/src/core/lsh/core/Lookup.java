@@ -32,7 +32,7 @@ public class Lookup {
 		points = doPoints ? new HashSet<Point>() : null;
 		corners = doCorners ? new HashSet<Corner>() : null;
 		id2point = doId2point ? new HashMap<String,Point>() : null;
-		boolean doCorner2Ids = true;
+		boolean doCorner2Ids = false;
 		corner2ids = doCorner2Ids ? new HashMap<Corner,Set<String>>() : null;
 		ids = doIds ? new HashSet<String>() : null;
 		corner2points = doCorner2points ? new HashMap<Corner, Set<Point>>() : null;

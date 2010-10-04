@@ -57,7 +57,7 @@ public class TestGLSimplexRecommender {
 //		AverageAbsoluteDifferenceRecommenderEvaluatorDual evaluatorDual = new AverageAbsoluteDifferenceRecommenderEvaluatorDual();
 		//	    DataModel model = GLSimplexRecommenderBuilder.recommender.model;
 		GLSimplexRecommenderBuilder builder = new GLSimplexRecommenderBuilder();
-		SimplexSVTextDataModel model = GLSimplexRecommenderBuilder.recommender.model;
+		SimplexTextDataModel model = GLSimplexRecommenderBuilder.recommender.model;
 		DataModel realModel = new GroupLensDataModel(new File(args[0]));
 		GroupLensRecommender realRecco = new GroupLensRecommender(realModel);
 		//	    System.out.println("GroupLensRecommender v.s. GroupLens data");
@@ -87,7 +87,7 @@ public class TestGLSimplexRecommender {
 		evaluateN2(builder.buildRecommender(null), model, realRecco, realModel);
 	}
 
-	private static void evaluateN2(Recommender recommender, SimplexSVTextDataModel model, 
+	private static void evaluateN2(Recommender recommender, SimplexTextDataModel model, 
 			GroupLensRecommender realRecco,
 			DataModel realModel) throws TasteException {
 		double sum = 0.0;

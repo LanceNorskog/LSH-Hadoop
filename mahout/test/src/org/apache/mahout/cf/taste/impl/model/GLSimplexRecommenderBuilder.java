@@ -14,7 +14,7 @@ public class GLSimplexRecommenderBuilder implements RecommenderBuilder {
 	public static GLSimplexRecommender recommender = null;
 	public static String HASHER = "lsh.core.VertexTransitiveHasher";
 	public static String DIMENSION = "100";
-	public static String GRIDSIZE = "0.53";
+	public static String GRIDSIZE = "0.55";
 
 	public static void init(String fileName) {
 		recommender = createSingleton(fileName);
@@ -33,7 +33,7 @@ public class GLSimplexRecommenderBuilder implements RecommenderBuilder {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "100");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.53");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.55");
 		try {
 			return new GLSimplexRecommender(props, fileName);
 		} catch (Exception e) {

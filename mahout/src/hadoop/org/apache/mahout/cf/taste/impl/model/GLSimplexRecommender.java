@@ -38,13 +38,13 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  */
 public class GLSimplexRecommender implements Recommender {
 	List<RecommendedItem> NORECS = Collections.emptyList();
-	final SimplexSVTextDataModel model;
+	final SimplexTextDataModel model;
 
 	public GLSimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		model = createDataModel(props, dataFile);
 	}
 
-	public static SimplexSVTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+	public static SimplexTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		Hasher hasher;
 		String hasherClass = props.getProperty(LSHDriver.HASHER);
 		double gridsize = Double.parseDouble(props.getProperty(LSHDriver.GRIDSIZE));
@@ -58,7 +58,7 @@ public class GLSimplexRecommender implements Recommender {
 		}
 		hasher.setStretch(stretch);
 		CornerGen cg = new CornerGen(hasher, stretch);
-		return new SimplexSVTextDataModel(dataFile, hasher, cg);
+		return new SimplexTextDataModel(dataFile, hasher, cg);
 	}
 
 
@@ -68,14 +68,14 @@ public class GLSimplexRecommender implements Recommender {
 	@Override
 	public float estimatePreference(long userID, long itemID)
 	throws TasteException {
-		PreferenceArray prefs = model.getPreferencesFromUser(userID);
-		Iterator<Preference> it = prefs.iterator();
-		while(it.hasNext()) {
-			Preference pref = it.next();
-			if (pref.getItemID() == itemID)
-				return pref.getValue();
-		}
-		return Float.NaN;
+//		PreferenceArray prefs = model.getPreferencesFromUser(userID);
+//		Iterator<Preference> it = prefs.iterator();
+//		while(it.hasNext()) {
+//			Preference pref = it.next();
+//			if (pref.getItemID() == itemID)
+//				return pref.getValue();
+//		}
+		return model.getPreferenceValue(userID, itemID);
 	}
 
 	/* (non-Javadoc)
