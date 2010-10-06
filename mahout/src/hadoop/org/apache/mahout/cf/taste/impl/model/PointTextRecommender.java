@@ -7,6 +7,9 @@ import java.util.List;
 
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
+import org.apache.mahout.cf.taste.impl.eval.AverageAbsoluteDifferenceRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.recommender.GenericRecommendedItem;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
@@ -14,6 +17,8 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
+
+import sun.org.mozilla.javascript.internal.EvaluatorException;
 
 /* 
  * DataModel has all answers. Just ask it.
@@ -87,8 +92,26 @@ public class PointTextRecommender implements Recommender {
 	public static void main(String[] args) throws IOException, TasteException {
 		DataModel model = new PointTextDataModel(args[0]);
 		Recommender rec = new PointTextRecommender(model);
-		List<RecommendedItem> x = rec.recommend(5, 3);
-		x.hashCode();
+//		List<RecommendedItem> x = rec.recommend(5, 3);
+//		x.hashCode();
+		RecommenderEvaluator evaluator = new AverageAbsoluteDifferenceRecommenderEvaluator();
+	    double evaluation = evaluator.evaluate(new PointTextRecommenderBuilder(),
+	    	      null,
+	    	      model,
+	    	      0.9,
+	    	      0.3);
+	    System.err.println("Evaluation: " + evaluation);
 	}
 
 }
+
+class PointTextRecommenderBuilder implements RecommenderBuilder {
+
+	@Override
+	public Recommender buildRecommender(DataModel dataModel)
+			throws TasteException {
+		return new PointTextRecommender(dataModel);
+	}
+	
+}
+
