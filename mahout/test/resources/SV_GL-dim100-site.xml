@@ -37,7 +37,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.scale</name>
-		<value>0.4</value>
+		<value>0.01</value>
 		<description>rescaling constant for prefences in semantic vectors.</description>
 	</property>
 

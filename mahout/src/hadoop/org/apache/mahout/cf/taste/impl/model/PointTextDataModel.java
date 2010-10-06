@@ -30,19 +30,20 @@ public class PointTextDataModel extends AbstractDataModel {
 	final Lookup userDB;
 	// raw text corner-first LSH of items
 	final Lookup itemDB;
-	// real 1.0 = hash(1.0) * variance
-	double varianceManhattan;
-	// real 1.0 dist 
-	final double diagonal;
+	final int dimensions;
+	// scaling for Manhattan and Euclidean distances
+	final double varianceManhattan;
+	final double varianceEuclid;
 	// project ratings from 0->1 into 1...5
 	final double scale = 4;
 	final double offset = 1;
-
-	final boolean doPoints = true;
+	
+	double total = 0;
+	int count = 0;
 
 	public PointTextDataModel(String pointsFile) throws IOException {
-		userDB = new Lookup(null, true, !doPoints, true, true, false, false);
-		itemDB = new Lookup(null, true, !doPoints, true, true, false, false);
+		userDB = new Lookup(null, true, false, true, true, false, false);
+		itemDB = new Lookup(null, true, false, true, true, false, false);
 		Reader f;
 		f = new FileReader(new File(pointsFile));
 		itemDB.loadPoints(f, "I");
@@ -50,21 +51,17 @@ public class PointTextDataModel extends AbstractDataModel {
 		f = new FileReader(new File(pointsFile));
 		userDB.loadPoints(f, "U");
 		f.close();
-
-		Iterator<Point> points = itemDB.points.iterator();
-		int dimension = points.next().values.length;
-		double[] zero = new double[dimension];
+		// yow!
+		Iterator<Point> it = userDB.points.iterator();
+		dimensions = it.next().values.length;
+		double[] zero = new double[dimensions];
 		for(int i = 0; i < zero.length; i++)
 			zero[i] = 0.0;
-		double[] unit = new double[dimension];
+		double[] unit = new double[dimensions];
 		for(int i = 0; i < unit.length; i++)
 			unit[i] = 1.0;
-		varianceManhattan = 1.0;
-		double dist = manhattanD(zero, unit);
-		varianceManhattan = 1/dist;
-//		System.err.println("Variance: " + varianceManhattan);
-
-		diagonal = 1/Math.sqrt(dimension);
+		varianceManhattan = Math.sqrt(2) * 1.0/dimensions;
+		varianceEuclid = 1.0/Math.sqrt(dimensions);
 	}
 
 	@Override
@@ -110,6 +107,8 @@ public class PointTextDataModel extends AbstractDataModel {
 		Point userP = userDB.id2point.get((userID) + "");
 		Point itemP = itemDB.id2point.get((itemID) + "");
 		double distance = manhattanD(itemP.values, userP.values);
+		total += distance;
+		count++;
 		return (float) distance2rating(distance);
 	}
 
@@ -144,15 +143,7 @@ public class PointTextDataModel extends AbstractDataModel {
 		return prefs;
 	}
 
-	//	??? hash distance. really f'ud
-	//	double manhattan(int[] a, int[] b) {
-	//		float sum = 0;
-	//		for(int i = 0; i < a.length; i++) {
-	//			sum += Math.abs(a[i] - b[i]);
-	//		}
-	//		return (sum / a.length) * varianceManhattan;
-	//	}
-
+	// rectangular distance
 	double manhattanD(double[] a, double[] b) {
 		double sum = 0;
 		for(int i = 0; i < a.length; i++) {
@@ -161,18 +152,75 @@ public class PointTextDataModel extends AbstractDataModel {
 		return sum * varianceManhattan;
 	}
 
-	// rectangular distance
+	// euclidean distance
 	double euclidD(double[] a, double[] b) {
 		double sum = 0;
 		for(int i = 0; i < a.length; i++) {
 			sum += (a[i] - b[i]) * (a[i] - b[i]);
 		}			
-		return Math.sqrt(sum) * diagonal;
+		double dist = Math.sqrt(sum);
+		return dist * varianceEuclid;
 	}
 
 	double distance2rating(double d) {
-		double e = (1-d) * scale + offset;
+		if (d < 0.1d || d > 0.9d) {
+			this.hashCode();
+		}
+		d = invert(d, Math.sqrt(dimensions));
+		double e;
+		e = (1-d);
+		e = e * scale;
+//		e = e * 6;
+//		e = e - 12.4;
+//		e = Math.max(0, e);
+//		e = Math.min(4, e);
+		e = e + offset;
 		return e;
+	}
+	
+	
+	
+//	// invert pyramid effect of additive random values
+//	// point distances are compressed because the distances are N random numbers added
+//	void invertPyramid(double[] in, double[] out) {
+//		double sumIn = 0, sumOut = 0;
+//		for (int i = 0; i < dimensions; i++) {
+//			double r = in[i];
+//			sumIn += r;
+//			double inverted = invert(r);
+//			out[i] = inverted;
+//			total += inverted;
+//			sumOut += inverted;
+//			count++;
+//		}
+//		double avg = total / count;
+//		double avgIn = sumIn / dimensions;
+//		double avgOut = sumOut / dimensions;
+//		this.hashCode();
+//	}
+
+	/*
+	 * Correct the effects of adding N samples
+	 * Adding N samples makes the random distribution pyramidal - this flattens it.
+	 */
+	private double invert(double r, double n) {
+		double canon = Math.abs(r - 0.5d);
+		double compressed = (0.5 - canon)/n;
+//		compressed = (0.5 - compressed);
+		double inverted;
+		if (r > 0.5)
+			inverted = r + compressed;
+		else 
+			inverted = r - compressed;
+		return inverted;
+//		double canon = r - 0.5d;
+//		double height = (0.5 - Math.abs(canon));
+//		double compressed = height/n;
+//		compressed = (0.5 - compressed);
+//		if (canon < 0)
+//			compressed = -compressed;
+//		double inverted = compressed + 0.5;
+//		return inverted;
 	}
 
 	@Override
@@ -182,7 +230,7 @@ public class PointTextDataModel extends AbstractDataModel {
 
 	@Override
 	public boolean hasPreferenceValues() {
-		return false;
+		return true;
 	}
 
 	@Override
@@ -212,6 +260,28 @@ public class PointTextDataModel extends AbstractDataModel {
 	public static void main(String[] args) throws IOException {
 		PointTextDataModel model = new PointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
 		model.hashCode();
+		System.out.println("Items");
+		doscan(model.itemDB);
+		System.out.println("Users");
+		doscan(model.userDB);
 	}
 
+	static void doscan(Lookup points) {
+		double min = 100000;
+		double max = -100000;
+		double sum = 0;
+		int dimension = 0;
+		for(Point p: points.points) {
+			double[] values = p.values;
+			dimension = values.length;
+			for(int i = 0; i < values.length;i++) {
+				min = Math.min(values[i], min);
+				max = Math.max(values[i], max);
+				sum += values[i];
+			}
+		}
+		System.out.println("min: " + min + ", max: " + max + ", mean: " + sum / (points.points.size() * dimension));
+		
+	}
+	
 }

@@ -30,15 +30,15 @@ import org.apache.mahout.math.VarLongWritable;
 public final class TupleWritable extends VarLongWritable {
 	private long itemID;
 
-	private float itemSpot;
-	private float pref;
-	private float userSpot;
+	private double itemSpot;
+	private double pref;
+	private double userSpot;
 
 	public TupleWritable() {
 		// do nothing
 	}
 
-	public TupleWritable(long userID, long itemID, float userSpot, float itemSpot, float pref) {
+	public TupleWritable(long userID, long itemID, double userSpot, double itemSpot, double pref) {
 		super.set(userID);
 		this.itemID = itemID;
 		this.userSpot = userSpot;
@@ -54,11 +54,11 @@ public final class TupleWritable extends VarLongWritable {
 		return get();
 	}
 
-	public float getPref() {
+	public double getPref() {
 		return pref;
 	}
 
-	public float getUserSpot() {
+	public double getUserSpot() {
 		return userSpot;
 	}
 
@@ -66,11 +66,11 @@ public final class TupleWritable extends VarLongWritable {
 		return itemID;
 	}
 
-	public float getItemSpot() {
+	public double getItemSpot() {
 		return itemSpot;
 	}
 
-	public void set(long userID, long itemID, float userSpot, float itemSpot, float pref) {
+	public void set(long userID, long itemID, double userSpot, double itemSpot, double pref) {
 		super.set(userID);
 		this.itemID = itemID;
 		this.userSpot = userSpot;
@@ -82,25 +82,25 @@ public final class TupleWritable extends VarLongWritable {
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
 		out.writeLong(itemID);
-		out.writeFloat(userSpot);
-		out.writeFloat(itemSpot);
-		out.writeFloat(pref);
+		out.writeDouble(userSpot);
+		out.writeDouble(itemSpot);
+		out.writeDouble(pref);
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
 		super.readFields(in);
 		itemID = in.readLong();
-		userSpot = in.readFloat();
-		itemSpot = in.readFloat();
-		pref = in.readFloat();
+		userSpot = in.readDouble();
+		itemSpot = in.readDouble();
+		pref = in.readDouble();
 	}
 
 	@Override
 	public int hashCode() {
 		return super.hashCode() ^ ((Long) itemID).hashCode() ^
-				((Float) userSpot).hashCode() ^ ((Float) itemSpot).hashCode() ^
-				((Float) pref).hashCode()
+				((Double) userSpot).hashCode() ^ ((Double) itemSpot).hashCode() ^
+				((Double) pref).hashCode()
 ;
 	}
 

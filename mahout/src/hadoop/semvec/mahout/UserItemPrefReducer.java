@@ -29,9 +29,9 @@ public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
 	// shift preferences from 1 to 5 -> -2 to 2.
-	public Float bias = -3f;
+	public Double bias = -3.0;
 	// scaling for pref values
-	public Float scale = 0.04f;
+	public Double scale = 0.5;
 	
 	public int projections = 0;
 	public int trims = 0;
@@ -45,8 +45,8 @@ public class UserItemPrefReducer extends
 		Configuration conf = context.getConfiguration();
 		String scaleString = conf.get(LSHDriver.SCALE);
 		String biasString = conf.get(LSHDriver.BIAS);
-		scale = Float.parseFloat(scaleString);
-		bias = Float.parseFloat(biasString);	
+		scale = Double.parseDouble(scaleString);
+		bias = Double.parseDouble(biasString);	
 	};
 	
 	protected void reduce(
@@ -54,19 +54,19 @@ public class UserItemPrefReducer extends
 			Iterable<TupleWritable> values,
 			Reducer<LongWritable, TupleWritable, Text, Text>.Context context)
 			throws java.io.IOException, InterruptedException {
-		float tug = 0;
+		double tug = 0;
 		int nitems = 0;
 		Set<Long> users = new HashSet<Long>();
-		Map<Long,Float> itemSpots = new HashMap<Long,Float>();
-		Map<Long,ChemicalFloat> ratings = new HashMap<Long, ChemicalFloat>();
+		Map<Long,Double> itemSpots = new HashMap<Long,Double>();
+		Map<Long,ChemicalDouble> ratings = new HashMap<Long, ChemicalDouble>();
 		Long dim = key.get();
-		Float minUserSpot = Float.MIN_VALUE;
-		Float maxUserSpot = Float.MAX_VALUE;
+		Double minUserSpot = Double.MIN_VALUE;
+		Double maxUserSpot = Double.MAX_VALUE;
 
 		StringBuilder sb = new StringBuilder();
 		for (TupleWritable data : values) {
 			if (! users.contains(data.getUserID())) {
-				Float spot = data.getUserSpot();
+				Double spot = data.getUserSpot();
 				if (spot < minUserSpot)
 					minUserSpot = spot;
 				if (spot < maxUserSpot)
@@ -76,15 +76,15 @@ public class UserItemPrefReducer extends
 			}
 			
 			itemSpots.put(data.getItemID(), data.getItemSpot());
-			ChemicalFloat rating = ratings.get(data.getItemID());
+			ChemicalDouble rating = ratings.get(data.getItemID());
 			if (null == rating) {
-				rating = new ChemicalFloat();
+				rating = new ChemicalDouble();
 				ratings.put(data.getItemID(), rating);
 			} 
 			
 			// each user pulls the item towards himself
-			float pref = (data.getPref() - bias);
-			float delta = data.getUserSpot() - data.getItemSpot();
+			double pref = (data.getPref() - bias);
+			double delta = data.getUserSpot() - data.getItemSpot();
 			if (delta > 0)
 			{
 				pref = Math.min(pref * scale, delta);
@@ -104,8 +104,8 @@ public class UserItemPrefReducer extends
 			sb.append(" ");
 			sb.append(dim.toString());
 			sb.append(' ');
-			Float spot = itemSpots.get(itemID);
-			float bump = ratings.get(itemID).f;
+			Double spot = itemSpots.get(itemID);
+			double bump = ratings.get(itemID).f;
 			spot += (bump * scale)/divisor;
 			pinned++;
 			if (spot >= 1.0)
@@ -114,6 +114,8 @@ public class UserItemPrefReducer extends
 				spot = minUserSpot;
 			else
 				pinned--;
+			// XXX remove gravity
+			spot = itemSpots.get(itemID);
 			sb.append(spot.toString());
 			context.write(null, new Text(sb.toString()));
 			projections++;
@@ -132,7 +134,7 @@ public class UserItemPrefReducer extends
 		sb.append(" ");
 		sb.append(dim.toString());
 		sb.append(' ');
-		Float spot = data.getUserSpot();
+		Double spot = data.getUserSpot();
 		sb.append(spot.toString());
 		context.write(null, new Text(sb.toString()));
 	}
@@ -147,21 +149,21 @@ public class UserItemPrefReducer extends
 /*
  * reduce the object load from incrementing the ratings
  */
-class ChemicalFloat {
-	public float f;
+class ChemicalDouble {
+	public double f;
 	
-	ChemicalFloat() {
+	ChemicalDouble() {
 		f = 0.0f;
 	}
 	
 	@Override
 	public int hashCode() {
 		// TODO Auto-generated method stub
-		return ((Float) f).hashCode();
+		return ((Double) f).hashCode();
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		return ((Float) f).equals(((ChemicalFloat)o).f);
+		return ((Double) f).equals(((ChemicalDouble)o).f);
 	}
 }

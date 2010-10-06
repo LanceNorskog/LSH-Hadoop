@@ -35,59 +35,62 @@ import lsh.hadoop.LSHDriver;
  */
 
 public class UserItemPrefMapper extends
-    Mapper<LongWritable,Text, LongWritable,TupleWritable> {
-	
-  public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
+Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 
-  private static final Pattern DELIMITER = Pattern.compile("::");
+	public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
 
-  private boolean booleanData;
-  private boolean transpose;
-  private boolean itemKey = false;
-  private int dimension = -1;
-  
-  Random[] dimensionRandom;
+	private static final Pattern DELIMITER = Pattern.compile("::");
 
-//  DimMapper(boolean itemKey) {
-//    this.itemKey = itemKey;
-//  }
+	private boolean booleanData;
+	private boolean transpose;
+	private boolean itemKey = false;
+	private int dimension = -1;
 
-  @Override
-  protected void setup(Context context) {
-    Configuration jobConf = context.getConfiguration();
-    booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
-    transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
-	String d = jobConf.get(LSHDriver.DIMENSION);
-	if (null == d)
-		dimension = 2;
-	else
-		dimension = Integer.parseInt(d);
-    dimensionRandom = new Random[dimension];
-    for(int dim = 0; dim < dimension; dim++)
-    	dimensionRandom[dim] = new Random(dim);
-  }
+	Random[] userRandom;
+	Random[] itemRandom;
+	double[] invertPyramid;
 
-  @Override
-  public void map(LongWritable key,
-                  Text value,
-                  Context context) throws IOException, InterruptedException {
-    String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
-    long userID = Long.parseLong(tokens[0]);
-    long itemID = Long.parseLong(tokens[1]);
-    if (itemKey ^ transpose) {
-      // If using items as keys, and not transposing items and users, then users are items!
-      // Or if not using items as keys (users are, as usual), but transposing items and users,
-      // then users are items! Confused?
-      long temp = userID;
-      userID = itemID;
-      itemID = temp;
-    }
-    for(int dim = 0; dim < dimension; dim++) {
-		float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
-    	TupleWritable valueout = new TupleWritable(userID, itemID, 
-    			dimensionRandom[dim].nextFloat(), dimensionRandom[dim].nextFloat(), prefValue);	
-    	context.write(new LongWritable(dim), valueout);
-    }
-  }
+	@Override
+	protected void setup(Context context) {
+		Configuration jobConf = context.getConfiguration();
+		booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
+		transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
+		String d = jobConf.get(LSHDriver.DIMENSION);
+		if (null == d)
+			dimension = 2;
+		else
+			dimension = Integer.parseInt(d);
+		userRandom = new Random[dimension];
+		for(int dim = 0; dim < dimension; dim++)
+			userRandom[dim] = new Random(dim - 100);
+		itemRandom = new Random[dimension];
+		for(int dim = 0; dim < dimension; dim++)
+			itemRandom[dim] = new Random(1-dim - 100);
+		invertPyramid = new double[dimension];
+
+	}
+
+	@Override
+	public void map(LongWritable key,
+			Text value,
+			Context context) throws IOException, InterruptedException {
+		String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
+		long userID = Long.parseLong(tokens[0]);
+		long itemID = Long.parseLong(tokens[1]);
+		if (itemKey ^ transpose) {
+			// If using items as keys, and not transposing items and users, then users are items!
+			// Or if not using items as keys (users are, as usual), but transposing items and users,
+			// then users are items! Confused?
+			long temp = userID;
+			userID = itemID;
+			itemID = temp;
+		}
+		for(int dim = 0; dim < dimension; dim++) {
+			float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
+			TupleWritable valueout = new TupleWritable(userID, itemID, 
+					userRandom[dim].nextDouble(), itemRandom[dim].nextDouble(), prefValue);	
+			context.write(new LongWritable(dim), valueout);
+		}
+	}
 
 }
