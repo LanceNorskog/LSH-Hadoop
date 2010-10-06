@@ -166,7 +166,7 @@ public class PointTextDataModel extends AbstractDataModel {
 		if (d < 0.1d || d > 0.9d) {
 			this.hashCode();
 		}
-		d = invert(d, Math.sqrt(dimensions));
+		d = invert(d, 2*dimensions);
 		double e;
 		e = (1-d);
 		e = e * scale;
