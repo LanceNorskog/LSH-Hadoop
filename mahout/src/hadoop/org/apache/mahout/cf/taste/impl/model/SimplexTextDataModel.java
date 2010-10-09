@@ -72,7 +72,6 @@ public class SimplexTextDataModel extends AbstractDataModel {
 			varianceHash = 1.0;
 			double dist = euclidD(unit, projected);
 			varianceHash = 1.0 / dist;
-			System.out.println("Variance: " + varianceHash);
 		} else
 			varianceHash = Double.NaN;
 
@@ -85,7 +84,6 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		varianceManhattan = 1.0;
 		double dist = manhattanD(zero, unit);
 		varianceManhattan = 1/dist;
-		System.out.println("Variance: " + varianceManhattan);
 
 		diagonal = 1/Math.sqrt(dimension);
 	}
@@ -126,7 +124,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	@Override
 	public Float getPreferenceValue(long userID, long itemID)
 	throws TasteException {
-		return getPreferenceValuePoint(userID, itemID);
+		return getPreferenceValueCorner(userID, itemID);
 	}
 
 	private Float getPreferenceValueCorner(long userID, long itemID)
@@ -135,7 +133,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		int[] hashUser = hasher.hash(userP.values);
 		Point itemP = itemDB.id2point.get((itemID) + "");
 		int[] hashItem = hasher.hash(itemP.values);
-		double distance = euclid(hashUser, hashItem);
+		double distance = manhattan(hashUser, hashItem);
 		return (float) distance2rating(distance);
 	}
 
@@ -178,7 +176,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		for(Corner c: all) {
 			Set<String> items = itemDB.corner2ids.get(c);
 			if (null != items) {
-				float dist = (float) distance2rating(euclid(main.hashes, c.hashes));
+				float dist = (float) distance2rating(manhattan(main.hashes, c.hashes));
 				for(String itemID: items) {
 					prefs.setUserID(prefIndex, userID);
 					prefs.setItemID(prefIndex, Long.parseLong(itemID));
@@ -211,13 +209,13 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	}
 
 	//	??? hash distance. really f'ud
-	//	double manhattan(int[] a, int[] b) {
-	//		float sum = 0;
-	//		for(int i = 0; i < a.length; i++) {
-	//			sum += Math.abs(a[i] - b[i]);
-	//		}
-	//		return (sum / a.length) * varianceManhattan;
-	//	}
+		double manhattan(int[] a, int[] b) {
+			float sum = 0;
+			for(int i = 0; i < a.length; i++) {
+				sum += Math.abs(a[i] - b[i]);
+			}
+			return (sum / a.length) * varianceManhattan;
+		}
 
 	double manhattanD(double[] a, double[] b) {
 		double sum = 0;
@@ -228,13 +226,13 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	}
 
 	// hash distance - not correct!
-	double euclid(int[] a, int[] b) {
-		double sum = 0.0;
-		for(int i = 0; i < a.length; i++) {
-			sum += (a[i] - b[i]) * (a[i] - b[i]);
-		}			
-		return Math.sqrt(sum) * varianceHash;
-	}
+//	double euclid(int[] a, int[] b) {
+//		double sum = 0.0;
+//		for(int i = 0; i < a.length; i++) {
+//			sum += (a[i] - b[i]) * (a[i] - b[i]);
+//		}			
+//		return Math.sqrt(sum) * varianceHash;
+//	}
 
 	// rectangular distance
 	double euclidD(double[] a, double[] b) {
@@ -249,6 +247,26 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		double e = (1-d) * scale + offset;
 		return e;
 	}
+	
+	/*
+	double distance2rating(double d) {
+		double spread = 2.5;
+		if (d < 0.1d || d > 0.9d) {
+			this.hashCode();
+		}
+//		d = invert(d, 2*dimensions);
+		double e;
+		double expand = scale * spread;
+		e = (1-d);
+		e = e * expand;
+		e = e - Math.sqrt(expand / spread);
+		e = Math.max(0, e);
+		e = Math.min(scale, e);
+		e = e + offset;
+		return e;
+	}
+	*/
+
 
 	@Override
 	public LongPrimitiveIterator getUserIDs() throws TasteException {

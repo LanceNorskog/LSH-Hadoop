@@ -59,16 +59,27 @@ public class RateAllItems {
 		DataModel pointModel = new PointTextDataModel(args[2]);
 		Recommender recco;
 //		recco = doReccoGL(pointModel);
+		recco = doSimplexDataModel(args[1]);
+		DataModel simplexModel = recco.getDataModel();
 		recco = doReccoSlope1(glModel);
 		//		recco = doReccoKNN_LL_NegQO(glModel);
 		//		recco = doReccoGLSimplex(args);
 		//		recco = doReccoPearsonItem(glModel);
 
-		printDeltaRecommendations(pointModel, recco);
+		printDeltaRecommendations(simplexModel, recco, 20);
 //		printAvgPrefs(pointModel);
 //		printMinMaxPrefs(pointModel, 5);
 //		printMinMaxReccomendations(recco);
 //		printSumPrefs(pointModel, 0);
+	}
+
+	private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+		Properties props = new Properties();
+		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
+		props.setProperty(LSHDriver.DIMENSION, "100");
+		props.setProperty(LSHDriver.GRIDSIZE, "1.0");
+		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
+		return rec;
 	}
 
 	private static Recommender doReccoPearsonItem(DataModel glModel)
@@ -106,7 +117,7 @@ public class RateAllItems {
 	}
 
 	// for pref the model has, get the recommendation
-	private static void printDeltaRecommendations(DataModel model, Recommender recco)
+	private static void printDeltaRecommendations(DataModel model, Recommender recco, int count)
 	throws TasteException {
 		System.out.println("user,item,count,recco,model,delta,scaledelta");
 		LongPrimitiveIterator items = model.getItemIDs();
@@ -118,7 +129,6 @@ public class RateAllItems {
 				if (null == iDs)
 					prefsI.hashCode();
 				int nprefs = iDs.length;
-				int count = 15;
 				LongPrimitiveIterator users = model.getUserIDs();
 				while (users.hasNext()) {
 					long userID = users.nextLong();

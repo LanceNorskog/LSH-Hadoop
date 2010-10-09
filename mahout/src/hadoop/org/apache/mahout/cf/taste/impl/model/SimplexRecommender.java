@@ -104,11 +104,11 @@ public class SimplexRecommender implements Recommender {
 
 	private void getRecommendationsHash(int howMany, List<RecommendedItem> recs,
 			Corner main, Corner c) {
-		((Object) null).hashCode();
+//		((Object) null).hashCode();
 		Set<String> ids = model.itemDB.corner2ids.get(c);
 		if (null != ids) {
 			for(String id: ids) {
-				float rating = (float) (model.distance2rating(model.euclid(main.hashes, c.hashes)));
+				float rating = (float) (model.distance2rating(model.manhattan(main.hashes, c.hashes)));
 				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), rating);
 				int j = 0;
 				for(; j < recs.size(); j++) {
@@ -132,7 +132,7 @@ public class SimplexRecommender implements Recommender {
 		Set<String> ids = model.itemDB.corner2ids.get(c);
 		if (null != ids) {
 			for(String id: ids) {
-				float rating = (float) (model.distance2rating(model.euclid(main.hashes, c.hashes)));
+				float rating = (float) (model.distance2rating(model.manhattan(main.hashes, c.hashes)));
 				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), rating);
 				int j = 0;
 				for(; j < recs.size(); j++) {
@@ -198,7 +198,7 @@ public class SimplexRecommender implements Recommender {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "100");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.60");
+		props.setProperty(LSHDriver.GRIDSIZE, "1.0");
 		SimplexRecommender rec = new SimplexRecommender(props, args[0]);
 		//		LongPrimitiveIterator lpi = model.getUserIDs();
 		//		System.out.println("User IDs:");
