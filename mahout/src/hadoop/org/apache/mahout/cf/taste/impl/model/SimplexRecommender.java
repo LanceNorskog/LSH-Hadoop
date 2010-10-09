@@ -36,11 +36,11 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  * @author lance
  *
  */
-public class GLSimplexRecommender implements Recommender {
+public class SimplexRecommender implements Recommender {
 	List<RecommendedItem> NORECS = Collections.emptyList();
 	final SimplexTextDataModel model;
 
-	public GLSimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+	public SimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		model = createDataModel(props, dataFile);
 	}
 
@@ -94,9 +94,8 @@ public class GLSimplexRecommender implements Recommender {
 			return NORECS;
 		int[] hashes = model.hasher.hash(p.values);
 		Corner main = new Corner(hashes);
-		getRecommendations(howMany, recs, main, main);
+//		getRecommendations(howMany, recs, main, main);
 		Set<Corner> all = model.cg.getHashSet(p);
-		// usePoints(howMany, recs, p, c);
 		for(Corner c: all) {
 			getRecommendationsHash(howMany, recs, main, c);
 		}
@@ -199,9 +198,8 @@ public class GLSimplexRecommender implements Recommender {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "100");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.6");
-		String file = args.length > 0 ? args[0] : "/tmp/lsh_hadoop/short.csv";
-		GLSimplexRecommender rec = new GLSimplexRecommender(props, args[0]);
+		props.setProperty(LSHDriver.GRIDSIZE, "0.60");
+		SimplexRecommender rec = new SimplexRecommender(props, args[0]);
 		//		LongPrimitiveIterator lpi = model.getUserIDs();
 		//		System.out.println("User IDs:");
 		//		while (lpi.hasNext()) {

@@ -163,42 +163,22 @@ public class PointTextDataModel extends AbstractDataModel {
 	}
 
 	double distance2rating(double d) {
+		double spread = 2.5;
 		if (d < 0.1d || d > 0.9d) {
 			this.hashCode();
 		}
-		d = invert(d, 2*dimensions);
+//		d = invert(d, 2*dimensions);
 		double e;
+		double expand = scale * spread;
 		e = (1-d);
-		e = e * scale;
-//		e = e * 6;
-//		e = e - 12.4;
-//		e = Math.max(0, e);
-//		e = Math.min(4, e);
+		e = e * expand;
+		e = e - Math.sqrt(expand / spread);
+		e = Math.max(0, e);
+		e = Math.min(scale, e);
 		e = e + offset;
 		return e;
 	}
 	
-	
-	
-//	// invert pyramid effect of additive random values
-//	// point distances are compressed because the distances are N random numbers added
-//	void invertPyramid(double[] in, double[] out) {
-//		double sumIn = 0, sumOut = 0;
-//		for (int i = 0; i < dimensions; i++) {
-//			double r = in[i];
-//			sumIn += r;
-//			double inverted = invert(r);
-//			out[i] = inverted;
-//			total += inverted;
-//			sumOut += inverted;
-//			count++;
-//		}
-//		double avg = total / count;
-//		double avgIn = sumIn / dimensions;
-//		double avgOut = sumOut / dimensions;
-//		this.hashCode();
-//	}
-
 	/*
 	 * Correct the effects of adding N samples
 	 * Adding N samples makes the random distribution pyramidal - this flattens it.

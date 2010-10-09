@@ -11,7 +11,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 
 public class GLSimplexRecommenderBuilder implements RecommenderBuilder {
-	public static GLSimplexRecommender recommender = null;
+	public static SimplexRecommender recommender = null;
 	public static String HASHER = "lsh.core.VertexTransitiveHasher";
 	public static String DIMENSION = "100";
 	public static String GRIDSIZE = "0.55";
@@ -29,13 +29,13 @@ public class GLSimplexRecommenderBuilder implements RecommenderBuilder {
 	}
 
 
-	private static GLSimplexRecommender createSingleton(String fileName) {
+	private static SimplexRecommender createSingleton(String fileName) {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "100");
 		props.setProperty(LSHDriver.GRIDSIZE, "0.55");
 		try {
-			return new GLSimplexRecommender(props, fileName);
+			return new SimplexRecommender(props, fileName);
 		} catch (Exception e) {
 			return null;
 		}

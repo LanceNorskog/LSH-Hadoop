@@ -57,17 +57,18 @@ public class RateAllItems {
 	ClassNotFoundException {
 		DataModel glModel = new GroupLensDataModel(new File(args[0]));
 		DataModel pointModel = new PointTextDataModel(args[2]);
-//		Recommender recco;
+		Recommender recco;
 //		recco = doReccoGL(pointModel);
-//		recco = doReccoSlope1(pointModel);
+		recco = doReccoSlope1(glModel);
 		//		recco = doReccoKNN_LL_NegQO(glModel);
 		//		recco = doReccoGLSimplex(args);
 		//		recco = doReccoPearsonItem(glModel);
 
-//		printAllRecommendations(recco);
-		printAvgPrefs(pointModel);
-//		printMinMaxPrefs(pointModel);
+		printDeltaRecommendations(pointModel, recco);
+//		printAvgPrefs(pointModel);
+//		printMinMaxPrefs(pointModel, 5);
 //		printMinMaxReccomendations(recco);
+//		printSumPrefs(pointModel, 0);
 	}
 
 	private static Recommender doReccoPearsonItem(DataModel glModel)
@@ -104,7 +105,43 @@ public class RateAllItems {
 		return new SlopeOneRecommender(glModel);
 	}
 
-	private static void printAllRecommendations(Recommender recco)
+	// for pref the model has, get the recommendation
+	private static void printDeltaRecommendations(DataModel model, Recommender recco)
+	throws TasteException {
+		System.out.println("user,item,count,recco,model,delta,scaledelta");
+		LongPrimitiveIterator items = model.getItemIDs();
+		while (items.hasNext()) {
+			try {
+				long itemID = items.nextLong();
+				PreferenceArray prefsI = recco.getDataModel().getPreferencesForItem(itemID);
+				long[] iDs = prefsI.getIDs();
+				if (null == iDs)
+					prefsI.hashCode();
+				int nprefs = iDs.length;
+				int count = 15;
+				LongPrimitiveIterator users = model.getUserIDs();
+				while (users.hasNext()) {
+					long userID = users.nextLong();
+					Float pref = model.getPreferenceValue(userID, itemID);
+					if (null != pref && pref < 10000000.0) {
+						float rec = recco.estimatePreference(userID, itemID);
+						if (rec < 1000000.0) {
+							System.out.println(userID + "," + itemID + "," + nprefs + "," + rec + "," + pref
+									+ "," + (rec - pref)
+									+ "," + (((rec - pref) * Math.sqrt(nprefs))));
+							if (--count == 0)
+								break;
+						}
+					}
+				}
+			} catch (TasteException te) {
+				;
+			}
+		}
+		items.hashCode();
+	}
+
+	private static void printAvgRecommendations(Recommender recco)
 	throws TasteException {
 		System.out.println("item,count,stddev,mean");
 		DataModel model = recco.getDataModel();
@@ -118,8 +155,6 @@ public class RateAllItems {
 			LongPrimitiveIterator users = model.getUserIDs();
 			while (users.hasNext()) {
 				long userID = users.nextLong();
-				if ((rnd.nextInt() % 50) != 0)
-					continue;
 				float pref = recco.estimatePreference(userID, itemID);
 				if (pref != Float.NaN) {
 					sum += pref;
@@ -156,7 +191,7 @@ public class RateAllItems {
 		users.hashCode();
 	}
 
-	private static void printAvgPrefs(DataModel model)
+	private static void printAvgPrefs(DataModel model, int subsample)
 	throws TasteException {
 		System.out.println("item,count,stddev,mean");
 		LongPrimitiveIterator items = model.getItemIDs();
@@ -169,8 +204,9 @@ public class RateAllItems {
 			LongPrimitiveIterator users = model.getUserIDs();
 			while (users.hasNext()) {
 				long userID = users.nextLong();
-//				if ((rnd.nextInt() % 20) != 0)
-//					continue;
+				if (subsample > 0)
+					if ((rnd.nextInt() % subsample) != 0)
+						continue;
 
 				float pref = model.getPreferenceValue(userID, itemID);
 				if (pref != Float.NaN) {
@@ -190,11 +226,11 @@ public class RateAllItems {
 		items.hashCode();
 	}
 	
-	private static void printMinMaxPrefs(DataModel model)
+	private static void printMinMaxPrefs(DataModel model, int subsample)
 	throws TasteException {
 		System.out.println("item,min,max");
 		LongPrimitiveIterator items = model.getItemIDs();
-//		Random rnd = new Random();
+		Random rnd = new Random();
 		while (items.hasNext()) {
 //			StandardDeviation stddev = new StandardDeviation();
 			long itemID = items.nextLong();
@@ -203,8 +239,9 @@ public class RateAllItems {
 			LongPrimitiveIterator users = model.getUserIDs();
 			while (users.hasNext()) {
 				long userID = users.nextLong();
-//				if ((rnd.nextInt() % 20) != 0)
-//					continue;
+				if (subsample > 0)
+					if ((rnd.nextInt() % subsample) != 0)
+						continue;
 
 				float pref = model.getPreferenceValue(userID, itemID);
 				if (min > pref)
@@ -217,6 +254,27 @@ public class RateAllItems {
 		items.hashCode();
 	}
 
+	private static void printSumPrefs(DataModel model, int subsample)
+	throws TasteException {
+		LongPrimitiveIterator items = model.getItemIDs();
+		Random rnd = new Random();
+		while (items.hasNext()) {
+			long itemID = items.nextLong();
+			double sum = 0;
+			int count = 0;
+			LongPrimitiveIterator users = model.getUserIDs();
+			while (users.hasNext()) {
+				long userID = users.nextLong();
+				float pref = model.getPreferenceValue(userID, itemID);
+				if (pref != Float.NaN) {
+					sum += pref;
+					count++;
+				}
+			}
+		}
+		PointTextDataModel x = (PointTextDataModel) model;
+		System.out.println("Raw distances: " + (x.total /x.count));
+		items.hashCode();
+	}
 }
-
 

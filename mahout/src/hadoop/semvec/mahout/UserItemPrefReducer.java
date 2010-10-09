@@ -13,6 +13,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
+import sun.security.x509.DeltaCRLIndicatorExtension;
+
 /*
  * For a dimension, randomly project all users and items onto a line from 0 to 1.
  * For each user+preference, pull the item towards the user.
@@ -31,7 +33,7 @@ public class UserItemPrefReducer extends
 	// shift preferences from 1 to 5 -> -2 to 2.
 	public Double bias = -3.0;
 	// scaling for pref values
-	public Double scale = 0.5;
+	public Double scale = 1.0;
 	
 	public int projections = 0;
 	public int trims = 0;
@@ -39,6 +41,9 @@ public class UserItemPrefReducer extends
 	public int users = 0;
 	public int items = 0;
 	public int pinned = 0;
+
+	int nitems = 0;
+	double deltas = 0.0;
 
 	@Override
 	protected void setup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
@@ -55,7 +60,6 @@ public class UserItemPrefReducer extends
 			Reducer<LongWritable, TupleWritable, Text, Text>.Context context)
 			throws java.io.IOException, InterruptedException {
 		double tug = 0;
-		int nitems = 0;
 		Set<Long> users = new HashSet<Long>();
 		Map<Long,Double> itemSpots = new HashMap<Long,Double>();
 		Map<Long,ChemicalDouble> ratings = new HashMap<Long, ChemicalDouble>();
@@ -115,7 +119,9 @@ public class UserItemPrefReducer extends
 			else
 				pinned--;
 			// XXX remove gravity
-			spot = itemSpots.get(itemID);
+//			spot = itemSpots.get(itemID);
+			nitems++;
+			deltas += Math.abs(spot - itemSpots.get(itemID));
 			sb.append(spot.toString());
 			context.write(null, new Text(sb.toString()));
 			projections++;
@@ -141,7 +147,7 @@ public class UserItemPrefReducer extends
 	
 	@Override
 	protected void cleanup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
-		System.err.println("REPORT: # projections: " + projections + ", pinned: " + pinned);
+		System.err.println("REPORT: # projections: " + projections + ", pinned: " + pinned + ", avg delta: " + (deltas/nitems));
 	};
 	
 }

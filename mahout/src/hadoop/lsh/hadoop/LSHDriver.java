@@ -74,7 +74,10 @@ public class LSHDriver {
 		Job job = new Job();
 		Configuration conf = job.getConfiguration();
 		conf.addResource(new Path(siteFile));
-		File outputDir = new File(conf.get(OUT));
+		String pathname = conf.get(OUT);
+		if (null == pathname)
+			return;
+		File outputDir = new File(pathname);
 		rmdir(outputDir);
 		if (outputDir.exists())
 			throw new IOException("Cannot remove output dir: " + outputDir.toString());
