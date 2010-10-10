@@ -5,6 +5,7 @@ import lsh.core.CornerGen;
 import lsh.core.Hasher;
 import lsh.core.Lookup;
 import lsh.core.Point;
+import lsh.core.Utils;
 
 import java.io.File;
 import java.io.FileReader;
@@ -53,14 +54,15 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	public SimplexTextDataModel(String cornersFile, Hasher hasher, CornerGen cg) throws IOException {
 		this.hasher = hasher;
 		this.cg = cg;
-		userDB = new Lookup(null, true, !doPoints, true, true, false, false);
-		itemDB = new Lookup(null, true, !doPoints, true, true, false, false);
+		userDB = new Lookup(null, doPoints, !doPoints, false, false, false, false);
+		itemDB = new Lookup(null, doPoints, !doPoints, false, false, false, false);
 		Reader f;
 		f = new FileReader(new File(cornersFile));
-		itemDB.loadCP(f, "I");
-		f.close();
-		f = new FileReader(new File(cornersFile));
-		userDB.loadCP(f, "U");
+//		itemDB.loadCP(f, "I");
+//		f.close();
+//		f = new FileReader(new File(cornersFile));
+//		userDB.loadCP(f, "U");
+		Utils.load_corner_points_format(f, "I", itemDB, "U", userDB);
 		f.close();
 		int dimension = cg.stretch.length;
 		if (null != hasher) {
@@ -81,16 +83,23 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		double[] unit = new double[dimension];
 		for(int i = 0; i < unit.length; i++)
 			unit[i] = 1.0;
-		varianceManhattan = 1.0;
+		varianceHash = 1.0;
+		int[] zeroHash = hasher.hash(zero);
+		int[] unitHash = hasher.hash(unit);
+//		varianceHash = 1/(Math.sqrt(manhattan(zeroHash, unitHash))*1.5);
+		varianceHash = manhattan(zeroHash,unitHash);
+		varianceHash = Math.sqrt(2)/varianceHash;
 		double dist = manhattanD(zero, unit);
 		varianceManhattan = 1/dist;
+		varianceManhattan = 1.0/dimension;
+
 
 		diagonal = 1/Math.sqrt(dimension);
 	}
 
 	@Override
 	public LongPrimitiveIterator getItemIDs() throws TasteException {
-		return new LPI(itemDB.ids.iterator());
+		return new LPI(itemDB.id2corner.keySet().iterator());
 	}
 
 	@Override
@@ -101,12 +110,12 @@ public class SimplexTextDataModel extends AbstractDataModel {
 
 	@Override
 	public int getNumItems() throws TasteException {
-		return itemDB.ids.size();
+		return itemDB.id2corner.keySet().size();
 	}
 
 	@Override
 	public int getNumUsers() throws TasteException {
-		return userDB.ids.size();
+		return userDB.id2corner.keySet().size();
 	}
 
 	@Override
@@ -124,16 +133,21 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	@Override
 	public Float getPreferenceValue(long userID, long itemID)
 	throws TasteException {
-		return getPreferenceValueCorner(userID, itemID);
+		return doPoints ? getPreferenceValuePoint(userID, itemID) : getPreferenceValueCorner(userID, itemID);
 	}
 
 	private Float getPreferenceValueCorner(long userID, long itemID)
 	throws TasteException {
-		Point userP = userDB.id2point.get((userID) + "");
-		int[] hashUser = hasher.hash(userP.values);
-		Point itemP = itemDB.id2point.get((itemID) + "");
-		int[] hashItem = hasher.hash(itemP.values);
-		double distance = manhattan(hashUser, hashItem);
+//		Point userP = userDB.id2point.get((userID) + "");
+//		int[] hashUser = hasher.hash(userP.values);
+//		Point itemP = itemDB.id2point.get((itemID) + "");
+//		int[] hashItem = hasher.hash(itemP.values);
+//		double man = manhattanD(userP.values, itemP.values);
+//		double distance = manhattan(hashUser, hashItem);
+//		return (float) distance2rating(man);
+		Corner user = userDB.id2corner.get(userID + "");
+		Corner item = itemDB.id2corner.get(itemID + "");
+		double distance = manhattan(user.hashes, item.hashes);
 		return (float) distance2rating(distance);
 	}
 
@@ -153,11 +167,12 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	@Override
 	public PreferenceArray getPreferencesFromUser(long userID)
 	throws TasteException {
-		return getPreferencesFromUserPoint(userID);
+		return doPoints ? getPreferencesFromUserPoint(userID) : getPreferencesFromUserCorner(userID);
 	}
 
 	private PreferenceArray getPreferencesFromUserCorner(long userID)
 	throws NoSuchUserException {
+		// XX use id2corner
 		int prefIndex = 0;
 		Point p = userDB.id2point.get((userID) + "");
 		if (null == p)
@@ -209,20 +224,20 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	}
 
 	//	??? hash distance. really f'ud
-		double manhattan(int[] a, int[] b) {
-			float sum = 0;
-			for(int i = 0; i < a.length; i++) {
-				sum += Math.abs(a[i] - b[i]);
-			}
-			return (sum / a.length) * varianceManhattan;
+	double manhattan(int[] a, int[] b) {
+		double sum = 0;
+		for(int i = 0; i < a.length; i++) {
+			sum += Math.abs(a[i] - b[i]);
 		}
+		return sum * varianceHash;
+	}
 
 	double manhattanD(double[] a, double[] b) {
 		double sum = 0;
 		for(int i = 0; i < a.length; i++) {
 			sum += Math.abs(a[i] - b[i]);
 		}
-		return sum * varianceManhattan;
+		return sum * Math.sqrt(2) * varianceManhattan;
 	}
 
 	// hash distance - not correct!
@@ -244,6 +259,10 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	}
 
 	double distance2rating(double d) {
+		if (d < 0)
+			d = 0.0;
+		if (d > 1) 
+			d = 1.0;
 		double e = (1-d) * scale + offset;
 		return e;
 	}
@@ -270,7 +289,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 
 	@Override
 	public LongPrimitiveIterator getUserIDs() throws TasteException {
-		return new LPI(userDB.ids.iterator());
+		return new LPI(userDB.id2corner.keySet().iterator());
 	}
 
 	@Override
@@ -303,7 +322,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		SimplexTextDataModel model = new SimplexTextDataModel("/tmp/lsh_hadoop/GL_corners_100k/part-r-00000", null, null);
+		SimplexTextDataModel model = new SimplexTextDataModel("/tmp/lsh_hadoop/shortU.txt", null, null);
 		model.hashCode();
 	}
 

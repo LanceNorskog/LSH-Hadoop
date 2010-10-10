@@ -19,9 +19,7 @@ public class Utils {
 	// all structures are optional
 	// slower than could be but uses hashed everything
 
-	static public void load_corner_points_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, 
-			Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners, 
-			String payload) throws IOException {
+	static public void load_corner_points_format(Reader r, String payload1, Lookup l1, String payload2, Lookup l2) throws IOException {
 		BufferedReader lnr = new BufferedReader(r);
 		String line;
 		int lines = 0;
@@ -33,14 +31,17 @@ public class Utils {
 				pipes = parts[1].split("\\|");
 			String id = parts[0];
 			Corner corner = Corner.newCorner(id);
-			if (null != corners)
-				corners.add(corner);
+			if (null != l1.corners)
+				l1.corners.add(corner);
+			if (null != l2 && null != l2.corners)
+				l2.corners.add(corner);
 			for(int i = 0; i < pipes.length; i++) {
-				Point point = Point.newPoint(pipes[i]);
-				if (null == payload || (null != point.payload) && payload.equals(point.payload)) {
-					addPair(ids, points, corners, id2point, corner2ids, corner2points, point2corners, corner, point);
-				} else {
-					payload.hashCode();
+				Point p = Point.newPoint(pipes[i]);
+				if (p.payload.equals(payload1)) {
+					addPair(l1.ids, l1.points, l1.corners, l1.id2point, l1.id2corner, l1.corner2ids, l1.corner2points, l1.point2corners, corner, p);
+				}
+				if (null != payload2 && p.payload.equals(payload2)) {
+					addPair(l2.ids, l2.points, l2.corners, l2.id2point, l2.id2corner, l2.corner2ids, l2.corner2points, l2.point2corners, corner, p);
 				}
 			}
 			lines++;
@@ -53,9 +54,7 @@ public class Utils {
 	// all structures are optional
 	// slower than could be but uses hashed everything
 
-	static public void load_point_corners_format(Reader r, Set<Point> points, Set<Corner> corners, Set<String> ids, 
-			Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points, Map<Point, Set<Corner>> point2corners, 
-			String payload) throws IOException {
+	static public void load_point_corners_format(Reader r, String payload1, Lookup l1, String payload2, Lookup l2) throws IOException {
 		//		LineNumberReader lnr = new LineNumberReader(r);
 		BufferedReader lnr = new BufferedReader(r);
 
@@ -64,16 +63,18 @@ public class Utils {
 			String parts[] = line.split("[ \t]");
 			String[] pipes = parts[1].split("\\|");
 			Point point = Point.newPoint(parts[0]);
-			if (null != payload ) { 
-				if (null == point.payload || !payload.equals(point.payload)) {
-					payload.hashCode();
-					continue;
+			if (!payload1.equals(point.payload)) {
+				addPoint(l1.ids, l1.points, l1.id2point, point);
+				for(int i = 0; i < pipes.length; i++) {
+					Corner corner = Corner.newCorner(pipes[i]);
+					addPair(l1.ids, l1.points, l1.corners, l1.id2point, l1.id2corner, l1.corner2ids, l1.corner2points, l1.point2corners, corner, point);
 				}
-			}
-			addPoint(ids, points, id2point, point);
-			for(int i = 0; i < pipes.length; i++) {
-				Corner corner = Corner.newCorner(pipes[i]);
-				addPair(ids, points, corners, id2point, corner2ids, corner2points, point2corners, corner, point);
+			} else if (payload2.equals(point.payload)) {
+				addPoint(l2.ids, l2.points, l2.id2point, point);
+				for(int i = 0; i < pipes.length; i++) {
+					Corner corner = Corner.newCorner(pipes[i]);
+					addPair(l2.ids, l2.points, l2.corners, l2.id2point, l2.id2corner, l2.corner2ids, l2.corner2points, l2.point2corners, corner, point);
+				}
 			}
 		}		
 	}
@@ -99,7 +100,7 @@ public class Utils {
 	}
 
 	static public void addPair(Set<String> ids, Set<Point> points, Set<Corner> corners, 
-			Map<String, Point> id2point, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points,
+			Map<String, Point> id2point, Map<String, Corner> id2corner, Map<Corner, Set<String>> corner2ids, Map<Corner, Set<Point>> corner2points,
 			Map<Point, Set<Corner>> point2corners, Corner corner, Point point) {
 		if (null != ids)
 			ids.add(point.id);
@@ -109,6 +110,8 @@ public class Utils {
 			corners.add(corner);
 		if (null != id2point)
 			id2point.put(point.id, point);
+		if (null != id2corner) 
+			id2corner.put(point.id, corner);
 		if (null != corner2ids) {
 			Set<String> bag = corner2ids.get(corner);
 			if (null == bag) {
@@ -143,6 +146,12 @@ public class Utils {
 			points.add(point);
 		if (null != id2point)
 			id2point.put(point.id, point);
+	}
+
+	public static void load_corner(Reader r, Set<Point> points,
+			Set<String> ids, Map<String, Corner> id2corner, String payload) {
+		
+		
 	}
 
 }

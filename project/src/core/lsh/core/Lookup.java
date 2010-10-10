@@ -23,6 +23,7 @@ public class Lookup {
 	final public Set<Corner> corners;
 	final public Set<String> ids;
 	final public Map<String,Point> id2point;
+	final public Map<String,Corner> id2corner;
 	final public Map<Corner,Set<String>> corner2ids;
 	final public Map<Corner, Set<Point>> corner2points;
 	final public HashMap<Point, Set<Corner>> point2corners;
@@ -32,7 +33,8 @@ public class Lookup {
 		points = doPoints ? new HashSet<Point>() : null;
 		corners = doCorners ? new HashSet<Corner>() : null;
 		id2point = doId2point ? new HashMap<String,Point>() : null;
-		boolean doCorner2Ids = true;
+		id2corner = new HashMap<String,Corner>();
+		boolean doCorner2Ids = false;
 		corner2ids = doCorner2Ids ? new HashMap<Corner,Set<String>>() : null;
 		ids = doIds ? new HashSet<String>() : null;
 		corner2points = doCorner2points ? new HashMap<Corner, Set<Point>>() : null;
@@ -40,15 +42,19 @@ public class Lookup {
 	}
 
 	public void loadCP(Reader r, String payload) throws IOException {
-		Utils.load_corner_points_format(r, points, corners, ids, id2point, corner2ids, corner2points, point2corners, payload);
+		Utils.load_corner_points_format(r, payload, this, null, null);
 	}
 
 	public void loadPC(Reader r, String payload) throws IOException {
-		Utils.load_point_corners_format(r, points, corners, ids, id2point, corner2ids, corner2points, point2corners, payload);
+		Utils.load_point_corners_format(r, payload, this, null, null);
 	}
 
 	public void loadPoints(Reader r, String payload) throws IOException {
 		Utils.load_point(r, points, ids, id2point, payload);
+	}
+
+	public void loadCorners(Reader r, String payload) throws IOException {
+		Utils.load_corner(r, points, ids, id2corner, payload);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {

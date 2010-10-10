@@ -56,7 +56,7 @@ public class RateAllItems {
 	InstantiationException, IllegalAccessException,
 	ClassNotFoundException {
 		DataModel glModel = new GroupLensDataModel(new File(args[0]));
-		DataModel pointModel = new PointTextDataModel(args[2]);
+//		DataModel pointModel = new PointTextDataModel(args[2]);
 		Recommender recco;
 //		recco = doReccoGL(pointModel);
 		recco = doSimplexDataModel(args[1]);
@@ -66,7 +66,7 @@ public class RateAllItems {
 		//		recco = doReccoGLSimplex(args);
 		//		recco = doReccoPearsonItem(glModel);
 
-		printDeltaRecommendations(simplexModel, recco, 20);
+		printEaseOfRecommendations(simplexModel, recco);
 //		printAvgPrefs(pointModel);
 //		printMinMaxPrefs(pointModel, 5);
 //		printMinMaxReccomendations(recco);
@@ -77,7 +77,7 @@ public class RateAllItems {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "100");
-		props.setProperty(LSHDriver.GRIDSIZE, "1.0");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.51");
 		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
 		return rec;
 	}
@@ -128,18 +128,24 @@ public class RateAllItems {
 				long[] iDs = prefsI.getIDs();
 				if (null == iDs)
 					prefsI.hashCode();
-				int nprefs = iDs.length;
+				int iprefs = iDs.length;
 				LongPrimitiveIterator users = model.getUserIDs();
+				int cutoff = count;
 				while (users.hasNext()) {
 					long userID = users.nextLong();
+					PreferenceArray prefsU = recco.getDataModel().getPreferencesForItem(itemID);
+					long[] uDs = prefsU.getIDs();
+					if (null == iDs)
+						prefsU.hashCode();
+					int uprefs = uDs.length;
 					Float pref = model.getPreferenceValue(userID, itemID);
 					if (null != pref && pref < 10000000.0) {
 						float rec = recco.estimatePreference(userID, itemID);
 						if (rec < 1000000.0) {
-							System.out.println(userID + "," + itemID + "," + nprefs + "," + rec + "," + pref
+							System.out.println(userID + "," + itemID + "," + uprefs + "," + rec + "," + pref
 									+ "," + (rec - pref)
-									+ "," + (((rec - pref) * Math.sqrt(nprefs))));
-							if (--count == 0)
+									+ "," + (((rec - pref) * Math.sqrt(iprefs))));
+							if (--cutoff == 0)
 								break;
 						}
 					}
@@ -149,6 +155,47 @@ public class RateAllItems {
 			}
 		}
 		items.hashCode();
+	}
+
+	// How easy is it to recommend to this user? stddev of recs for user from recommender and model
+	private static void printEaseOfRecommendations(DataModel model, Recommender recco)
+	throws TasteException {
+		System.out.println("user,count,recco,model");
+		LongPrimitiveIterator users = model.getUserIDs();
+		while (users.hasNext()) {
+			try {
+				long userID = users.nextLong();
+				PreferenceArray prefsU = recco.getDataModel().getPreferencesFromUser(userID);
+				long[] uIDs = prefsU.getIDs();
+				if (null == uIDs)
+					prefsU.hashCode();
+				int uprefs = uIDs.length;
+				LongPrimitiveIterator items = model.getItemIDs();
+				StandardDeviation stdR = new StandardDeviation();
+				StandardDeviation stdM = new StandardDeviation();
+				int count = 0;
+				while (items.hasNext()) {
+					long itemID = items.nextLong();
+					PreferenceArray prefsI = recco.getDataModel().getPreferencesForItem(itemID);
+					long[] iIDs = prefsI.getIDs();
+					if (null == iIDs)
+						prefsI.hashCode();
+					Float pref = model.getPreferenceValue(userID, itemID);
+					if (null != pref && pref < 10000000.0) {
+						float rec = recco.estimatePreference(userID, itemID);
+						if (rec < 1000000.0) {
+							count++;
+							stdR.increment(rec);
+							stdM.increment(pref);
+						}
+					}
+				}
+				System.out.println(userID + "," + uprefs + "," + stdR.getResult() + "," + stdM.getResult());
+			} catch (TasteException te) {
+				;
+			}
+		}
+		users.hashCode();
 	}
 
 	private static void printAvgRecommendations(Recommender recco)

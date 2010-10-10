@@ -6,24 +6,24 @@
 	<classpathentry kind="src" path="src/solr"/>
 	<classpathentry kind="src" path="src/mahout"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/junit-3.8.1.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-cli-1.2.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-codec-1.3.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-el-1.0.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-httpclient-3.0.1.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-logging-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-logging-api-1.0.4.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-net-1.4.1.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-api-1.4.3.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-log4j12-1.4.3.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/commons-codec-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/commons-httpclient-3.1.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/commons-io-1.4.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/geronimo-stax-api_1.0_spec-1.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/jcl-over-slf4j-1.5.5.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/slf4j-api-1.5.5.jar"/>
-	<classpathentry kind="lib" path="lib/solrj-lib/wstx-asl-3.2.7.jar"/>
-	<classpathentry kind="lib" path="lib/apache-solr-solrj-1.4.2-dev.jar"/>
-	<classpathentry kind="lib" path="C:/cygwin/home/work/open/unified/lucene-solr/lucene/build/contrib/spatial/lucene-spatial-4.0-dev.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/junit-3.8.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-cli-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-codec-1.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-el-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-httpclient-3.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-logging-1.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-logging-api-1.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/commons-net-1.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-api-1.4.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/slf4j-log4j12-1.4.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/commons-codec-1.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/commons-httpclient-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/commons-io-1.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/geronimo-stax-api_1.0_spec-1.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/jcl-over-slf4j-1.5.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/slf4j-api-1.5.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/solrj-lib/wstx-asl-3.2.7.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/apache-solr-solrj-1.4.2-dev.jar"/>
+	<classpathentry exported="true" kind="lib" path="C:/cygwin/home/work/open/unified/lucene-solr/lucene/build/contrib/spatial/lucene-spatial-4.0-dev.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
