@@ -200,7 +200,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 				prefIndex++;
 			}
 		}
-		prefs.sortByItem();
+		prefs.sortByValueReversed();
 		return prefs;
 	}
 

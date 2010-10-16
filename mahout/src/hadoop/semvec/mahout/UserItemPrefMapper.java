@@ -46,6 +46,7 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 	private boolean itemKey = false;
 	private int dimension = -1;
 
+	Random seedbase = new Random();
 	Random[] userRandom;
 	Random[] itemRandom;
 	double[] invertPyramid;
@@ -56,16 +57,21 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 		booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
 		transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
 		String d = jobConf.get(LSHDriver.DIMENSION);
+		String r = jobConf.get(LSHDriver.RANDOMSEED);
+		Random seedbase = new Random();
 		if (null == d)
 			dimension = 2;
 		else
 			dimension = Integer.parseInt(d);
+		if (null != r) {
+			seedbase = new Random(Integer.parseInt(r));
+		}
 		userRandom = new Random[dimension];
 		for(int dim = 0; dim < dimension; dim++)
-			userRandom[dim] = new Random(dim - 100);
+			userRandom[dim] = new Random(seedbase.nextLong());
 		itemRandom = new Random[dimension];
 		for(int dim = 0; dim < dimension; dim++)
-			itemRandom[dim] = new Random(1-dim - 100);
+			itemRandom[dim] = new Random(seedbase.nextLong());
 		invertPyramid = new double[dimension];
 
 	}
@@ -88,9 +94,27 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 		for(int dim = 0; dim < dimension; dim++) {
 			float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
 			TupleWritable valueout = new TupleWritable(userID, itemID, 
-					userRandom[dim].nextDouble(), itemRandom[dim].nextDouble(), prefValue);	
+					normal(userRandom[dim]), normal(itemRandom[dim]), prefValue);	
 			context.write(new LongWritable(dim), valueout);
 		}
 	}
 
+	/*
+	 * Random distributions:
+	 * Since distance calculations drive the outputs to a normal distribution,
+	 * it is better to start with a normal distribution in the first place.
+	 */
+	private double uniform(Random source) {
+		return source.nextDouble();
+	}
+
+	private double normal(Random source) {
+		double sum = 0;
+		for(int i = 0; i < 6; i++)
+			sum += source.nextDouble();
+		sum = sum / 6.0001;
+		return sum;
+	}
+
+	
 }

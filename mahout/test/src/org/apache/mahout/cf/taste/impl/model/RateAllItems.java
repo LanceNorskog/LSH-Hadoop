@@ -5,6 +5,7 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -55,22 +56,35 @@ public class RateAllItems {
 	public static void main(String[] args) throws IOException, TasteException,
 	InstantiationException, IllegalAccessException,
 	ClassNotFoundException {
-		DataModel glModel = new GroupLensDataModel(new File(args[0]));
-//		DataModel pointModel = new PointTextDataModel(args[2]);
+		doPointModel(args);
+//		doSimplexModel(args);
+
+	}
+
+	private static void doSimplexModel(String[] args)
+			throws InstantiationException, IllegalAccessException,
+			ClassNotFoundException, IOException, TasteException {
 		Recommender recco;
-//		recco = doReccoGL(pointModel);
 		recco = doSimplexDataModel(args[1]);
-		DataModel simplexModel = recco.getDataModel();
+		SimplexTextDataModel simplexModel = (SimplexTextDataModel) recco.getDataModel();
+		printEaseOfRecommendations(simplexModel, recco);
+	}
+
+	private static void doPointModel(String[] args) throws IOException,
+			TasteException {
+		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
+		PointTextDataModel pointModel = new PointTextDataModel(args[2]);
+		Recommender recco;
 		recco = doReccoSlope1(glModel);
 		//		recco = doReccoKNN_LL_NegQO(glModel);
 		//		recco = doReccoGLSimplex(args);
 		//		recco = doReccoPearsonItem(glModel);
 
-		printEaseOfRecommendations(simplexModel, recco);
-//		printAvgPrefs(pointModel);
-//		printMinMaxPrefs(pointModel, 5);
-//		printMinMaxReccomendations(recco);
-//		printSumPrefs(pointModel, 0);
+		printDeltaRecommendations(pointModel, recco, 10);
+		printAvgPrefs(pointModel, 0);
+		printMinMaxPrefs(pointModel, 5);
+		printMinMaxReccomendations(recco);
+		printSumPrefs(pointModel, 0);
 	}
 
 	private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
@@ -116,10 +130,14 @@ public class RateAllItems {
 		return new SlopeOneRecommender(glModel);
 	}
 
-	// for pref the model has, get the recommendation
+	/*
+	 * 	For each pref the model has, get the recommendation
+	 * 		Uses: test recommender
+	 * 			Test recommender against other model.
+	 */
 	private static void printDeltaRecommendations(DataModel model, Recommender recco, int count)
 	throws TasteException {
-		System.out.println("user,item,count,recco,model,delta,scaledelta");
+		System.out.println("user,item,ucount,icount,recco,model,delta,scaledelta");
 		LongPrimitiveIterator items = model.getItemIDs();
 		while (items.hasNext()) {
 			try {
@@ -133,7 +151,7 @@ public class RateAllItems {
 				int cutoff = count;
 				while (users.hasNext()) {
 					long userID = users.nextLong();
-					PreferenceArray prefsU = recco.getDataModel().getPreferencesForItem(itemID);
+					PreferenceArray prefsU = recco.getDataModel().getPreferencesFromUser(userID);
 					long[] uDs = prefsU.getIDs();
 					if (null == iDs)
 						prefsU.hashCode();
@@ -142,9 +160,11 @@ public class RateAllItems {
 					if (null != pref && pref < 10000000.0) {
 						float rec = recco.estimatePreference(userID, itemID);
 						if (rec < 1000000.0) {
-							System.out.println(userID + "," + itemID + "," + uprefs + "," + rec + "," + pref
-									+ "," + (rec - pref)
-									+ "," + (((rec - pref) * Math.sqrt(iprefs))));
+							System.out.println(userID + "," + itemID + "," 
+									+ uprefs + "," + iprefs + ","
+									+ rec + "," + pref + "," 
+									+ (rec - pref) + ","
+									+ ((rec - pref) * Math.sqrt(iprefs)));
 							if (--cutoff == 0)
 								break;
 						}
@@ -242,7 +262,7 @@ public class RateAllItems {
 			i = 1;
 			for(; i <= 5; i++)
 				min += ratings.get(ratings.size() - i).getValue();
-			max = min/ratings.size();
+			min = min/ratings.size();
 			System.out.println(userID + "," + min + "," + max);
 		}
 		users.hashCode();
@@ -278,8 +298,6 @@ public class RateAllItems {
 			String stdstr = (stddev.getResult()) > 0 ? Double.toString(stddev.getResult()) : "0";
 			System.out.println(itemID + "," + count + "," + stdstr + "," + rating);
 		}
-		PointTextDataModel x = (PointTextDataModel) model;
-		System.out.println("Raw distances: " + (x.total /x.count));
 		items.hashCode();
 	}
 	

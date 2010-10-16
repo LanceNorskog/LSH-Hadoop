@@ -4,9 +4,11 @@ import lsh.core.Lookup;
 import lsh.core.Point;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
@@ -37,30 +39,48 @@ public class PointTextDataModel extends AbstractDataModel {
 	// project ratings from 0->1 into 1...5
 	final double scale = 4;
 	final double offset = 1;
+	// mean of point distances
+	final double manhattanMean = 0.33;
+	final double euclidMean = 0.4;
 	
-	double total = 0;
-	int count = 0;
+	public double total = 0;
+	public int count = 0;
+	public int clamped = 0;
+	
+	public long[] buckets = new long[10];
 
-	public PointTextDataModel(String pointsFile) throws IOException {
+	public PointTextDataModel(String pointsPath) throws IOException {
+		this(new File(pointsPath));
+	}
+	
+	public PointTextDataModel(File pointsFile) {
 		userDB = new Lookup(null, true, false, true, true, false, false);
 		itemDB = new Lookup(null, true, false, true, true, false, false);
-		Reader f;
-		f = new FileReader(new File(pointsFile));
-		itemDB.loadPoints(f, "I");
-		f.close();
-		f = new FileReader(new File(pointsFile));
-		userDB.loadPoints(f, "U");
-		f.close();
+		try {
+			FileReader itemReader = new FileReader(pointsFile);
+			FileReader userReader = new FileReader(pointsFile);
+			itemDB.loadPoints(itemReader, "I");
+			itemReader.close();
+			userDB.loadPoints(userReader, "U");
+			userReader.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		// yow!
 		Iterator<Point> it = userDB.points.iterator();
-		dimensions = it.next().values.length;
-		double[] zero = new double[dimensions];
-		for(int i = 0; i < zero.length; i++)
-			zero[i] = 0.0;
-		double[] unit = new double[dimensions];
-		for(int i = 0; i < unit.length; i++)
-			unit[i] = 1.0;
-		varianceManhattan = Math.sqrt(2) * 1.0/dimensions;
+//		dimensions = it.next().values.length / 2;
+		dimensions = 1;
+//		double[] zero = new double[dimensions];
+//		for(int i = 0; i < zero.length; i++)
+//			zero[i] = 0.0;
+//		double[] unit = new double[dimensions];
+//		for(int i = 0; i < unit.length; i++)
+//			unit[i] = 1.0;
+		varianceManhattan = (1.0/(dimensions));
 		varianceEuclid = 1.0/Math.sqrt(dimensions);
 	}
 
@@ -109,7 +129,8 @@ public class PointTextDataModel extends AbstractDataModel {
 		double distance = manhattanD(itemP.values, userP.values);
 		total += distance;
 		count++;
-		return (float) distance2rating(distance);
+		double rating = distance2rating(distance);
+		return (float) rating;
 	}
 
 	@Override
@@ -139,23 +160,25 @@ public class PointTextDataModel extends AbstractDataModel {
 			prefs.setValue(prefIndex, dist);
 			prefIndex++;
 		}
-		prefs.sortByItem();
+		prefs.sortByValueReversed();
 		return prefs;
 	}
 
 	// rectangular distance
 	double manhattanD(double[] a, double[] b) {
 		double sum = 0;
-		for(int i = 0; i < a.length; i++) {
+		for(int i = 0; i < dimensions; i++) {
 			sum += Math.abs(a[i] - b[i]);
 		}
-		return sum * varianceManhattan;
+		double r = sum * varianceManhattan;
+//		r = invert(r, dimensions*2);
+		return r;
 	}
 
 	// euclidean distance
 	double euclidD(double[] a, double[] b) {
 		double sum = 0;
-		for(int i = 0; i < a.length; i++) {
+		for(int i = 0; i < dimensions; i++) {
 			sum += (a[i] - b[i]) * (a[i] - b[i]);
 		}			
 		double dist = Math.sqrt(sum);
@@ -164,15 +187,18 @@ public class PointTextDataModel extends AbstractDataModel {
 
 	double distance2rating(double d) {
 		double spread = 2.5;
-		if (d < 0.1d || d > 0.9d) {
+		
+		if (d < 0.0 || d > 1.0d) {
+			d = Math.max(0.01, d);
+			d = Math.min(0.99, d);
+			clamped ++;
 			this.hashCode();
 		}
-//		d = invert(d, 2*dimensions);
+//		d = invert(d, dimensions);
+		buckets[(int) (d * buckets.length)]++;
 		double e;
-		double expand = scale * spread;
 		e = (1-d);
-		e = e * expand;
-		e = e - Math.sqrt(expand / spread);
+		e = e * scale;
 		e = Math.max(0, e);
 		e = Math.min(scale, e);
 		e = e + offset;
@@ -184,24 +210,58 @@ public class PointTextDataModel extends AbstractDataModel {
 	 * Adding N samples makes the random distribution pyramidal - this flattens it.
 	 */
 	private double invert(double r, double n) {
-		double canon = Math.abs(r - 0.5d);
-		double compressed = (0.5 - canon)/n;
-//		compressed = (0.5 - compressed);
-		double inverted;
-		if (r > 0.5)
-			inverted = r + compressed;
-		else 
-			inverted = r - compressed;
-		return inverted;
+//		double canon = Math.abs(r - 0.5d);
+//		double compressed = (0.5 - canon)/n;
+////		compressed = (0.5 - compressed);
+//		double inverted;
+//		if (r > 0.5)
+//			inverted = r + compressed;
+//		else 
+//			inverted = r - compressed;
+//		return inverted;
 //		double canon = r - 0.5d;
 //		double height = (0.5 - Math.abs(canon));
 //		double compressed = height/n;
 //		compressed = (0.5 - compressed);
 //		if (canon < 0)
 //			compressed = -compressed;
-//		double inverted = compressed + 0.5;
+//		double inverted = (r + compressed);
 //		return inverted;
-	}
+//		double canon = r - 0.5d;
+//		double height = canon;
+//		double compressed = height/n;
+//		double decompressed = (canon - compressed);
+//		double inverted = 0.5 - (decompressed);
+//		return inverted;
+//		double e = r * 2;
+//		return Math.min(r, 0.99999);
+//		n = n /2;
+		double canon;
+		double basis = ( manhattanMean);
+		double midpointLeft = basis/2.0;
+		double midpointRight = basis + (1 - basis)/2.0;
+		double inverted;
+		double compress = n/(n+1); 
+		if (r > basis) {
+			canon = (r - basis);
+//			if (canon < midpointRight)
+//				inverted = midpointLeft + canon/2;
+//			else
+//				inverted = midpointLeft + canon/2;
+			inverted = basis + canon + (canon * compress);
+		}
+		else { 
+			canon = (basis - r);
+//			if (canon < midpointLeft)
+//				inverted = midpointLeft + canon/2;
+//			else
+//				inverted = midpointRight/2 + canon;
+			inverted = (basis - canon)*compress;
+		}
+		if (inverted < 0) 
+			this.hashCode();
+		return inverted;
+}
 
 	@Override
 	public LongPrimitiveIterator getUserIDs() throws TasteException {
@@ -236,31 +296,47 @@ public class PointTextDataModel extends AbstractDataModel {
 	/**
 	 * @param args
 	 * @throws IOException 
+	 * @throws TasteException 
 	 */
-	public static void main(String[] args) throws IOException {
-		PointTextDataModel model = new PointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
+	public static void main(String[] args) throws IOException, TasteException {
+		PointTextDataModel model = new PointTextDataModel(args[0]);
 		model.hashCode();
+		System.out.println("pow: " + Math.pow(1.01, 1/100.0));
 		System.out.println("Items");
-		doscan(model.itemDB);
+		doscan(model.itemDB, model.dimensions);
 		System.out.println("Users");
-		doscan(model.userDB);
+		doscan(model.userDB, model.dimensions);
+		dodistances(model);
 	}
 
-	static void doscan(Lookup points) {
+ static void dodistances(PointTextDataModel model) throws TasteException {
+		for(String userID: model.userDB.ids) {
+			for(String itemID: model.itemDB.ids) {
+				long u = Long.parseLong(userID);
+				long id = Long.parseLong(itemID);
+				model.getPreferenceValue(u, id);
+			}
+		}
+		System.out.println("clamped: " + model.clamped);
+		System.out.println("total:   " + model.total);
+		System.out.println("count:   " + model.count);
+		System.out.println("mean:    " + (model.total / model.count));
+		System.out.println("buckets: " + (Arrays.toString(model.buckets)));
+	}
+
+	static void doscan(Lookup points, int dimensions) {
 		double min = 100000;
 		double max = -100000;
 		double sum = 0;
-		int dimension = 0;
 		for(Point p: points.points) {
 			double[] values = p.values;
-			dimension = values.length;
-			for(int i = 0; i < values.length;i++) {
+			for(int i = 0; i < dimensions;i++) {
 				min = Math.min(values[i], min);
 				max = Math.max(values[i], max);
 				sum += values[i];
 			}
 		}
-		System.out.println("min: " + min + ", max: " + max + ", mean: " + sum / (points.points.size() * dimension));
+		System.out.println("min: " + min + ", max: " + max + ", mean: " + sum / (points.points.size() * dimensions));
 		
 	}
 	

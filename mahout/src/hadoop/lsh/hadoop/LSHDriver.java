@@ -42,6 +42,7 @@ public class LSHDriver {
 	public static final String DIMENSION = "lsh.hadoop.LSHDriver.dimension";
 	public static final String SCALE = "lsh.hadoop.LSHDriver.scale";
 	public static final String BIAS = "lsh.hadoop.LSHDriver.bias";
+	public static final String RANDOMSEED = "lsh.hadoop.LSHDriver.randomseed";
 	
 	// yeah yeah GenericOptionsParser
 	public static void main(String[] args) throws Exception {
