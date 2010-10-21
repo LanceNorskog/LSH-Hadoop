@@ -45,16 +45,16 @@ import org.slf4j.LoggerFactory;
  * which uses a given {@link DataModel} and {@link UserNeighborhood} to produce recommendations.
  * </p>
  */
-public class EstimatingUserRecommender extends AbstractRecommender implements UserBasedRecommender {
+public class EstimatingUserBasedRecommender extends AbstractRecommender implements UserBasedRecommender {
   
-  private static final Logger log = LoggerFactory.getLogger(EstimatingUserRecommender.class);
+  private static final Logger log = LoggerFactory.getLogger(EstimatingUserBasedRecommender.class);
   
   private final UserNeighborhood neighborhood;
   private final UserSimilarity similarity;
   private final RefreshHelper refreshHelper;
   private EstimatedPreferenceCapper capper;
   
-  public EstimatingUserRecommender(DataModel dataModel,
+  public EstimatingUserBasedRecommender(DataModel dataModel,
                                      UserNeighborhood neighborhood,
                                      UserSimilarity similarity) {
     super(dataModel);
