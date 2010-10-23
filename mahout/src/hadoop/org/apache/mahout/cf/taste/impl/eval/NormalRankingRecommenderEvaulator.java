@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeMap;
@@ -15,6 +16,7 @@ import java.util.TreeMap;
 import lsh.hadoop.LSHDriver;
 
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
+import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
@@ -44,15 +46,16 @@ import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.uncommons.maths.random.MersenneTwisterRNG;
 
 /*
  * Evaluate recommender by comparing order of all raw prefs with order in recommender's output for that user.
  */
 
 public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
-	private static final int SAMPLE = 100;
 	float minPreference, maxPreference;
 	boolean doCSV = false;
+	
 
 	@Override
 	public double evaluate(RecommenderBuilder recommenderBuilder,
@@ -63,70 +66,92 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	}
 
 	/*
-	 * get randomly sampled recommendations
+	 * Get randomly sampled recommendations
+	 * 
 	 */
 	public double evaluate(Recommender recco,
-			DataModel dataModel) throws TasteException {
+			DataModel dataModel, Random rnd, int samples) throws TasteException {
 		double scores = 0;
+		int allItems = dataModel.getNumItems();
 		LongPrimitiveIterator users = dataModel.getUserIDs();
 		if (doCSV)
-			System.out.println("user,count,match,normal");
+			System.out.println("user,sampled,match,normal");
 
+		int foundusers = 0;
 		while (users.hasNext()) {
 			long userID = users.nextLong();
-			int nitems = SAMPLE;
-			List<RecommendedItem> recs = recco.recommend(userID, nitems);
-			Preference[] prefsR = getPrefsArray(recs);
-			Preference[] prefsDM = getMatching(userID, recs, dataModel);
-			int match = nitems - hamming2(prefsDM, prefsR);
+			allItems = Math.min(allItems, samples * 20);
+			List<RecommendedItem> recs;
+			try {
+				recs = recco.recommend(userID, allItems);
+			} catch (NoSuchUserException e) {
+				continue;
+			}
+			int sampled = recs.size();
+			if (sampled == 0)
+				continue;
+			foundusers++;
+			Preference[] prefsR = new Preference[sampled];
+			Preference[] prefsDM = new Preference[sampled];
+			getPrefsArray(recs, prefsR, rnd, 1.0);
+			getMatching(userID, prefsDM, recs, dataModel);
+			int match = sampled - sloppyHamming(prefsDM, prefsR);
 			double normalW = normalWilcoxon(prefsDM, prefsR);
 			double variance = normalW;
 			if (doCSV)
-				System.out.println(userID + "," + nitems + "," + match + "," + variance);
+				System.out.println(userID + "," + sampled + "," + match + "," + variance);
 			scores += variance;
 			this.hashCode();
-//	points gets more trash but need measure that finds it
+			//	points gets more trash but need measure that finds it
 		}
-		return scores / dataModel.getNumUsers();
+		return scores / foundusers;
 	} 
 
-	private Preference[] getPrefsArray(List<RecommendedItem> recs) {
-		int nprefs = recs.size();
-		Preference[] prefs = new Preference[nprefs];
-		Iterator<RecommendedItem> it = recs.iterator();
-		for(int i = 0; i < nprefs; i++) {
-			RecommendedItem rec = it.next();
-			prefs[i] = new GenericPreference(0, rec.getItemID(), rec.getValue());
+	/*
+	 * Fill subsampled array from full list of recommended items 
+	 * Some recommenders give short lists
+	 */
+	private Preference[] getPrefsArray(List<RecommendedItem> recs, Preference[] prefs, Random rnd, double maximum) {
+		int nprefs = prefs.length;
+		if (nprefs > recs.size()) 
+			this.hashCode();
+		for (int i = 0; i < nprefs; i++) {
+			double sample = rnd.nextDouble();
+			int n = (int) Math.min(sample * (nprefs - 1), nprefs - 1);
+			prefs[i] = new GenericPreference(0, recs.get(n).getItemID(), recs.get(n).getValue());
 		}
 		Arrays.sort(prefs, new PrefCheck());
 		return prefs;
 	}
 
-	private Preference[] getMatching(Long userID, List<RecommendedItem> recs,
+	private Preference[] getMatching(Long userID, Preference[] prefs, List<RecommendedItem> recs,
 			DataModel dataModel) throws TasteException {
-		int nprefs = recs.size();
-		Preference[] prefs = new Preference[nprefs];
+		int nprefs = prefs.length;
 		Iterator<RecommendedItem> it = recs.iterator();
 		for(int i = 0; i < nprefs; i++) {
 			RecommendedItem rec = it.next();
 			Float value = dataModel.getPreferenceValue(userID, rec.getItemID());
-			prefs[i] = new GenericPreference(0, rec.getItemID(), value);
+			prefs[i] = new GenericPreference(userID, rec.getItemID(), value);
 		}
 		Arrays.sort(prefs, new PrefCheck());
 		return prefs;
 	}
-	
-	private int hamming2(Preference[] prefsDM, Preference[] prefsR) {
+
+	private int sloppyHamming(Preference[] prefsDM, Preference[] prefsR) {
 		int count = 0;
-		for(int i = 1; i < prefsDM.length - 1; i++) {
-			if ((prefsDM[i].getItemID() != prefsR[i].getItemID())&&
-				(prefsDM[i+1].getItemID() != prefsR[i].getItemID())&&
+		try {
+			for(int i = 1; i < prefsDM.length - 1; i++) {
+				if ((prefsDM[i].getItemID() != prefsR[i].getItemID())&&
+						(prefsDM[i+1].getItemID() != prefsR[i].getItemID())&&
 						(prefsDM[i-1].getItemID() != prefsR[i].getItemID()))
-				count++;
+					count++;
+			}
+		} catch (Exception e) {
+			this.hashCode();
 		}
 		return count;
 	}
-	
+
 	/*
 	 * Normal-distribution probability value for matched sets of values
 	 * http://comp9.psych.cornell.edu/Darlington/normscor.htm
@@ -134,7 +159,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	double normalWilcoxon(Preference[] prefsDM, Preference[] prefsR) {
 		double mean = 0;
 		int nitems = prefsDM.length;
-		
+
 		int[] vectorZ = new int[nitems];
 		int[] vectorZabs = new int[nitems];
 		double[] ranks = new double[nitems];
@@ -143,7 +168,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		wilcoxonRanks(vectorZ, vectorZabs, ranks, ranksAbs);
 		mean = getNormalMean(ranks, ranksAbs);
 		mean = Math.abs(mean) / (Math.sqrt(nitems));
-	  return mean;
+		return mean;
 	}
 
 	/*
@@ -184,7 +209,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			vectorZabs[i] = Math.abs(vectorZ[i]);
 		}
 	}
-	
+
 	/*
 	 * Ranks are the position of the value from low to high, divided by the # of values.
 	 * I had to walk through it a few times.
@@ -246,46 +271,57 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	 * @throws InstantiationException 
 	 */
 	public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+		// have to do this here or command-line java won't load uncommons-maths!
+		 MersenneTwisterRNG junk = new MersenneTwisterRNG();
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
-		Recommender prec = doPointText(args[1]);
-		DataModel pointModel = prec.getDataModel();
+		Recommender pointRecco = doPointText(args[1]);
+		DataModel pointModel = pointRecco.getDataModel();
+		Random random = new Random(0);
+		int samples = 50;
 		Recommender recco;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
 //		bsrv.doCSV = true;
 
 		double score ;
-		recco = doEstimatingUser(glModel);
-		score = bsrv.evaluate(prec, pointModel);
+		random.setSeed(0);
+		score = bsrv.evaluate(pointRecco, pointModel, random, samples);
 		System.out.println("Point score: " + score);
-		score = bsrv.evaluate(recco, pointModel);
+		recco = doEstimatingUser(glModel);
+		random.setSeed(0);
+		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Estimating score: " + score);
-		Recommender	pearsonrec = doReccoPearsonItem(glModel);
-		score = bsrv.evaluate(pearsonrec, pointModel);
+		recco = null;
+		recco = doReccoPearsonItem(glModel);
+		random.setSeed(0);
+		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Pearson score: " + score);
-		Recommender	slope1rec = doReccoSlope1(glModel);
-		score = bsrv.evaluate(slope1rec, pointModel);
+		recco = null;
+		recco = doReccoSlope1(glModel);
+		random.setSeed(0);
+		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Slope1 score: " + score);
-//		Recommender srec = doSimplexDataModel(args[2]);
-//		score = bsrv.evaluate(srec, glModel);
-//		System.out.println("Simplex score: " + score);
+		//		recco = null;
+		//   	recco = doSimplexDataModel(args[2]);
+		//		score = bsrv.evaluate(recco, glModel);
+		//		System.out.println("Simplex score: " + score);
 	}
 
 	private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
 		PointTextDataModel model = new PointTextDataModel(pointsFile);
 		return model;
 	}
-	
+
 	private static Recommender doPointText(String pointsFile) throws IOException {
 		Recommender prec;
 		DataModel model = new PointTextDataModel(pointsFile);
 		prec = new PointTextRecommender(model);
 		return prec;
 	}
-	
+
 	private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
-		   UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
-		    UserNeighborhood neighborhood = new NearestNUserNeighborhood(10, 0.2, similarity, bcModel, 0.2);
-		    return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
+		UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
+		UserNeighborhood neighborhood = new NearestNUserNeighborhood(10, 0.2, similarity, bcModel, 0.2);
+		return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
 
 	}
 
@@ -326,13 +362,18 @@ class PrefCheck implements Comparator<Preference> {
 
 	@Override
 	public int compare(Preference p1, Preference p2) {
-		if (p1.getValue() > p2.getValue())
-			return 1;
-		else if (p1.getValue() < p2.getValue())
-			return -1;
-		else 
+		try {
+			if (p1.getValue() > p2.getValue())
+				return 1;
+			else if (p1.getValue() < p2.getValue())
+				return -1;
+			else 
+				return 0;
+		} catch (Throwable t) { 
+			this.hashCode();
 			return 0;
+		}
 	}
-	
+
 }
 

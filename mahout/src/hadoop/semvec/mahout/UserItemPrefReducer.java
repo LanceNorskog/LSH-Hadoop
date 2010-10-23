@@ -119,7 +119,7 @@ public class UserItemPrefReducer extends
 			else
 				pinned--;
 			// XXX remove gravity
-			spot = itemSpots.get(itemID);
+//			spot = itemSpots.get(itemID);
 			nitems++;
 			deltas += Math.abs(spot - itemSpots.get(itemID));
 			sb.append(spot.toString());

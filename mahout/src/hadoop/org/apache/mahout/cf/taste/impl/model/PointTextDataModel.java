@@ -112,7 +112,7 @@ public class PointTextDataModel extends AbstractDataModel {
 	@Override
 	public int getNumUsersWithPreferenceFor(long... itemIDs)
 	throws TasteException {
-		throw new UnsupportedOperationException();
+		return getNumUsers();
 	}
 
 	@Override

@@ -94,7 +94,7 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 		for(int dim = 0; dim < dimension; dim++) {
 			float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
 			TupleWritable valueout = new TupleWritable(userID, itemID, 
-					normal(userRandom[dim]), normal(itemRandom[dim]), prefValue);	
+					uniform(userRandom[dim]), uniform(itemRandom[dim]), prefValue);	
 			context.write(new LongWritable(dim), valueout);
 		}
 	}
