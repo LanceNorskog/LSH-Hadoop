@@ -13,6 +13,7 @@ import java.util.TreeMap;
 
 import lsh.hadoop.LSHDriver;
 
+import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
@@ -63,9 +64,12 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 			DataModel dataModel) throws TasteException {
 		double scores = 0;
 		LongPrimitiveIterator users = dataModel.getUserIDs();
+//		if (doCSV)
+//			System.out.println("user,count,match,scan,bubble,normal");
 		if (doCSV)
-			System.out.println("user,count,match,scan,bubble,normal");
+			System.out.println("user,count,match,normal");
 
+		StandardDeviation std = new StandardDeviation();
 		while (users.hasNext()) {
 			long userID = users.nextLong();
 			// TreeMap preserves order of insertion
@@ -90,14 +94,20 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 			double bubbleScore = Math.sqrt(mean)/nprefs;
 //			System.out.println("\tswapped: " + swaps + ", mean: " + mean + ", score: " + bubbleScore);
 //			scores += bubbleScore; //(scanScore + bubbleScore)/2;
+			if (userID == 55) {
+				normalWilcoxon(prefsDM, prefsR);
+			}
 			double normalW = normalWilcoxon(prefsDM, prefsR);
-			double variance = normalW/nprefs;
+			double variance = normalW;
 			if (doCSV)
-				System.out.println(userID + "," + nprefs + "," + match + "," + scanScore + "," + bubbleScore + "," + variance);
+				System.out.println(userID + "," + nprefs + "," + match + "," + variance);
 			scores += variance;
+			std.increment(variance);
 			this.hashCode();
+//	points gets more trash but need measure that finds it
 		}
 		return scores / dataModel.getNumUsers();
+//		return std.getResult(); // scores / dataModel.getNumUsers();
 	} 
 
 	private Preference[] makeArray(PreferenceArray prefs) {
@@ -143,7 +153,7 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 		}		
 	}
 	
-	int hamming(Preference[] prefsDM, Preference[] prefsR) {
+	private int hamming(Preference[] prefsDM, Preference[] prefsR) {
 		int count = 0;
 		for(int i = 0; i < prefsDM.length; i++) {
 			if (prefsDM[i].getItemID() != prefsR[i].getItemID())
@@ -175,19 +185,6 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 			matches[i] = (prefsDM[i].getItemID() == prefsR[i].getItemID());
 		}
 
-//		return 0;
-//		for(int i = 0; i < length - 1; i++) {
-//			for(int j = sorted; j < length - 1; j++) {
-//				if (prefsR[j].getItemID() <= prefsR[j + 1].getItemID()) {
-//					continue;
-//				} else {
-//					Preference tmp = prefsR[j];
-//					prefsR[j] = prefsR[j + 1];
-//					prefsR[j + 1] = tmp;
-//					swaps++;
-//				}
-//			}
-//		}
 		while (sorted < length - 1) {
 			if (prefsDM[sorted].getItemID() == prefsR[sorted].getItemID()) {
 				sorted++;
@@ -211,11 +208,6 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 				}
 			}
 		}
-//		for(int i = 0; i < length ; i++) {
-//			if (prefsDM[i].getItemID() == prefsR[i].getItemID()) {
-//				System.out.println("Same item: " + i);
-//			}
-//		}
 		for(int i = 0; i < length; i++) {
 			if (prefsDM[i].getItemID() != prefsR[i].getItemID())
 				throw new Error("Sorting error?");		
@@ -224,6 +216,9 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 		return swaps;
 	}
 	
+	/*
+	 * find total number of different spots
+	 */
 	double scan(Preference[] prefsDM, Preference[] prefsR) {
 		double sum = 0;
 		int nitems = prefsDM.length;
@@ -272,8 +267,8 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 		getVectorZ(prefsDM, prefsR, vectorZ, vectorZabs);
 		wilcoxonRanks(vectorZ, vectorZabs, ranks, ranksAbs);
 		mean = getNormalMean(ranks, ranksAbs);
-		double zTest = mean * Math.sqrt(nitems);
-	  return zTest;
+		mean = Math.abs(mean) * (Math.sqrt(nitems));
+	  return mean;
 	}
 
 
@@ -287,7 +282,7 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 		for(int i = 0; i < nitems; i++) {
 			sum += ranks[i];
 		}
-		double mean = sum/nitems;
+		double mean = sum / nitems;
 		return mean;
 	}
 
@@ -336,18 +331,46 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 			int score = vectorZabs[i];
 			for(int j = 0; j < nitems; j++) {
 				if (score == sorted[j]) {
-					rank += j + 1 - zeros;
+					rank += (j + 1) - zeros;
 					count++;
 				} else if (score < sorted[j]) {
 					break;
 				}
 			}
-			ranks[i] = rank/count;	// better be at least 1
+			ranks[i] = (rank/count) * ((vectorZ[i] < 0) ? -1 : 1);	// better be at least 1
 		}
 		for(int i = 0; i < nitems; i++) {
 			ranksAbs[i] = Math.abs(ranks[i]);
 		}
 	}
+//
+//	private void wilcoxonRanksRong(int[] vectorZ, int[] vectorZabs, double[] ranks, double[] ranksAbs) {
+//		int nitems = vectorZ.length;
+//		int[] sorted = vectorZabs.clone();
+//		Arrays.sort(sorted);
+//		int zeros = 0;
+//		for(; zeros < nitems; zeros++) {
+//			if (sorted[zeros] > 0) 
+//				break;
+//		}
+//		for(int i = 0; i < nitems; i++) {
+//			double rank = 0;
+//			int count = 0;
+//			int score = vectorZabs[i];
+//			for(int j = 0; j < nitems; j++) {
+//				if (score == sorted[j]) {
+//					rank += (j + 1) - zeros;
+//					count++;
+//				} else if (score < sorted[j]) {
+//					break;
+//				}
+//			}
+//			ranks[i] = rank/count;	// better be at least 1
+//		}
+//		for(int i = 0; i < nitems; i++) {
+//			ranksAbs[i] = Math.abs(ranks[i]);
+//		}
+//	}
 
 	@Override
 	public float getMaxPreference() {
@@ -384,18 +407,18 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
 
 		double score ;
 		recco = doEstimatingUser(glModel);
-		bsrv.doCSV = true;
+//		bsrv.doCSV = true;
 		score = bsrv.evaluate(recco, glModel);
-//		System.out.println("Estimating score: " + score);
-//		Recommender	prec = doPointText(args[1]);
-//		score = bsrv.evaluate(prec, glModel);
-//		System.out.println("Point score: " + score);
-//		Recommender	pearsonrec = doReccoPearsonItem(glModel);
-//		score = bsrv.evaluate(pearsonrec, glModel);
-//		System.out.println("Pearson score: " + score);
-//		Recommender	slope1rec = doReccoSlope1(glModel);
-//		score = bsrv.evaluate(slope1rec, glModel);
-//		System.out.println("Slope1 score: " + score);
+		System.out.println("Estimating score: " + score);
+		Recommender	prec = doPointText(args[1]);
+		score = bsrv.evaluate(prec, glModel);
+		System.out.println("Point score: " + score);
+		Recommender	pearsonrec = doReccoPearsonItem(glModel);
+		score = bsrv.evaluate(pearsonrec, glModel);
+		System.out.println("Pearson score: " + score);
+		Recommender	slope1rec = doReccoSlope1(glModel);
+		score = bsrv.evaluate(slope1rec, glModel);
+		System.out.println("Slope1 score: " + score);
 //		Recommender srec = doSimplexDataModel(args[2]);
 //		score = bsrv.evaluate(srec, glModel);
 //		System.out.println("Simplex score: " + score);
