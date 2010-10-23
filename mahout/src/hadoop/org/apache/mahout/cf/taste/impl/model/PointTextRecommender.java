@@ -48,6 +48,7 @@ public class PointTextRecommender implements Recommender {
 			throws TasteException {
 		List<RecommendedItem> recs = new ArrayList<RecommendedItem>();
 		PreferenceArray prefs = model.getPreferencesFromUser(userID);
+		prefs.sortByValueReversed();
 		for(Preference p: prefs) {
 			howMany--;
 			if (howMany < 0)

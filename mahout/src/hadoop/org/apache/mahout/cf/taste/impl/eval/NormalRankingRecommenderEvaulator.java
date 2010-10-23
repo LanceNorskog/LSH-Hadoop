@@ -93,7 +93,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			foundusers++;
 			Preference[] prefsR = new Preference[sampled];
 			Preference[] prefsDM = new Preference[sampled];
-			getPrefsArray(recs, prefsR, rnd, 1.0);
+			getPrefsArray(recs, userID, prefsR, rnd, 1.0);
 			getMatching(userID, prefsDM, recs, dataModel);
 			int match = sampled - sloppyHamming(prefsDM, prefsR);
 			double normalW = normalWilcoxon(prefsDM, prefsR);
@@ -111,14 +111,14 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	 * Fill subsampled array from full list of recommended items 
 	 * Some recommenders give short lists
 	 */
-	private Preference[] getPrefsArray(List<RecommendedItem> recs, Preference[] prefs, Random rnd, double maximum) {
+	private Preference[] getPrefsArray(List<RecommendedItem> recs, long userID, Preference[] prefs, Random rnd, double maximum) {
 		int nprefs = prefs.length;
 		if (nprefs > recs.size()) 
 			this.hashCode();
 		for (int i = 0; i < nprefs; i++) {
 			double sample = rnd.nextDouble();
 			int n = (int) Math.min(sample * (nprefs - 1), nprefs - 1);
-			prefs[i] = new GenericPreference(0, recs.get(n).getItemID(), recs.get(n).getValue());
+			prefs[i] = new GenericPreference(userID, recs.get(n).getItemID(), recs.get(n).getValue());
 		}
 		Arrays.sort(prefs, new PrefCheck());
 		return prefs;
@@ -141,10 +141,15 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		int count = 0;
 		try {
 			for(int i = 1; i < prefsDM.length - 1; i++) {
-				if ((prefsDM[i].getItemID() != prefsR[i].getItemID())&&
-						(prefsDM[i+1].getItemID() != prefsR[i].getItemID())&&
-						(prefsDM[i-1].getItemID() != prefsR[i].getItemID()))
+				long itemID = prefsR[i].getItemID();
+				if ((prefsDM[i].getItemID() != itemID) &&
+						(prefsDM[i+1].getItemID() != itemID)&&
+						(prefsDM[i-1].getItemID() != itemID)) {
 					count++;
+				} else {
+//					System.out.println("xxx");
+					this.hashCode();
+				}
 			}
 		} catch (Exception e) {
 			this.hashCode();
@@ -280,7 +285,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		int samples = 50;
 		Recommender recco;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
-//		bsrv.doCSV = true;
+		bsrv.doCSV = true;
 
 		double score ;
 		random.setSeed(0);

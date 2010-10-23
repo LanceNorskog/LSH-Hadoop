@@ -72,8 +72,8 @@ public class PointTextDataModel extends AbstractDataModel {
 		}
 		// yow!
 		Iterator<Point> it = userDB.points.iterator();
-//		dimensions = it.next().values.length / 2;
-		dimensions = 1;
+		dimensions = it.next().values.length / 2;
+//		dimensions = 1;
 //		double[] zero = new double[dimensions];
 //		for(int i = 0; i < zero.length; i++)
 //			zero[i] = 0.0;
@@ -146,7 +146,9 @@ public class PointTextDataModel extends AbstractDataModel {
 	@Override
 	public PreferenceArray getPreferencesFromUser(long userID)
 	throws TasteException {
-		return getPreferencesFromUserPoint(userID);
+		PreferenceArray prefs = getPreferencesFromUserPoint(userID);
+		prefs.sortByItem();
+		return prefs;
 	}
 
 	private PreferenceArray getPreferencesFromUserPoint(long userID)
@@ -164,7 +166,6 @@ public class PointTextDataModel extends AbstractDataModel {
 			prefs.setValue(prefIndex, dist);
 			prefIndex++;
 		}
-		prefs.sortByValueReversed();
 		return prefs;
 	}
 
@@ -175,7 +176,6 @@ public class PointTextDataModel extends AbstractDataModel {
 			sum += Math.abs(a[i] - b[i]);
 		}
 		double r = sum * varianceManhattan;
-//		r = invert(r, dimensions*2);
 		return r;
 	}
 
@@ -209,64 +209,6 @@ public class PointTextDataModel extends AbstractDataModel {
 		return e;
 	}
 	
-	/*
-	 * Correct the effects of adding N samples
-	 * Adding N samples makes the random distribution pyramidal - this flattens it.
-	 */
-	private double invert(double r, double n) {
-//		double canon = Math.abs(r - 0.5d);
-//		double compressed = (0.5 - canon)/n;
-////		compressed = (0.5 - compressed);
-//		double inverted;
-//		if (r > 0.5)
-//			inverted = r + compressed;
-//		else 
-//			inverted = r - compressed;
-//		return inverted;
-//		double canon = r - 0.5d;
-//		double height = (0.5 - Math.abs(canon));
-//		double compressed = height/n;
-//		compressed = (0.5 - compressed);
-//		if (canon < 0)
-//			compressed = -compressed;
-//		double inverted = (r + compressed);
-//		return inverted;
-//		double canon = r - 0.5d;
-//		double height = canon;
-//		double compressed = height/n;
-//		double decompressed = (canon - compressed);
-//		double inverted = 0.5 - (decompressed);
-//		return inverted;
-//		double e = r * 2;
-//		return Math.min(r, 0.99999);
-//		n = n /2;
-		double canon;
-		double basis = ( manhattanMean);
-		double midpointLeft = basis/2.0;
-		double midpointRight = basis + (1 - basis)/2.0;
-		double inverted;
-		double compress = n/(n+1); 
-		if (r > basis) {
-			canon = (r - basis);
-//			if (canon < midpointRight)
-//				inverted = midpointLeft + canon/2;
-//			else
-//				inverted = midpointLeft + canon/2;
-			inverted = basis + canon + (canon * compress);
-		}
-		else { 
-			canon = (basis - r);
-//			if (canon < midpointLeft)
-//				inverted = midpointLeft + canon/2;
-//			else
-//				inverted = midpointRight/2 + canon;
-			inverted = (basis - canon)*compress;
-		}
-		if (inverted < 0) 
-			this.hashCode();
-		return inverted;
-}
-
 	@Override
 	public LongPrimitiveIterator getUserIDs() throws TasteException {
 		return new LPI(userDB.ids.iterator());
