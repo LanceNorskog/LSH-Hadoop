@@ -91,8 +91,12 @@ public class PointTextDataModel extends AbstractDataModel {
 
 	@Override
 	public FastIDSet getItemIDsFromUser(long userID) throws TasteException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		int nitems = getNumItems();
+		FastIDSet fids = new FastIDSet(nitems);
+		for(int i = 0; i < nitems; i++) {
+			fids.add(i);
+		}
+		return fids;
 	}
 
 	@Override
