@@ -98,8 +98,8 @@ public final class TupleWritable extends VarLongWritable {
 
 	@Override
 	public int hashCode() {
-		return super.hashCode() ^ ((Long) itemID).hashCode() ^
-				((Double) userSpot).hashCode() ^ ((Double) itemSpot).hashCode() ^
+		return super.hashCode() + ((Long) itemID).hashCode() +
+				((Double) userSpot).hashCode() + ((Double) itemSpot).hashCode() +
 				((Double) pref).hashCode()
 ;
 	}

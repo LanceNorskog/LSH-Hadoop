@@ -30,10 +30,11 @@ import sun.security.x509.DeltaCRLIndicatorExtension;
 public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
+	private static final double EFFECT = 0.5;
 	// shift preferences from 1 to 5 -> -2 to 2.
 	public Double bias = -3.0;
 	// scaling for pref values
-	public Double scale = 1.0;
+	public Double scale = 4.0;
 	
 	public int projections = 0;
 	public int trims = 0;
@@ -64,8 +65,8 @@ public class UserItemPrefReducer extends
 		Map<Long,Double> itemSpots = new HashMap<Long,Double>();
 		Map<Long,ChemicalDouble> ratings = new HashMap<Long, ChemicalDouble>();
 		Long dim = key.get();
-		Double minUserSpot = Double.MIN_VALUE;
-		Double maxUserSpot = Double.MAX_VALUE;
+		Double minUserSpot = Double.MAX_VALUE;
+		Double maxUserSpot = Double.MIN_VALUE;
 
 		StringBuilder sb = new StringBuilder();
 		for (TupleWritable data : values) {
@@ -73,7 +74,7 @@ public class UserItemPrefReducer extends
 				Double spot = data.getUserSpot();
 				if (spot < minUserSpot)
 					minUserSpot = spot;
-				if (spot < maxUserSpot)
+				if (spot > maxUserSpot)
 					maxUserSpot = spot;
 				collectUser(context, dim, sb, data);
 				users.add(data.getUserID());
@@ -87,16 +88,16 @@ public class UserItemPrefReducer extends
 			} 
 			
 			// each user pulls the item towards himself
-			double pref = (data.getPref() - bias);
+			double pref = (data.getPref() - bias) / scale;
 			double delta = data.getUserSpot() - data.getItemSpot();
-			if (delta > 0)
-			{
-				pref = Math.min(pref * scale, delta);
-			} else {
-				pref = Math.min(pref * scale, -delta);
+//			if (delta > 0)
+//			{
+//				pref = Math.min(pref, delta);
+//			} else {
+//				pref = Math.min(pref, -delta);
+//			}
+			if (delta < 0)
 				pref = -pref;
-			}
-				
 			rating.f += pref;
 		}
 		int divisor = users.size();
@@ -110,14 +111,14 @@ public class UserItemPrefReducer extends
 			sb.append(' ');
 			Double spot = itemSpots.get(itemID);
 			double bump = ratings.get(itemID).f;
-			spot += (bump * scale)/divisor;
-			pinned++;
-			if (spot >= 1.0)
-				spot = maxUserSpot;
-			else if (spot <= 0.0)
-				spot = minUserSpot;
-			else
-				pinned--;
+			spot += (bump * EFFECT)/divisor;
+//			pinned++;
+//			if (spot >= maxUserSpot)
+//				spot = maxUserSpot;
+//			else if (spot <= minUserSpot)
+//				spot = minUserSpot;
+//			else
+//				pinned--;
 			// XXX remove gravity
 //			spot = itemSpots.get(itemID);
 			nitems++;
@@ -162,14 +163,14 @@ class ChemicalDouble {
 		f = 0.0f;
 	}
 	
-	@Override
-	public int hashCode() {
-		// TODO Auto-generated method stub
-		return ((Double) f).hashCode();
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		return ((Double) f).equals(((ChemicalDouble)o).f);
-	}
+//	@Override
+//	public int hashCode() {
+//		// TODO Auto-generated method stub
+//		return ((Double) f).hashCode();
+//	}
+//
+//	@Override
+//	public boolean equals(Object o) {
+//		return ((Double) f).equals(((ChemicalDouble)o).f);
+//	}
 }

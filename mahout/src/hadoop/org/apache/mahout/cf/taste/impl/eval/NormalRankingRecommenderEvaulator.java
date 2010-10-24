@@ -177,41 +177,37 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	}
 
 	/*
-	 * get mean of deviation from hypothesized center of 0
-	 */
-	private double getNormalMean(double[] ranks, double[] ranksAbs) {
-		int nitems = ranks.length;
-		double sum = 0;
-		for(int i = 0; i < nitems; i++) {
-			sum += ranks[i];
-		}
-		double mean = sum / nitems;
-		return mean;
-	}
-
-	/*
 	 * vector Z is a list of distances between the correct value and the recommended value
 	 * Z[i] = position i of correct itemID - position of correct itemID in recommendation list
 	 * 	can be positive or negative
 	 * 	the smaller the better - means recommendations are closer
 	 * both are the same length, and both sample from the same set
+	 * 
+	 * destructive to prefsDM and prefsR arrays - allows N log N instead of N^2 order
 	 */
 	private void getVectorZ(Preference[] prefsDM, Preference[] prefsR, int[] vectorZ, int[] vectorZabs) {
 		int nitems = prefsDM.length;
+		int bottom = 0;
+		int top = nitems - 1;
 		for(int i = 0; i < nitems; i++) {
 			long itemID = prefsDM[i].getItemID();
-			for(int j = 0; j < nitems; j++) {
+			for(int j = bottom; j <= top; j++) {
+				if (prefsR[j] == null)
+					continue;
 				long test = prefsR[j].getItemID();
 				if (itemID == test) {
 					vectorZ[i] = i - j;
-					if (i != j)
-						this.hashCode();
+					vectorZabs[i] = Math.abs(i - j);
+					if (j == bottom) {
+						bottom++;
+					} else if (j == top) {
+						top--;
+					} else {
+						prefsR[j] = null;
+					}
 					break;
 				}
 			}	
-		}
-		for(int i = 0; i < nitems; i++) {
-			vectorZabs[i] = Math.abs(vectorZ[i]);
 		}
 	}
 
@@ -241,10 +237,22 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 				}
 			}
 			ranks[i] = (rank/count) * ((vectorZ[i] < 0) ? -1 : 1);	// better be at least 1
-		}
-		for(int i = 0; i < nitems; i++) {
 			ranksAbs[i] = Math.abs(ranks[i]);
 		}
+		this.hashCode();
+	}
+
+	/*
+	 * get mean of deviation from hypothesized center of 0
+	 */
+	private double getNormalMean(double[] ranks, double[] ranksAbs) {
+		int nitems = ranks.length;
+		double sum = 0;
+		for(int i = 0; i < nitems; i++) {
+			sum += ranks[i];
+		}
+		double mean = sum / nitems;
+		return mean;
 	}
 
 	@Override
@@ -291,20 +299,20 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		random.setSeed(0);
 		score = bsrv.evaluate(pointRecco, pointModel, random, samples);
 		System.out.println("Point score: " + score);
-		recco = doEstimatingUser(glModel);
-		random.setSeed(0);
-		score = bsrv.evaluate(recco, pointModel, random, samples);
-		System.out.println("Estimating score: " + score);
+//		recco = doEstimatingUser(glModel);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(recco, pointModel, random, samples);
+//		System.out.println("Estimating score: " + score);
 		recco = null;
 		recco = doReccoPearsonItem(glModel);
 		random.setSeed(0);
 		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Pearson score: " + score);
-		recco = null;
-		recco = doReccoSlope1(glModel);
-		random.setSeed(0);
-		score = bsrv.evaluate(recco, pointModel, random, samples);
-		System.out.println("Slope1 score: " + score);
+//		recco = null;
+//		recco = doReccoSlope1(glModel);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(recco, pointModel, random, samples);
+//		System.out.println("Slope1 score: " + score);
 		//		recco = null;
 		//   	recco = doSimplexDataModel(args[2]);
 		//		score = bsrv.evaluate(recco, glModel);

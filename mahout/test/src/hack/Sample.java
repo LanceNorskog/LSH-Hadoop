@@ -2,11 +2,11 @@ package hack;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.LineNumberInputStream;
-import java.io.LineNumberReader;
 import java.io.Reader;
 import java.nio.CharBuffer;
 import java.util.Random;
+
+import com.google.common.io.LineReader;
 
 public class Sample {
 
@@ -15,23 +15,27 @@ public class Sample {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		double sample = 0.1;
-		Random rand = new Random();
+		double low = 0;
+		double high = 1;
+		Random rand = new Random(0);
 		
 		if (args.length > 0) {
-			sample = Double.parseDouble(args[0]);
+			low = Double.parseDouble(args[0]);
+			high = Double.parseDouble(args[1]);
 		}
-		int n;
-		String line;
 		Reader in = new InputStreamReader(System.in);
-		LineNumberReader re = new LineNumberReader(in);
+		LineReader re = new LineReader(in);
 		String buf = null;
 		while ((buf = re.readLine()) != null && buf.length() > 0) {
-			if (rand.nextDouble() < sample) {
+//			System.err.println(buf);
+			double sample = rand.nextDouble();
+			if (sample >= low && sample < high) {
 				System.out.println(buf);
+			} else {
+				System.err.println(sample);
 			}
 		}
-
+		System.out.flush();
 	}
 
 }
