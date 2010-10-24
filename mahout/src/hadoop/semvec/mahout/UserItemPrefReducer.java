@@ -30,7 +30,7 @@ import sun.security.x509.DeltaCRLIndicatorExtension;
 public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
-	private static final double EFFECT = 0.5;
+	private static final double EFFECT = 1.5;
 	// shift preferences from 1 to 5 -> -2 to 2.
 	public Double bias = -3.0;
 	// scaling for pref values
@@ -96,8 +96,7 @@ public class UserItemPrefReducer extends
 //			} else {
 //				pref = Math.min(pref, -delta);
 //			}
-			if (delta < 0)
-				pref = -pref;
+			pref *= delta;    // reduce effect by proximity, no overshoot
 			rating.f += pref;
 		}
 		int divisor = users.size();
