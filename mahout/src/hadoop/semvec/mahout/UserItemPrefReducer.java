@@ -31,10 +31,10 @@ public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
 	private static final double EFFECT = 1.5;
-	// shift preferences from 1 to 5 -> -2 to 2.
-	public Double bias = -3.0;
-	// scaling for pref values
-	public Double scale = 4.0;
+	// the space of the incoming pref values
+	// rating from 1->5 needs bias=3,scale=4
+	public Double bias = 0.0;
+	public Double scale = 1.0;
 	
 	public int projections = 0;
 	public int trims = 0;
@@ -51,8 +51,10 @@ public class UserItemPrefReducer extends
 		Configuration conf = context.getConfiguration();
 		String scaleString = conf.get(LSHDriver.SCALE);
 		String biasString = conf.get(LSHDriver.BIAS);
-		scale = Double.parseDouble(scaleString);
-		bias = Double.parseDouble(biasString);	
+		if (null != scaleString)
+			scale = Double.parseDouble(scaleString);
+		if (null != biasString)
+			bias = Double.parseDouble(biasString);	
 	};
 	
 	protected void reduce(

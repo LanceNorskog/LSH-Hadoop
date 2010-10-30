@@ -37,8 +37,8 @@ public class PointTextDataModel extends AbstractDataModel {
 	final double varianceManhattan;
 	final double varianceEuclid;
 	// project ratings from 0->1 into 1...5
-	final double scale = 4;
-	final double offset = 1;
+	final double scale = 1;
+	final double offset = 0;
 	// mean of point distances
 	final double manhattanMean = 0.33;
 	final double euclidMean = 0.4;
@@ -54,8 +54,8 @@ public class PointTextDataModel extends AbstractDataModel {
 	}
 	
 	public PointTextDataModel(File pointsFile) {
-		userDB = new Lookup(null, true, false, true, true, false, false);
-		itemDB = new Lookup(null, true, false, true, true, false, false);
+		userDB = new Lookup(null, true, false, true, true, false, false, false, false);
+		itemDB = new Lookup(null, true, false, true, true, false, false, false, false);
 		try {
 			FileReader itemReader = new FileReader(pointsFile);
 			FileReader userReader = new FileReader(pointsFile);
@@ -130,9 +130,12 @@ public class PointTextDataModel extends AbstractDataModel {
 	private Float getPreferenceValuePoint(long userID, long itemID) {
 		Point userP = userDB.id2point.get((userID) + "");
 		Point itemP = itemDB.id2point.get((itemID) + "");
+		if (null == userP || null == itemP)
+			return 0.5f;
 		double distance = manhattanD(itemP.values, userP.values);
 		total += distance;
 		count++;
+//		System.err.println(userID +"," + itemID + "," + distance);
 		double rating = distance2rating(distance);
 		return (float) rating;
 	}
@@ -156,7 +159,7 @@ public class PointTextDataModel extends AbstractDataModel {
 		int prefIndex = 0;
 		Point up = userDB.id2point.get((userID) + "");
 		if (null == up)
-			throw new NoSuchUserException();
+			return new GenericUserPreferenceArray(0);
 		PreferenceArray prefs = new GenericUserPreferenceArray(itemDB.ids.size());
 		for(String item: itemDB.ids) {
 			Point ip = itemDB.id2point.get(item);
@@ -190,7 +193,6 @@ public class PointTextDataModel extends AbstractDataModel {
 	}
 
 	double distance2rating(double d) {
-		double spread = 2.5;
 		
 		if (d < 0.0 || d > 1.0d) {
 			d = Math.max(0.01, d);
@@ -198,14 +200,9 @@ public class PointTextDataModel extends AbstractDataModel {
 			clamped ++;
 			this.hashCode();
 		}
-//		d = invert(d, dimensions);
 		buckets[(int) (d * buckets.length)]++;
 		double e;
 		e = (1-d);
-		e = e * scale;
-		e = Math.max(0, e);
-		e = Math.min(scale, e);
-		e = e + offset;
 		return e;
 	}
 	

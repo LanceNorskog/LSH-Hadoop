@@ -4,18 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Random;
-import java.util.TreeMap;
 
 import lsh.hadoop.LSHDriver;
 
-import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
@@ -28,25 +23,19 @@ import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
 import org.apache.mahout.cf.taste.impl.model.PointTextRecommender;
 import org.apache.mahout.cf.taste.impl.model.SimplexRecommender;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
-import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
-import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.recommender.knn.KnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
-import org.apache.mahout.cf.taste.impl.recommender.slopeone.SlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.CachingUserSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
-import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
-import org.uncommons.maths.random.MersenneTwisterRNG;
 
 /*
  * Evaluate recommender by comparing order of all raw prefs with order in recommender's output for that user.
@@ -80,7 +69,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		int foundusers = 0;
 		while (users.hasNext()) {
 			long userID = users.nextLong();
-			allItems = Math.min(allItems, samples * 20);
+			allItems = Math.min(allItems, samples);
 			List<RecommendedItem> recs;
 			try {
 				recs = recco.recommend(userID, allItems);
@@ -93,11 +82,11 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			foundusers++;
 			Preference[] prefsR = new Preference[sampled];
 			Preference[] prefsDM = new Preference[sampled];
-			getPrefsArray(recs, userID, prefsR, rnd, 1.0);
+			getPrefsArray(recs, userID, prefsR, rnd);
 			getMatching(userID, prefsDM, recs, dataModel);
 			int match = sampled - sloppyHamming(prefsDM, prefsR);
 			double normalW = normalWilcoxon(prefsDM, prefsR);
-			double variance = normalW;
+			double variance = normalW/sampled;
 			if (doCSV)
 				System.out.println(userID + "," + sampled + "," + match + "," + variance);
 			scores += variance;
@@ -111,16 +100,20 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	 * Fill subsampled array from full list of recommended items 
 	 * Some recommenders give short lists
 	 */
-	private Preference[] getPrefsArray(List<RecommendedItem> recs, long userID, Preference[] prefs, Random rnd, double maximum) {
+	private Preference[] getPrefsArray(List<RecommendedItem> recs, long userID, Preference[] prefs, Random rnd) {
 		int nprefs = prefs.length;
 		if (nprefs > recs.size()) 
 			this.hashCode();
-		for (int i = 0; i < nprefs; i++) {
+		int found = 0;
+		while (found < nprefs) {
 			double sample = rnd.nextDouble();
 			int n = (int) Math.min(sample * (nprefs - 1), nprefs - 1);
-			prefs[i] = new GenericPreference(userID, recs.get(n).getItemID(), recs.get(n).getValue());
+			if (null == prefs[found]) {
+				prefs[found] = new GenericPreference(userID, recs.get(found).getItemID(), recs.get(found).getValue());
+				found++;
+			}
 		}
-		Arrays.sort(prefs, new PrefCheck());
+		Arrays.sort(prefs, new PrefCheck(-1));
 		return prefs;
 	}
 
@@ -133,7 +126,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			Float value = dataModel.getPreferenceValue(userID, rec.getItemID());
 			prefs[i] = new GenericPreference(userID, rec.getItemID(), value);
 		}
-		Arrays.sort(prefs, new PrefCheck());
+		Arrays.sort(prefs, new PrefCheck(-1));
 		return prefs;
 	}
 
@@ -171,8 +164,11 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		double[] ranksAbs = new double[nitems];
 		getVectorZ(prefsDM, prefsR, vectorZ, vectorZabs);
 		wilcoxonRanks(vectorZ, vectorZabs, ranks, ranksAbs);
-		mean = getNormalMean(ranks, ranksAbs);
-		mean = Math.abs(mean) / (Math.sqrt(nitems));
+		// Mean of abs values is W+, Mean of signed values is W-
+//		mean = getMeanRank(ranks);
+//		mean = Math.abs(mean) * (Math.sqrt(nitems));
+		mean = Math.min(getMeanWplus(ranks), getMeanWminus(ranks));
+		mean = mean * (Math.sqrt(nitems));
 		return mean;
 	}
 
@@ -236,20 +232,45 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 					break;
 				}
 			}
-			ranks[i] = (rank/count) * ((vectorZ[i] < 0) ? -1 : 1);	// better be at least 1
-			ranksAbs[i] = Math.abs(ranks[i]);
+			if (vectorZ[i] != 0) {
+				ranks[i] = (rank/count) * ((vectorZ[i] < 0) ? -1 : 1);	// better be at least 1
+				ranksAbs[i] = Math.abs(ranks[i]);
+			}
 		}
+		
 		this.hashCode();
 	}
 
 	/*
 	 * get mean of deviation from hypothesized center of 0
 	 */
-	private double getNormalMean(double[] ranks, double[] ranksAbs) {
+	private double getMeanRank(double[] ranks) {
 		int nitems = ranks.length;
 		double sum = 0;
 		for(int i = 0; i < nitems; i++) {
 			sum += ranks[i];
+		}
+		double mean = sum / nitems;
+		return mean;
+	}
+
+	private double getMeanWplus(double[] ranks) {
+		int nitems = ranks.length;
+		double sum = 0;
+		for(int i = 0; i < nitems; i++) {
+			if (ranks[i] > 0)
+				sum += ranks[i];
+		}
+		double mean = sum / nitems;
+		return mean;
+	}
+
+	private double getMeanWminus(double[] ranks) {
+		int nitems = ranks.length;
+		double sum = 0;
+		for(int i = 0; i < nitems; i++) {
+			if (ranks[i] < 0)
+				sum += -ranks[i];
 		}
 		double mean = sum / nitems;
 		return mean;
@@ -284,39 +305,42 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	 * @throws InstantiationException 
 	 */
 	public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		// have to do this here or command-line java won't load uncommons-maths!
-		 MersenneTwisterRNG junk = new MersenneTwisterRNG();
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender pointRecco = doPointText(args[1]);
 		DataModel pointModel = pointRecco.getDataModel();
 		Random random = new Random(0);
-		int samples = 50;
+		int samples = 3;
 		Recommender recco;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
 		bsrv.doCSV = true;
 
 		double score ;
-		random.setSeed(0);
-		score = bsrv.evaluate(pointRecco, pointModel, random, samples);
-		System.out.println("Point score: " + score);
-//		recco = doEstimatingUser(glModel);
 //		random.setSeed(0);
-//		score = bsrv.evaluate(recco, pointModel, random, samples);
-//		System.out.println("Estimating score: " + score);
-		recco = null;
-		recco = doReccoPearsonItem(glModel);
+//		score = bsrv.evaluate(pointRecco, pointModel, random, samples);
+//		System.out.println("Point score: " + score);
+		
+		/*
+		This cannot find uncommons maths from the command line!
+		recco = doEstimatingUser(glModel);
 		random.setSeed(0);
 		score = bsrv.evaluate(recco, pointModel, random, samples);
-		System.out.println("Pearson score: " + score);
+		System.out.println("Estimating score: " + score);
+		 */
+//		recco = null;
+//		recco = doReccoPearsonItem(glModel);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(recco, pointModel, random, samples);
+//		System.out.println("Pearson score: " + score);
 //		recco = null;
 //		recco = doReccoSlope1(glModel);
 //		random.setSeed(0);
 //		score = bsrv.evaluate(recco, pointModel, random, samples);
 //		System.out.println("Slope1 score: " + score);
-		//		recco = null;
-		//   	recco = doSimplexDataModel(args[2]);
-		//		score = bsrv.evaluate(recco, glModel);
-		//		System.out.println("Simplex score: " + score);
+//		needs namedvectors
+		recco = null;
+		recco = doSimplexDataModel(args[2]);
+		score = bsrv.evaluate(recco, pointModel, random, samples);
+		System.out.println("Simplex score: " + score);
 	}
 
 	private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
@@ -362,8 +386,8 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		props.setProperty(LSHDriver.DIMENSION, "100");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.54");
+		props.setProperty(LSHDriver.DIMENSION, "50");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.70");
 		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
 		return rec;
 	}
@@ -372,20 +396,21 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 }
 
 class PrefCheck implements Comparator<Preference> {
+	final int sign;
+	
+	PrefCheck(int sign) {
+		this.sign = sign;
+	}
 
 	@Override
 	public int compare(Preference p1, Preference p2) {
-		try {
-			if (p1.getValue() > p2.getValue())
-				return 1;
-			else if (p1.getValue() < p2.getValue())
-				return -1;
-			else 
-				return 0;
-		} catch (Throwable t) { 
-			this.hashCode();
+		double v1 = p1.getValue() * sign;
+		if (p1.getValue()*sign > p2.getValue()*sign)
+			return 1;
+		else if (p1.getValue()*sign < p2.getValue()*sign)
+			return -1;
+		else 
 			return 0;
-		}
 	}
 
 }

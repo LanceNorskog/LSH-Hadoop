@@ -9,7 +9,7 @@ import java.util.Arrays;
  */
 
 public class VertexTransitiveHasher implements Hasher {
-	double[] stretch;
+	public double[] stretch;
 	private int dim;
 	static final double S3 = Math.sqrt(3.0d);
 	static final double MU = (1.0d - (1.0d/Math.sqrt(3.0d)))/2.0d;

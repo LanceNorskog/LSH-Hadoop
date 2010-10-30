@@ -90,7 +90,7 @@ public class RateAllItems {
 	private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		props.setProperty(LSHDriver.DIMENSION, "100");
+		props.setProperty(LSHDriver.DIMENSION, "50");
 		props.setProperty(LSHDriver.GRIDSIZE, "0.51");
 		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
 		return rec;
@@ -198,8 +198,6 @@ public class RateAllItems {
 					long itemID = items.nextLong();
 					PreferenceArray prefsI = recco.getDataModel().getPreferencesForItem(itemID);
 					long[] iIDs = prefsI.getIDs();
-					if (null == iIDs)
-						prefsI.hashCode();
 					Float pref = model.getPreferenceValue(userID, itemID);
 					if (null != pref && pref < 10000000.0) {
 						float rec = recco.estimatePreference(userID, itemID);
@@ -215,7 +213,6 @@ public class RateAllItems {
 				;
 			}
 		}
-		users.hashCode();
 	}
 
 	private static void printAvgRecommendations(Recommender recco)

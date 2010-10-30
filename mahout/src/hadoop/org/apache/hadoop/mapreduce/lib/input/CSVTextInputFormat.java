@@ -1,6 +1,7 @@
 package org.apache.hadoop.mapreduce.lib.input;
 
 import java.io.IOException;
+import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -20,7 +21,8 @@ import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
  * 
  * Use case: 
  *  text data files with one or more data items per line. 
- *  This class rips apart the data items with regex patterns, then assembles a new value with 0 or more values.
+ *  This class rips apart the data items with regex patterns, 
+ *  then assembles a new value with 0 or more values.
  *  Items have one common separator, or the first item has a different separator.
  *  The output includes 1 or more items from the list, chosen by order.
  *  The output items are separated by the given 'replace' fields- 
@@ -31,6 +33,8 @@ import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
  *  order = n1,n2,n3...nn  
  *  
  *  pattern2/replace2 are not required
+ *  
+ *  Includes option for sampling, allowing disjoint sampled sets from different passes
  * 
  *  See main() for examples
  */
@@ -43,6 +47,9 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 	private static final String FORMAT_REPLACE2 = "mapreduce.csvinput.replace2";
 	private static final String FORMAT_ORDER = "mapreduce.csvinput.order";
 	private static final String FORMAT_PAYLOAD = "mapreduce.csvinput.payload";
+	private static final String FORMAT_SAMPLE_SEED = "mapreduce.csvinput.sample.seed";
+	private static final String FORMAT_SAMPLE_MIN = "mapreduce.csvinput.sample.min";
+	private static final String FORMAT_SAMPLE_MAX = "mapreduce.csvinput.sample.max";
 
 	@Override
 	public RecordReader<LongWritable, Text> 
@@ -55,19 +62,26 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 		String replace2 = conf.get(FORMAT_REPLACE2);
 		String order = conf.get(FORMAT_ORDER);
 		String payload = conf.get(FORMAT_PAYLOAD);
+		String sampleSeed = conf.get(FORMAT_SAMPLE_SEED);
+		String sampleMin = conf.get(FORMAT_SAMPLE_MIN);
+		String sampleMax = conf.get(FORMAT_SAMPLE_MAX);
 		if (null == pattern1 || null == replace1 || null == order) {
 			throw new IOException("CSVTextFormat: missing parameter pattern1/replace1/order");
 		}
-		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order, payload);
+		Sampler sampler = null;
+		if (null != sampleMax) {
+			sampler = new Sampler(sampleSeed, sampleMin, sampleMax);
+		}
+		return new FlexibleRecordReader(pattern1, pattern2, replace1, replace2, order, payload, sampler);
 	}
 
-	  @Override
-	  protected boolean isSplitable(JobContext context, Path file) {
-	    CompressionCodec codec = 
-	      new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
-	    return codec == null;
-	  }
-	  
+	@Override
+	protected boolean isSplitable(JobContext context, Path file) {
+		CompressionCodec codec = 
+			new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
+		return codec == null;
+	}
+
 	/**
 	 * @param args
 	 * @throws Exception 
@@ -76,13 +90,13 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 		FlexibleRecordReader frr;
 
 		String test;
-		frr = new FlexibleRecordReader("::", null, " ", null, "0,1", null);
+		frr = new FlexibleRecordReader("::", null, " ", null, "0,1", null, null);
 		test = frr.unpackValue("id::lat,long");
 		if (!test.equals("id lat,long")) {
 			throw new Exception("unpack multiple filled values failed");
 		}
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6","|");
+		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6","|", null);
 		String orig = "id,1,2,3,4,lat,long,7";
 		test = frr.unpackValue(orig);
 		if (!test.equals("id,lat,long")) {
@@ -93,6 +107,9 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
 		if (!test.equals(",,long")) {
 			throw new Exception("unpack multiple empty values failed");
 		}
+		// need some test of sampling
+		// requires a real I/O test of this damn thing
+
 	}
 }
 
@@ -101,15 +118,18 @@ class FlexibleRecordReader extends LineRecordReader {
 	final int[] order;
 	final int[] reverse;
 	final String payload;
+	final Sampler sampler;
+
 
 	public FlexibleRecordReader(String pattern1, String pattern2,
-			String replace1, String replace2, String order, String payload) {
+			String replace1, String replace2, String order, String payload, Sampler sampler) {
 		super();
 		this.pattern1 = pattern1;
 		this.pattern2 = pattern2;
 		this.replace1 = replace1;
 		this.replace2 = replace2;
 		this.payload = payload;
+		this.sampler = sampler;
 		String[] parts = order.split(",");
 		this.order = new int[parts.length];
 		int max = -1;
@@ -126,6 +146,22 @@ class FlexibleRecordReader extends LineRecordReader {
 			this.reverse[this.order[i]] = i;
 		}
 		this.hashCode();
+	}
+
+	// weird advance thing makes this more complex
+	@Override
+	public boolean nextKeyValue() throws IOException {
+		if (null == sampler)
+			return super.nextKeyValue();
+		boolean skip = !sampler.sample();
+		while (skip) {
+			boolean last = super.nextKeyValue();
+			if (!last)
+				return false;
+			// we have now officially skipped a line
+			skip = !sampler.sample();
+		}
+		return super.nextKeyValue();
 	}
 
 	@Override
@@ -194,4 +230,29 @@ class FlexibleRecordReader extends LineRecordReader {
 		}
 	}
 
+}
+
+final class Sampler {
+	final Random rnd;
+	final double sampleMin;
+	final double sampleMax;
+
+	Sampler( String sampleSeed, String sampleMin, String sampleMax) {
+		this.sampleMax = Double.parseDouble(sampleMax);
+		if (null != sampleMin) {
+			this.sampleMin = Double.parseDouble(sampleMin);
+		} else {
+			this.sampleMin = 0.0;
+		}
+		if (null != sampleSeed) {
+			this.rnd = new Random(Long.parseLong(sampleSeed));
+		} else {
+			this.rnd = new Random();
+		}	
+	}
+
+	boolean sample() {
+		double sample = rnd.nextDouble();
+		return (sample >= sampleMin && sample < sampleMax);
+	}
 }

@@ -27,12 +27,9 @@ public class Sample {
 		LineReader re = new LineReader(in);
 		String buf = null;
 		while ((buf = re.readLine()) != null && buf.length() > 0) {
-//			System.err.println(buf);
 			double sample = rand.nextDouble();
 			if (sample >= low && sample < high) {
 				System.out.println(buf);
-			} else {
-				System.err.println(sample);
 			}
 		}
 		System.out.flush();

@@ -61,6 +61,23 @@ public class CornerGen {
 		return corners;
 	}
 
+	public Set<Corner> getHashSet(int[] hash) {
+		Set<Corner> corners = new HashSet<Corner>();
+		corners.add(new Corner(hash.clone()));
+		double remainder[] = new double[hash.length];
+		double unhashed[] = new double[hash.length];
+		hasher.unhash(hash, unhashed);
+		for(int i = 0; i < hash.length; i++) {
+			remainder[i] = 0.00001; 
+		}
+		int permuted[] = permute(remainder);
+		for(int dim = 0; dim < permuted.length; dim++) {
+			hash[permuted[dim]]++;
+			corners.add(new Corner(hash.clone()));
+		}
+		return corners;
+	}
+
 	/*
 	 * return 0-n sorted by hash[0-n], then reversed
 	 */

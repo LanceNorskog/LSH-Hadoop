@@ -58,7 +58,7 @@ public class SimplexRecommender implements Recommender {
 		}
 		hasher.setStretch(stretch);
 		CornerGen cg = new CornerGen(hasher, stretch);
-		return new SimplexTextDataModel(dataFile, hasher, cg);
+		return new SimplexTextDataModel(dataFile, cg);
 	}
 
 
@@ -89,13 +89,14 @@ public class SimplexRecommender implements Recommender {
 	public List<RecommendedItem> recommend(long userID, int howMany)
 	throws TasteException {
 		List<RecommendedItem> recs = new ArrayList<RecommendedItem>(howMany);
-		Point p = model.userDB.id2point.get(((Long) userID).toString());
-		if (null == p) 
-			return NORECS;
-		int[] hashes = model.hasher.hash(p.values);
-		Corner main = new Corner(hashes);
+//		Point p = model.userDB.id2point.get(((Long) userID).toString());
+//		if (null == p) 
+//			return NORECS;
+//		int[] hashes = model.cg.hasher.hash(p.values);
+//		Corner main = new Corner(hashes);
 //		getRecommendations(howMany, recs, main, main);
-		Set<Corner> all = model.cg.getHashSet(p);
+		Corner main = model.userDB.id2corner.get(((Long) userID).toString());
+		Set<Corner> all = model.cg.getHashSet(main.hashes.clone());
 		for(Corner c: all) {
 			getRecommendationsHash(howMany, recs, main, c);
 		}
@@ -104,11 +105,12 @@ public class SimplexRecommender implements Recommender {
 
 	private void getRecommendationsHash(int howMany, List<RecommendedItem> recs,
 			Corner main, Corner c) {
-//		((Object) null).hashCode();
 		Set<String> ids = model.itemDB.corner2ids.get(c);
 		if (null != ids) {
 			for(String id: ids) {
 				float rating = (float) (model.distance2rating(model.manhattan(main.hashes, c.hashes)));
+				if (rating == Float.NaN)
+					rating = 1.0f;
 				RecommendedItem recco = new GenericRecommendedItem(Long.parseLong(id), rating);
 				int j = 0;
 				for(; j < recs.size(); j++) {
@@ -197,7 +199,7 @@ public class SimplexRecommender implements Recommender {
 	public static void main(String[] args) throws IOException, TasteException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		props.setProperty(LSHDriver.DIMENSION, "100");
+		props.setProperty(LSHDriver.DIMENSION, "101");
 		props.setProperty(LSHDriver.GRIDSIZE, "1.0");
 		SimplexRecommender rec = new SimplexRecommender(props, args[0]);
 		//		LongPrimitiveIterator lpi = model.getUserIDs();

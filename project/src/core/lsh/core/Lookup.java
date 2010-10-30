@@ -28,13 +28,13 @@ public class Lookup {
 	final public Map<Corner, Set<Point>> corner2points;
 	final public HashMap<Point, Set<Corner>> point2corners;
 	
-	public Lookup(Hasher hasher, boolean doPoints, boolean doCorners, boolean doIds, boolean doId2point, boolean doCorner2points, boolean doPoint2corners) {
+	public Lookup(Hasher hasher, boolean doPoints, boolean doCorners, boolean doIds, boolean doId2point, 
+			boolean doId2corner, boolean doCorner2Ids, boolean doCorner2points, boolean doPoint2corners) {
 		this.hasher = hasher;
 		points = doPoints ? new HashSet<Point>() : null;
 		corners = doCorners ? new HashSet<Corner>() : null;
 		id2point = doId2point ? new HashMap<String,Point>() : null;
-		id2corner = new HashMap<String,Corner>();
-		boolean doCorner2Ids = false;
+		id2corner = doId2corner ? new HashMap<String,Corner>() : null;
 		corner2ids = doCorner2Ids ? new HashMap<Corner,Set<String>>() : null;
 		ids = doIds ? new HashSet<String>() : null;
 		corner2points = doCorner2points ? new HashMap<Corner, Set<Point>>() : null;
@@ -83,7 +83,7 @@ public class Lookup {
 		int dim = Integer.parseInt(args[1]);
 		double gridsize = Double.parseDouble(args[2]);
 
-		Lookup lookup = new Lookup(null, true, true, true, true, true, true);
+		Lookup lookup = new Lookup(null, true, true, true, true, true, true, true, true);
 		lookup.loadCP(r, null);
 		if (args.length == 5) {
 			Collection<Corner> corners = lookup.getMatchingCorners(args[4]);

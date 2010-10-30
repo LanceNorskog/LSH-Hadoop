@@ -96,7 +96,7 @@ public class Search1 {
 
 	public static void main(String[] args) throws IOException {
 		Hasher h = new OrthonormalHasher(2, 1d);
-		Lookup l = new Lookup(h, true, true, true, true, true, true);
+		Lookup l = new Lookup(h, true, true, true, true, true, true, true, true);
 		Reader fr = new FileReader(args[0]);
 		l.loadCP(fr, null);
 		String g32 = "fetch";
