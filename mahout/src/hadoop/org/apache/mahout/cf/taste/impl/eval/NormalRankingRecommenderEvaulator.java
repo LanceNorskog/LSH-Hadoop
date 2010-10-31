@@ -97,6 +97,48 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 	} 
 
 	/*
+	 * Get randomly sampled recommendations
+	 * 
+	 */
+	public double evaluate(Recommender recco1,
+			Recommender recco2, Random rnd, int samples) throws TasteException {
+		double scores = 0;
+		int allItems = recco1.getDataModel().getNumItems();
+		LongPrimitiveIterator users = recco1.getDataModel().getUserIDs();
+		if (doCSV)
+			System.out.println("user,sampled,match,normal");
+
+		int foundusers = 0;
+		while (users.hasNext()) {
+			long userID = users.nextLong();
+			allItems = Math.min(allItems, samples);
+			List<RecommendedItem> recs;
+			try {
+				recs = recco1.recommend(userID, allItems);
+			} catch (NoSuchUserException e) {
+				continue;
+			}
+			int sampled = recs.size();
+			if (sampled == 0)
+				continue;
+			foundusers++;
+			Preference[] prefsR = new Preference[sampled];
+			Preference[] prefsDM = new Preference[sampled];
+			getPrefsArray(recs, userID, prefsR, rnd);
+			getMatching(userID, prefsDM, recs, recco2);
+			int match = sampled - sloppyHamming(prefsDM, prefsR);
+			double normalW = normalWilcoxon(prefsDM, prefsR);
+			double variance = normalW/sampled;
+			if (doCSV)
+				System.out.println(userID + "," + sampled + "," + match + "," + variance);
+			scores += variance;
+			this.hashCode();
+			//	points gets more trash but need measure that finds it
+		}
+		return scores / foundusers;
+	} 
+
+	/*
 	 * Fill subsampled array from full list of recommended items 
 	 * Some recommenders give short lists
 	 */
@@ -124,6 +166,19 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		for(int i = 0; i < nprefs; i++) {
 			RecommendedItem rec = it.next();
 			Float value = dataModel.getPreferenceValue(userID, rec.getItemID());
+			prefs[i] = new GenericPreference(userID, rec.getItemID(), value);
+		}
+		Arrays.sort(prefs, new PrefCheck(-1));
+		return prefs;
+	}
+
+	private Preference[] getMatching(Long userID, Preference[] prefs, List<RecommendedItem> recs,
+			Recommender recco2) throws TasteException {
+		int nprefs = prefs.length;
+		Iterator<RecommendedItem> it = recs.iterator();
+		for(int i = 0; i < nprefs; i++) {
+			RecommendedItem rec = it.next();
+			Float value = recco2.estimatePreference(userID, rec.getItemID());
 			prefs[i] = new GenericPreference(userID, rec.getItemID(), value);
 		}
 		Arrays.sort(prefs, new PrefCheck(-1));
@@ -308,11 +363,12 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender pointRecco = doPointText(args[1]);
 		DataModel pointModel = pointRecco.getDataModel();
+		Recommender simplexRecco = doSimplexDataModel(args[2]);
+		DataModel simplexModel = simplexRecco.getDataModel();
 		Random random = new Random(0);
-		int samples = 3;
-		Recommender recco;
+		int samples = 50;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
-		bsrv.doCSV = true;
+//		bsrv.doCSV = true;
 
 		double score ;
 //		random.setSeed(0);
@@ -326,21 +382,26 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Estimating score: " + score);
 		 */
-//		recco = null;
-//		recco = doReccoPearsonItem(glModel);
+		Recommender pearsonRecco = doReccoPearsonItem(glModel);
+		random.setSeed(0);
+//		score = bsrv.evaluate(pearsonRecco, pointModel, random, samples);
+//		System.out.println("Pearson v.s. point model score: " + score);
+//		Recommender slope1Recco = doReccoSlope1(glModel);
 //		random.setSeed(0);
-//		score = bsrv.evaluate(recco, pointModel, random, samples);
-//		System.out.println("Pearson score: " + score);
-//		recco = null;
-//		recco = doReccoSlope1(glModel);
-//		random.setSeed(0);
-//		score = bsrv.evaluate(recco, pointModel, random, samples);
-//		System.out.println("Slope1 score: " + score);
-//		needs namedvectors
-		recco = null;
-		recco = doSimplexDataModel(args[2]);
-		score = bsrv.evaluate(recco, pointModel, random, samples);
-		System.out.println("Simplex score: " + score);
+//		score = bsrv.evaluate(slope1Recco, pointModel, random, samples);
+//		System.out.println("Slope1 v.s. point model score: " + score);
+//		score = bsrv.evaluate(pearsonRecco, slope1Recco, random, samples);
+//		System.out.println("Slope1 v.s. Pearson score: " + score);
+////		needs namedvectors
+//		score = bsrv.evaluate(simplexRecco, pointModel, random, samples);
+//		System.out.println("Simplex v.s. point model score: " + score);
+//		score = bsrv.evaluate(simplexRecco, simplexModel, random, samples);
+//		System.out.println("Simplex v.s. simplex model score: " + score);
+//		score = bsrv.evaluate(simplexRecco, slope1Recco, random, samples);
+//		System.out.println("Simplex v.s. Slope1 score: " + score);
+		score = bsrv.evaluate(pearsonRecco, simplexRecco, random, samples);
+
+		System.out.println("Simplex v.s. Pearson score: " + score);
 	}
 
 	private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
@@ -387,7 +448,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
 		props.setProperty(LSHDriver.DIMENSION, "150");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.43");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.0001");
 		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
 		return rec;
 	}
@@ -395,6 +456,11 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 
 }
 
+/*
+ * Sort preference by preference, and then by item ID
+ * Simplex ranking spits out a lot of identical ratings, 
+ * so this gets better order comparison
+ */
 class PrefCheck implements Comparator<Preference> {
 	final int sign;
 	
@@ -409,8 +475,15 @@ class PrefCheck implements Comparator<Preference> {
 			return 1;
 		else if (p1.getValue()*sign < p2.getValue()*sign)
 			return -1;
-		else 
-			return 0;
+		else {
+			// break ties by item id
+			if (p1.getItemID() > p2.getItemID())
+				return 1;
+			else if (p1.getItemID() < p2.getItemID())
+				return 1;
+			else
+				return 0;
+		}
 	}
 
 }
