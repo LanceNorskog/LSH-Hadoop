@@ -90,8 +90,8 @@ public class RateAllItems {
 	private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		props.setProperty(LSHDriver.DIMENSION, "50");
-		props.setProperty(LSHDriver.GRIDSIZE, "0.51");
+		props.setProperty(LSHDriver.DIMENSION, "150");
+		props.setProperty(LSHDriver.GRIDSIZE, "0.43");
 		SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
 		return rec;
 	}

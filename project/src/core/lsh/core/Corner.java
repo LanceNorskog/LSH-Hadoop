@@ -57,34 +57,3 @@ public class Corner {
 	}
 }
 
-/*
- * Given a corner, enumerate surrounding corners
- */
-class CornersIterator implements Iterator<Corner> {
-	final int hashes[];
-//	final int signs[];
-//	final int progress[];
-	
-	CornersIterator(int[] hashes) {
-		this.hashes = hashes;
-//		signs = new int[hashes.length];
-	}
-
-	@Override
-	public boolean hasNext() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public Corner next() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void remove() {
-		
-	}
-	
-}

@@ -4,7 +4,6 @@ import lsh.core.Corner;
 import lsh.core.CornerGen;
 import lsh.core.Hasher;
 import lsh.core.Lookup;
-import lsh.core.Point;
 import lsh.core.Utils;
 import lsh.core.VertexTransitiveHasher;
 
@@ -20,10 +19,7 @@ import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.recommender.GenericRecommendedItem;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 
 /*
  * Load LSH corners-based text format using LSH bag-of-objects.
@@ -49,52 +45,31 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	// project ratings from 0->1 into 1...5
 	final double scale = 4;
 	final double offset = 1;
+	final boolean earlyBinding = false;
 	
-	boolean doPoints = false;
-
 	public SimplexTextDataModel(String cornersFile, CornerGen cg) throws IOException {
 //		this.hasher = hasher;
 		this.cg = cg;
 		userDB = new Lookup(null, false, false, false, false, true, false, false, false);
-		itemDB = new Lookup(null, false, false, false, false, false, true, false, false);
+		itemDB = new Lookup(null, false, false, false, false, true, true, false, false);
 		Reader f;
 		f = new FileReader(new File(cornersFile));
-//		itemDB.loadCP(f, "I");
-//		f.close();
-//		f = new FileReader(new File(cornersFile));
-//		userDB.loadCP(f, "U");
 		Utils.load_corner_points_format(f, "I", itemDB, "U", userDB);
 		f.close();
 		int dimension = cg.stretch.length;
-//		if (null != cg.hasher) {
-//			double[] unit = new double[dimension];
-//			for(int i = 0; i < unit.length; i++)
-//				unit[i] = 1.0;
-//			double[] projected = new double[dimension];
-//			cg.hasher.project(unit, projected);
-//			varianceEuclid = 1.0;
-//			double dist = euclidD(unit, projected);
-//			varianceEuclid = 1.0 / dist;
-//		} else
-//			varianceEuclid = Double.NaN;
-
 		double[] zero = new double[dimension];
 		for(int i = 0; i < zero.length; i++)
 			zero[i] = 0.0;
 		double[] unit = new double[dimension];
 		for(int i = 0; i < unit.length; i++)
 			unit[i] = 1.0;
-//		varianceEuclid = 1.0;
 		int[] zeroHash = cg.hasher.hash(zero);
 		int[] unitHash = cg.hasher.hash(unit);
-//		varianceEuclid = 1/(Math.sqrt(manhattan(zeroHash, unitHash))*1.5);
 		varianceEuclid = manhattan(zeroHash,unitHash);
 		varianceEuclid = Math.sqrt(2)/varianceEuclid;
 		double dist = manhattanD(zero, unit);
 		varianceManhattan = 1/dist;
 		varianceManhattan = 1.0/dimension;
-
-
 		diagonal = 1/Math.sqrt(dimension);
 	}
 
@@ -134,30 +109,33 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	@Override
 	public Float getPreferenceValue(long userID, long itemID)
 	throws TasteException {
-		return doPoints ? getPreferenceValuePoint(userID, itemID) : getPreferenceValueCorner(userID, itemID);
+		if (earlyBinding)
+		{		return getPreferenceValueCorner(userID, itemID);
+		
+		} else
+			return getPreferenceAverageCorner(userID, itemID);
 	}
 
+	private Float getPreferenceAverageCorner(long userID, long itemID) {
+		Corner user = userDB.id2corner.get(userID + "");
+		Corner item = itemDB.id2corner.get(itemID + "");
+		Set<Corner> all = cg.getHashSet(item.hashes.clone());
+		double sum = 0;
+		for(Corner c: all) {
+			double distance = manhattan(user.hashes, c.hashes);
+			sum += distance;
+		}
+		double mean = sum / all.size();
+		return (float) distance2rating(mean);
+	}
+
+	// early binding: all corners exist for each item.
 	private Float getPreferenceValueCorner(long userID, long itemID)
 	throws TasteException {
-//		Point userP = userDB.id2point.get((userID) + "");
-//		int[] hashUser = hasher.hash(userP.values);
-//		Point itemP = itemDB.id2point.get((itemID) + "");
-//		int[] hashItem = hasher.hash(itemP.values);
-//		double man = manhattanD(userP.values, itemP.values);
-//		double distance = manhattan(hashUser, hashItem);
-//		return (float) distance2rating(man);
 		Corner user = userDB.id2corner.get(userID + "");
 		Corner item = itemDB.id2corner.get(itemID + "");
 		double distance = manhattan(user.hashes, item.hashes);
 		return (float) distance2rating(distance);
-	}
-
-	private Float getPreferenceValuePoint(long userID, long itemID) {
-//		Point userP = userDB.id2point.get((userID) + "");
-//		Point itemP = itemDB.id2point.get((itemID) + "");
-//		double distance = manhattanD(itemP.values, userP.values);
-//		return (float) distance2rating(distance);
-		return 0.0f;
 	}
 
 	@Override
@@ -169,16 +147,21 @@ public class SimplexTextDataModel extends AbstractDataModel {
 	@Override
 	public PreferenceArray getPreferencesFromUser(long userID)
 	throws TasteException {
-		return doPoints ? getPreferencesFromUserPoint(userID) : getPreferencesFromUserCorner(userID);
+		if (earlyBinding) {
+			return getPreferencesFromUserCorner(userID);
+		} else {
+			return enumeratePreferencesFromUserCorner(userID);			
+		}
 	}
 
-	private PreferenceArray getPreferencesFromUserCorner(long userID)
+	// all item corners already point to neighbor items.
+	private PreferenceArray getPreferencesFromUserCorner(long userID) {
+		throw new UnsupportedOperationException();
+	}
+
+	// late binding- have to fabricate all neighboring oorners
+	private PreferenceArray enumeratePreferencesFromUserCorner(long userID)
 	throws NoSuchUserException {
-		// XX use id2corner
-//		Point p = userDB.id2point.get((userID) + "");
-//		if (null == p)
-//			throw new NoSuchUserException();
-//		int[] hashes = cg.hasher.hash(p.values);
 		Corner main = userDB.id2corner.get((userID) + "");
 		Set<Corner> all = cg.getHashSet(main.hashes.clone());
 		int count = 0;
@@ -206,34 +189,13 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		return prefs;
 	}
 
-	private PreferenceArray getPreferencesFromUserPoint(long userID)
-	throws NoSuchUserException {
-//		int prefIndex = 0;
-//		Point up = userDB.id2point.get((userID) + "");
-//		if (null == up)
-//			throw new NoSuchUserException();
-//		PreferenceArray prefs = new GenericUserPreferenceArray(itemDB.ids.size());
-//		for(String item: itemDB.ids) {
-//			Point ip = itemDB.id2point.get(item);
-//			float dist = (float) distance2rating(manhattanD(up.values, ip.values));
-//			prefs.setUserID(prefIndex, userID);
-//			prefs.setItemID(prefIndex, Long.parseLong(item));
-//			prefs.setValue(prefIndex, dist);
-//			prefIndex++;
-//		}
-//		prefs.sortByItem();
-//		return prefs;
-		return null;
-	}
-
-	//	??? hash distance. really f'ud
 	double manhattan(int[] a, int[] b) {
 		double sum = 0;
 		for(int i = 0; i < a.length; i++) {
 			sum += Math.abs(a[i] - b[i]);
 		}
 		// 0 times varianceEuclid is NaN !
-		return (sum < 0.0000001) ? 0 : sum * varianceEuclid;
+		return (sum < 0.0000001) ? 0 : sum * varianceManhattan;
 	}
 
 	double manhattanD(double[] a, double[] b) {
@@ -243,15 +205,6 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		}
 		return sum * Math.sqrt(2) * varianceManhattan;
 	}
-
-	// hash distance - not correct!
-//	double euclid(int[] a, int[] b) {
-//		double sum = 0.0;
-//		for(int i = 0; i < a.length; i++) {
-//			sum += (a[i] - b[i]) * (a[i] - b[i]);
-//		}			
-//		return Math.sqrt(sum) * varianceEuclid;
-//	}
 
 	// rectangular distance
 	double euclidD(double[] a, double[] b) {
@@ -271,26 +224,6 @@ public class SimplexTextDataModel extends AbstractDataModel {
 		return e;
 	}
 	
-	/*
-	double distance2rating(double d) {
-		double spread = 2.5;
-		if (d < 0.1d || d > 0.9d) {
-			this.hashCode();
-		}
-//		d = invert(d, 2*dimensions);
-		double e;
-		double expand = scale * spread;
-		e = (1-d);
-		e = e * expand;
-		e = e - Math.sqrt(expand / spread);
-		e = Math.max(0, e);
-		e = Math.min(scale, e);
-		e = e + offset;
-		return e;
-	}
-	*/
-
-
 	@Override
 	public LongPrimitiveIterator getUserIDs() throws TasteException {
 		return new LPI(userDB.id2corner.keySet().iterator());

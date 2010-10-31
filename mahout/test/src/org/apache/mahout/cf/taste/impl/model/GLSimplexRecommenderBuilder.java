@@ -32,7 +32,7 @@ public class GLSimplexRecommenderBuilder implements RecommenderBuilder {
 	private static SimplexRecommender createSingleton(String fileName) {
 		Properties props = new Properties();
 		props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
-		props.setProperty(LSHDriver.DIMENSION, "50");
+		props.setProperty(LSHDriver.DIMENSION, "150");
 		props.setProperty(LSHDriver.GRIDSIZE, "0.70");
 		try {
 			return new SimplexRecommender(props, fileName);

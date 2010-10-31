@@ -11,6 +11,7 @@ import lsh.core.Point;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Mapper.Context;
 
 /*
  * Tyler Neylon's Python example in his SODA 2010 paper.
@@ -34,6 +35,7 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 	int maxHash = Integer.MIN_VALUE;	
 	int minGeneratedHash = Integer.MAX_VALUE;
 	int maxGeneratedHash = Integer.MIN_VALUE;
+	final boolean earlyBinding = false;
 
 
 	@Override
@@ -72,6 +74,7 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 			} else {
 				throw new IOException("CornerMapper: Need dimension or gridsize parameters.");
 			}
+						
 			hasher.setStretch(stretch);
 			cg = new CornerGen(hasher, stretch);
 			double[] limit = new double[dimensions];
@@ -99,6 +102,35 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 	throws IOException, InterruptedException {
 
 		Point point = Point.newPoint(value.toString());
+		if (earlyBinding) {
+			doAllCorners(value, context, point);
+		} else {
+			doOneCorner(value, context, point);	
+		}
+	}
+
+	private void doOneCorner(Text value, Context context, Point point) throws IOException, InterruptedException {
+		int[] hash = cg.hasher.hash(point.values);
+		int i = 0;
+		for(; i < hash.length; i++) {
+			if (hash[i] < minGeneratedHash)
+				minGeneratedHash = hash[i];
+			if (hash[i] > maxGeneratedHash)
+				maxGeneratedHash = hash[i];
+			if (hash[i] < minHash)
+				break;
+			if (hash[i] > maxHash)
+				break;
+		}
+		if (i == hash.length) {
+			Corner corner = new Corner(hash);
+			context.write(new Text(corner.toString()), value);
+		}
+
+	}
+
+	private void doAllCorners(Text value, Context context, Point point)
+			throws IOException, InterruptedException {
 		Set<Corner> hashes = cg.getHashSet(point);
 		for (Corner corner : hashes) {
 			int i = 0;
