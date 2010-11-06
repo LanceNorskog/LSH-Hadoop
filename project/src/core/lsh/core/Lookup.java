@@ -41,6 +41,10 @@ public class Lookup {
 		point2corners = doPoint2corners ? new HashMap<Point, Set<Corner>>() : null;
 	}
 
+	public Lookup(boolean doPoints, boolean doCorners) {
+		this(null, doPoints, doCorners, false, false, false, false, false, false);
+	}
+
 	public void loadCP(Reader r, String payload) throws IOException {
 		Utils.load_corner_points_format(r, payload, this, null, null);
 	}
