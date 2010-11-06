@@ -363,8 +363,8 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender pointRecco = doPointText(args[1]);
 		DataModel pointModel = pointRecco.getDataModel();
-		Recommender simplexRecco = doSimplexDataModel(args[2]);
-		DataModel simplexModel = simplexRecco.getDataModel();
+//		Recommender simplexRecco = doSimplexDataModel(args[2]);
+//		DataModel simplexModel = simplexRecco.getDataModel();
 		Random random = new Random(0);
 		int samples = 50;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
@@ -382,14 +382,14 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		score = bsrv.evaluate(recco, pointModel, random, samples);
 		System.out.println("Estimating score: " + score);
 		 */
-		Recommender pearsonRecco = doReccoPearsonItem(glModel);
-		random.setSeed(0);
+//		Recommender pearsonRecco = doReccoPearsonItem(glModel);
+//		random.setSeed(0);
 //		score = bsrv.evaluate(pearsonRecco, pointModel, random, samples);
 //		System.out.println("Pearson v.s. point model score: " + score);
-//		Recommender slope1Recco = doReccoSlope1(glModel);
-//		random.setSeed(0);
-//		score = bsrv.evaluate(slope1Recco, pointModel, random, samples);
-//		System.out.println("Slope1 v.s. point model score: " + score);
+		Recommender slope1Recco = doReccoSlope1(glModel);
+		random.setSeed(0);
+		score = bsrv.evaluate(slope1Recco, pointModel, random, samples);
+		System.out.println("Slope1 v.s. point model score: " + score);
 //		score = bsrv.evaluate(pearsonRecco, slope1Recco, random, samples);
 //		System.out.println("Slope1 v.s. Pearson score: " + score);
 ////		needs namedvectors
@@ -399,9 +399,9 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 //		System.out.println("Simplex v.s. simplex model score: " + score);
 //		score = bsrv.evaluate(simplexRecco, slope1Recco, random, samples);
 //		System.out.println("Simplex v.s. Slope1 score: " + score);
-		score = bsrv.evaluate(pearsonRecco, simplexRecco, random, samples);
+//		score = bsrv.evaluate(pearsonRecco, simplexRecco, random, samples);
 
-		System.out.println("Simplex v.s. Pearson score: " + score);
+//		System.out.println("Simplex v.s. Pearson score: " + score);
 	}
 
 	private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {

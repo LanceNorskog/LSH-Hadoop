@@ -173,23 +173,25 @@ public class PointTextDataModel extends AbstractDataModel {
 	}
 
 	// rectangular distance
-	double manhattanD(double[] a, double[] b) {
+	public static double manhattanD(double[] a, double[] b) {
 		double sum = 0;
+		int dimensions = a.length;
 		for(int i = 0; i < dimensions; i++) {
 			sum += Math.abs(a[i] - b[i]);
 		}
-		double r = sum * varianceManhattan;
+		double r = sum / dimensions;
 		return r;
 	}
 
 	// euclidean distance
-	double euclidD(double[] a, double[] b) {
+	public static double euclidD(double[] a, double[] b) {
 		double sum = 0;
+		int dimensions = a.length;
 		for(int i = 0; i < dimensions; i++) {
 			sum += (a[i] - b[i]) * (a[i] - b[i]);
 		}			
 		double dist = Math.sqrt(sum);
-		return dist * varianceEuclid;
+		return dist / Math.sqrt(dimensions);
 	}
 
 	double distance2rating(double d) {

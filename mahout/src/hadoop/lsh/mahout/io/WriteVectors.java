@@ -3,11 +3,11 @@ package lsh.mahout.io;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 
-import org.apache.jasper.tagplugins.jstl.core.Out;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
@@ -38,12 +38,18 @@ public class WriteVectors {
 			box.loadCorners(lshReader, doUser ? "U" : "I");
 		}
 		DataOutput dout;
-		dout = new DataOutputStream(System.out);
+		File fOut = new File(args[n+1]);
+		fOut.delete();
+		FileOutputStream fOutStream = new FileOutputStream(fOut);
+		dout = new DataOutputStream(fOutStream);
+		dout.writeInt(box.points.size());
 		for(Point p: box.points) {
 			Vector v = new DenseVector(p.values);
 			VectorWritable vectorWritable = new VectorWritable(v);
 		    vectorWritable.setWritesLaxPrecision(true);
 		    vectorWritable.write(dout);
 		}
+		fOutStream.flush();
+		fOutStream.close();
 	}
 }
