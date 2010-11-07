@@ -30,7 +30,7 @@ import sun.security.x509.DeltaCRLIndicatorExtension;
 public class UserItemPrefReducer extends
 		Reducer<LongWritable, TupleWritable, Text, Text> {
 
-	private static final double EFFECT = 1.5;
+	private static final double EFFECT = 0.0;
 	// the space of the incoming pref values
 	// rating from 1->5 needs bias=3,scale=4
 	public Double bias = 0.0;

@@ -24,7 +24,7 @@ public class CanopyTest {
 	 */
 	public static void main(String[] args) throws IOException {
 		List<Vector> vectors = loadVectors(args[0]);
-		CanopyExample(vectors);
+		canopyExample(vectors);
 	}
 
 	public static List<Vector> loadVectors(String path) throws IOException {
@@ -40,12 +40,12 @@ public class CanopyTest {
 		return vectors;
 	}
 
-	public static void CanopyExample(List<Vector> vectors) {
-		List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.05);
+	public static void canopyExample(List<Vector> vectors) {
+		List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.03);
 		for(Canopy canopy : canopies) {
 			Vector radius = canopy.getRadius();
 			System.out.print("Canopy id: " + canopy.getId() + ", radius ");
-			radius = normalizeRadius(radius);
+//			radius = normalizeRadius(radius);
 			summarizeVector(radius);
 		}
 	}
@@ -54,10 +54,7 @@ public class CanopyTest {
 	public static Vector normalizeRadius(Vector radius) {
 		double min = radius.minValue();
 		double max = radius.maxValue();
-		if (min >= 0)
-			return radius;
-		else
-			return radius.plus(-min);
+		return radius.plus(-min);
 	}
 
 	public static void summarizeVector(Vector v) {
@@ -67,7 +64,14 @@ public class CanopyTest {
 		for(int i = 0; i < v.size(); i++) {
 			values[i] = v.getQuick(i);
 		}
-		System.out.println( "min: " + v.minValue() + ", max: " + v.maxValue() + ", norm2: " + (v.norm(2)/Math.sqrt(dimensions)) + ", stddev: " + stddev.evaluate(values));
+		System.out.println( "min: " + v.minValue() + ", max: " + trim(v.maxValue()) + ", norm2: " + trim(v.norm(2)) + ", stddev: " + trim(stddev.evaluate(values)));
+	}
+
+	private static String trim(double maxValue) {
+		String string = Double.toString(maxValue);
+		int l = string.length();
+		return l < 5 ? string : string.substring(0, 6);
+		
 	}
 
 	public static List<Canopy> makeCanopies(List<Vector> vectors, DistanceMeasure measure, double t1, double t2) {

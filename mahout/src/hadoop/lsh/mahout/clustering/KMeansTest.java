@@ -33,8 +33,14 @@ public class KMeansTest {
 		int k = 2; 
 		List<Vector> vectors = CanopyTest.loadVectors(args[0]);
 		int dimensions = vectors.get(0).size();
-//		doKmeans(vectors);
-		doDirichlet(vectors, dimensions);
+		List<Vector> save = new ArrayList(vectors.size());
+		for(Vector v: vectors) {
+			save.add(v.clone());
+		}
+		doKmeans(vectors, true);
+//		doFuzzyKmeans(vectors);
+//		CanopyTest.canopyExample(save);
+//		doDirichlet(vectors, dimensions);
 	}
 
 	private static void doDirichlet(List<Vector> vectors, int dimensions) {
@@ -43,47 +49,86 @@ public class KMeansTest {
 				new VectorWritable(new DenseVector(dimensions)));
 		DirichletClusterer dc =
 			new DirichletClusterer(
-			vwList,
-			modelDist,
-			1.0, 20, 2, 2);
-			List<org.apache.mahout.clustering.Cluster[]> result = dc.cluster(50);
-			result.hashCode();
-			System.out.println("N of cluster[]: " + result.size());
-			org.apache.mahout.clustering.Cluster[] c = result.get(result.size() - 1);
-//			for(org.apache.mahout.clustering.Cluster[] c: result) {
-				System.out.println("Length of cluster: " + c.length);
-//				for(int j = 0; j < c.length; j++) {
-//					System.out.print(" " + c[j].getNumPoints());
-//				}
-				double normalize = 1/Math.sqrt(dimensions);
-				for(int j = 0; j < c.length; j++) {
-					System.out.print("radius: ");
-					Vector radius = c[j].getRadius();
-					radius = CanopyTest.normalizeRadius(radius);
-//					Vector v = radius;
-					Vector v = radius.times(normalize);
-					CanopyTest.summarizeVector(v);
-				}
-				for(int j = 0; j < c.length; j++) {
-					System.out.print("radius: ");
-					Vector radius = c[j].getRadius();
-					Vector v = radius.times(normalize);
-					System.out.println(v);
-				}
-				//				System.out.println();
-//				i++;
-//			}
+					vwList,
+					modelDist,
+					1.0, 10, 2, 2);
+		List<org.apache.mahout.clustering.Cluster[]> result = dc.cluster(50);
+		System.out.println("N of cluster[]: " + result.size());
+		org.apache.mahout.clustering.Cluster[] c = result.get(result.size() - 1);
+		System.out.println("Length of cluster: " + c.length);
+		//				for(int j = 0; j < c.length; j++) {
+		//					System.out.print(" " + c[j].getNumPoints());
+		//				}
+		double normalize = 1/Math.sqrt(dimensions);
+		for(int j = 0; j < c.length; j++) {
+			System.out.print("radius: ");
+			Vector radius = c[j].getRadius();
+			//					radius = CanopyTest.normalizeRadius(radius);
+			//					Vector v = radius.times(normalize);
+			CanopyTest.summarizeVector(radius);
+		}
+		for(int j = 0; j < c.length; j++) {
+			System.out.print("radius: ");
+			Vector radius = c[j].getRadius();
+			System.out.println(radius);
+		}
 	}
 
-	private static void doKmeans(List<Vector> vectors) {
-		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.05);
-		System.out.println("N of canopies: " + canopies.size());
+	private static String trim(double maxValue) {
+		String string = Double.toString(maxValue);
+		int l = string.length();
+		return l < 5 ? string : string.substring(0, 6);
 
+	}
+
+
+
+	private static void doKmeans(List<Vector> vectors, boolean csv) {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
+		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, measure, 0.10, 0.03);
+//		System.out.println("N of canopies: " + canopies.size());
+
+		ArrayList<Cluster> clusters = new ArrayList<Cluster>();
+		for(Canopy canopy: canopies) {
+			Vector center = canopy.getCenter();
+			SoftCluster cluster = new SoftCluster(center, canopy.getId(), measure);
+			clusters.add(cluster);
+		}
+		List<List<Cluster>> kmout = KMeansClusterer.clusterPoints(vectors, clusters, 
+				new EuclideanDistanceMeasure(), 10, 0.1 );
+		kmout.hashCode();
+//		System.out.println("N of clusters: " + kmout.size());
+		for(Cluster sc: kmout.get(kmout.size() - 1)) 
+		{ 
+			Vector center = sc.getCenter();
+			if (csv) {
+				for(int i = 0; i < center.size(); i++) {
+					System.out.print(center.getQuick(i) + ",");
+				}
+				System.out.println();
+			} else {
+				System.out.println("Cluster ident: " + sc.getIdentifier() + 
+						", vector L2: " + trim(center.norm(2)) +
+						", radius L2: " + trim(sc.getRadius().norm(2)));
+			}
+			double min = Double.MAX_VALUE;
+			double max = Double.MIN_VALUE;
+			//			for(int i = 0; i < sc.count(); i++) {
+			//				for(int j = 0; j < sc.count(); j++) {
+			//					double dist = sc.
+			//				}
+			//			}
+		}
+	}
+	
+	private static void doFuzzyKmeans(List<Vector> vectors) {
+		DistanceMeasure measure = new TanimotoDistanceMeasure();
+		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, measure, 0.1, 0.03);
+		System.out.println("N of canopies: " + canopies.size());
 
 		List<SoftCluster> clusters = new ArrayList<SoftCluster>();
 		for(Canopy canopy: canopies) {
-			Vector centroid = canopy.computeCentroid();
+			Vector centroid = canopy.getCenter();
 			SoftCluster cluster = new SoftCluster(centroid, canopy.getId(), measure);
 			clusters.add(cluster);
 		}
@@ -95,11 +140,11 @@ public class KMeansTest {
 			System.out.println("Cluster ident: " + sc.getIdentifier() + ", N points: " + sc.getNumPoints());
 			double min = Double.MAX_VALUE;
 			double max = Double.MIN_VALUE;
-//			for(int i = 0; i < sc.count(); i++) {
-//				for(int j = 0; j < sc.count(); j++) {
-//					double dist = sc.
-//				}
-//			}
+			//			for(int i = 0; i < sc.count(); i++) {
+			//				for(int j = 0; j < sc.count(); j++) {
+			//					double dist = sc.
+			//				}
+			//			}
 		}
 	}
 }
