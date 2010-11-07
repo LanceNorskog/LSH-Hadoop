@@ -45,21 +45,32 @@ public class KMeansTest {
 			new DirichletClusterer(
 			vwList,
 			modelDist,
-			1.0, 10, 2, 2);
+			1.0, 20, 2, 2);
 			List<org.apache.mahout.clustering.Cluster[]> result = dc.cluster(50);
 			result.hashCode();
 			System.out.println("N of cluster[]: " + result.size());
-//			int i = 0;
 			org.apache.mahout.clustering.Cluster[] c = result.get(result.size() - 1);
 //			for(org.apache.mahout.clustering.Cluster[] c: result) {
 				System.out.println("Length of cluster: " + c.length);
 //				for(int j = 0; j < c.length; j++) {
 //					System.out.print(" " + c[j].getNumPoints());
 //				}
-//				for(int j = 0; j < c.length; j++) {
-//					System.out.println(" " + Math.sqrt(c[j].getCenter().getLengthSquared()));
-//				}
-//				System.out.println();
+				double normalize = 1/Math.sqrt(dimensions);
+				for(int j = 0; j < c.length; j++) {
+					System.out.print("radius: ");
+					Vector radius = c[j].getRadius();
+					radius = CanopyTest.normalizeRadius(radius);
+//					Vector v = radius;
+					Vector v = radius.times(normalize);
+					CanopyTest.summarizeVector(v);
+				}
+				for(int j = 0; j < c.length; j++) {
+					System.out.print("radius: ");
+					Vector radius = c[j].getRadius();
+					Vector v = radius.times(normalize);
+					System.out.println(v);
+				}
+				//				System.out.println();
 //				i++;
 //			}
 	}
