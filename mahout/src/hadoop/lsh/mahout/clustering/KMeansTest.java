@@ -37,7 +37,12 @@ public class KMeansTest {
 		for(Vector v: vectors) {
 			save.add(v.clone());
 		}
-		doKmeans(vectors, true);
+		List<Vector> vectorsTrain = null; 
+		if (args.length == 2) {
+			vectorsTrain = CanopyTest.loadVectors(args[1]);
+
+		}
+		doKmeans(vectors, vectorsTrain, false);
 //		doFuzzyKmeans(vectors);
 //		CanopyTest.canopyExample(save);
 //		doDirichlet(vectors, dimensions);
@@ -83,21 +88,32 @@ public class KMeansTest {
 
 
 
-	private static void doKmeans(List<Vector> vectors, boolean csv) {
+	private static void doKmeans(List<Vector> vectors, List<Vector> vectorsTrain, boolean csv) throws Exception {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
-		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, measure, 0.10, 0.03);
-//		System.out.println("N of canopies: " + canopies.size());
+		List<Canopy> canopies = CanopyTest.makeCanopies((null != vectorsTrain) ? vectorsTrain : vectors, measure, 0.1, 0.045);
+		System.err.println("N of canopies: " + canopies.size());
+		if (canopies.size() < 5 || canopies.size() > 100) {
+			System.out.println("N of kmeans clusters: " + canopies.size());
+//			throw new Exception();
+		}
 
 		ArrayList<Cluster> clusters = new ArrayList<Cluster>();
 		for(Canopy canopy: canopies) {
 			Vector center = canopy.getCenter();
 			SoftCluster cluster = new SoftCluster(center, canopy.getId(), measure);
 			clusters.add(cluster);
+			if (!csv)
+				System.out.println (" width L2:" + trim(Math.sqrt(cluster.getCenter().getDistanceSquared(cluster.computeCentroid()))));
+
 		}
 		List<List<Cluster>> kmout = KMeansClusterer.clusterPoints(vectors, clusters, 
-				new EuclideanDistanceMeasure(), 10, 0.1 );
+				new EuclideanDistanceMeasure(), 25, 0.1 );
 		kmout.hashCode();
 //		System.out.println("N of clusters: " + kmout.size());
+		if (kmout.get(kmout.size() - 1).size() < 5 || kmout.get(kmout.size() - 1).size() > 100) {
+			System.out.println("N of kmeans clusters: " + kmout.get(kmout.size() - 1).size());
+			throw new Exception();
+		}
 		for(Cluster sc: kmout.get(kmout.size() - 1)) 
 		{ 
 			Vector center = sc.getCenter();
@@ -111,8 +127,8 @@ public class KMeansTest {
 						", vector L2: " + trim(center.norm(2)) +
 						", radius L2: " + trim(sc.getRadius().norm(2)));
 			}
-			double min = Double.MAX_VALUE;
-			double max = Double.MIN_VALUE;
+//			double min = Double.MAX_VALUE;
+//			double max = Double.MIN_VALUE;
 			//			for(int i = 0; i < sc.count(); i++) {
 			//				for(int j = 0; j < sc.count(); j++) {
 			//					double dist = sc.

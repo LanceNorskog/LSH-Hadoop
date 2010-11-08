@@ -75,7 +75,7 @@ public class CanopyTest {
 	}
 
 	public static List<Canopy> makeCanopies(List<Vector> vectors, DistanceMeasure measure, double t1, double t2) {
-		System.out.println("make Canopies: tanimoto " + t1 + "," + t2);
+//		System.out.println("make Canopies: tanimoto " + t1 + "," + t2);
 		List<Canopy> canopies = CanopyClusterer.createCanopies(
 				vectors, measure, t1, t2);
 		return canopies;

@@ -1,1 +1,0 @@
-This folder implements semantic vectors directly, using the littlmr package.

@@ -18,25 +18,48 @@ import org.apache.mahout.math.VectorWritable;
 import lsh.core.Lookup;
 import lsh.core.Point;
 
+/*
+ * Read LSH format and write as CSV or Mahout vector file.
+ * 
+ * Usage:
+ * 	-u do user values - default item
+ *  -n add 'name'        - ID value
+ * 	-m do Mahout vectors - default CSV, no header
+ */
+
 public class WriteVectors {
 
 	/**
 	 * @param args
-	 * @throws IOException 
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		boolean doUser = false;
-		boolean doItem = true;
 		boolean doPoints = true;
-		boolean doCorners  = false;
 		boolean doName = false;
 		int n = 0;
-		boolean random = false;
 		boolean csv = true;
-		
-		if (args[0].equals("-r")) {
-			random = true;
-			n++;
+
+		while(true) {
+			if (args[n].equals("-c")) {
+				doPoints = false;
+				n++;
+			} else if (args[n].equals("-p")) {
+				doPoints = true;
+				n++;
+			} else if (args[n].equals("-u")) {
+				doUser = true;
+				n++;
+			} else if (args[n].equals("-n")) {
+				doName = true;
+				n++;
+			} else if (args[n].equals("-m")) {
+				csv = false;
+				n++;
+			} else if (args[n].charAt(0) == '-') {
+				throw new Exception("don't know options: " + args[n]);
+			} else
+				break;
 		}
 		File input = new File(args[n]);
 		File fOut = new File(args[n+1]);
@@ -45,75 +68,51 @@ public class WriteVectors {
 		OutputStream fOutStream = new FileOutputStream(fOut);
 		Reader lshReader = new FileReader(input);
 		dout = new DataOutputStream(fOutStream);
-		if (random) {
-			doRandom(dout, 1500, 150);
-		} else if (csv) {
-			doCSV(doUser, doPoints, doCorners, new PrintWriter(fOut), lshReader);
+		if (csv) {
+			doCSV(doUser, doPoints, new PrintWriter(fOut), lshReader);
 		}
 		else {
-		
-			doPoints(doUser, doPoints, doCorners, dout, lshReader);
+			doMahout(doUser, doPoints, dout, lshReader);
 		} 
 		fOutStream.flush();
 		fOutStream.close();
 	}
 
 	private static void doCSV(boolean doUser, boolean doPoints,
-			boolean doCorners, PrintWriter printWriter, Reader lshReader) throws IOException {
-		Lookup box = new Lookup(doPoints, doCorners);
+			PrintWriter printWriter, Reader lshReader) throws IOException {
+		Lookup box = new Lookup(doPoints, !doPoints);
 		if (doPoints) {
 			box.loadPoints(lshReader, doUser ? "U" : "I");
+			for(Point p: box.points) {
+				StringBuilder sb = new StringBuilder();
+				double[] values = p.values;
+				for(int i = 0; i < values.length; i++) {
+					sb.append(values[i]);
+					sb.append(',');
+				}
+				sb.setLength(sb.length() -1);
+				printWriter.println(sb.toString());
+			}
 		} else {
 			box.loadCorners(lshReader, doUser ? "U" : "I");
 		}
-		for(Point p: box.points) {
-			StringBuilder sb = new StringBuilder();
-			double[] values = p.values;
-			for(int i = 0; i < values.length; i++) {
-				sb.append(values[i]);
-				sb.append(',');
-			}
-			sb.setLength(sb.length() -1);
-			printWriter.println(sb.toString());
-		}
 
 	}
 
-	private static void doRandom(DataOutput dout, int rows, int dimensions) throws IOException {
-		Random rnd = new Random(0);
-		
-		dout.writeInt(rows);
-		for(int row = 0; row < rows; row++) {
-			double values[] = new double[dimensions];
-			for(int i = 0; i < dimensions; i++) {
-				values[i] = normal(rnd);
-			}
-			Vector v = new DenseVector(values);
-			VectorWritable vectorWritable = new VectorWritable(v);
-		    vectorWritable.setWritesLaxPrecision(true);
-		    vectorWritable.write(dout);
-		}
-	}
-	
-	static double normal(Random rnd) {
-		return (rnd.nextDouble() + rnd.nextDouble() + rnd.nextDouble() + rnd.nextDouble() + rnd.nextDouble())/6.0;
-	}
-
-	private static void doPoints(boolean doUser, boolean doPoints,
-			boolean doCorners,
+	private static void doMahout(boolean doUser, boolean doPoints,
 			DataOutput dout, Reader lshReader) throws IOException {
-		Lookup box = new Lookup(doPoints, doCorners);
+		Lookup box = new Lookup(doPoints, !doPoints);
 		if (doPoints) {
 			box.loadPoints(lshReader, doUser ? "U" : "I");
+			dout.writeInt(box.points.size());
+			for(Point p: box.points) {
+				Vector v = new DenseVector(p.values);
+				VectorWritable vectorWritable = new VectorWritable(v);
+				vectorWritable.setWritesLaxPrecision(true);
+				vectorWritable.write(dout);
+			}
 		} else {
 			box.loadCorners(lshReader, doUser ? "U" : "I");
-		}
-		dout.writeInt(box.points.size());
-		for(Point p: box.points) {
-			Vector v = new DenseVector(p.values);
-			VectorWritable vectorWritable = new VectorWritable(v);
-		    vectorWritable.setWritesLaxPrecision(true);
-		    vectorWritable.write(dout);
 		}
 	}
 }

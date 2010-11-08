@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 /*
  * Assemble points for each id 
- * Receives from IdentityMapper:
+ * Receives from SemvecMapper:
  * 		key user/item id
  * 		value U/I dimension spot
  * Output: User/Item id,point,"U" or "I" as payload
