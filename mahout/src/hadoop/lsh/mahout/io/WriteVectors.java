@@ -26,6 +26,7 @@ import org.apache.mahout.utils.vectors.io.VectorWriter;
 
 import org.apache.mahout.utils.vectors.io.VectorWriter;
 
+import lsh.core.Corner;
 import lsh.core.Lookup;
 import lsh.core.Point;
 
@@ -33,9 +34,10 @@ import lsh.core.Point;
  * Read LSH format and write as CSV or Mahout vector file.
  * 
  * Usage:
- * 	-u do user values - default item
+ * 	-u do user values    - default is item
  *  -n add 'name'        - ID value
  * 	-m do Mahout vectors - default CSV, no header
+ *  -g                   - hasher gridsize
  */
 
 public class WriteVectors {
@@ -50,6 +52,7 @@ public class WriteVectors {
 		boolean doName = false;
 		int n = 0;
 		boolean csv = true;
+		double gridsize = 1.0;
 
 		while(true) {
 			if (args[n].equals("-c")) {
@@ -67,6 +70,9 @@ public class WriteVectors {
 			} else if (args[n].equals("-m")) {
 				csv = false;
 				n++;
+			} else if (args[n].equals("-g")) {
+				gridsize = Double.parseDouble(args[n+1]);
+				n += 2;
 			} else if (args[n].charAt(0) == '-') {
 				throw new Exception("don't know options: " + args[n]);
 			} else
@@ -82,16 +88,16 @@ public class WriteVectors {
 			DataOutput dout;
 			OutputStream fOutStream = new FileOutputStream(fOut);
 			dout = new DataOutputStream(fOutStream);
-			doCSV(doUser, doPoints, new PrintWriter(fOut), lshReader);
+			doCSV(doUser, doPoints, gridsize, new PrintWriter(fOut), lshReader);
 			fOutStream.flush();
 			fOutStream.close();
 		}
 		else {
-			doMahout(doUser, doPoints, outputFile, lshReader);
+			doMahout(doUser, doPoints, gridsize, outputFile, lshReader);
 		} 
 	}
 
-	private static void doCSV(boolean doUser, boolean doPoints,
+	private static void doCSV(boolean doUser, boolean doPoints, double gridsize,
 			PrintWriter printWriter, Reader lshReader) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
 		if (doPoints) {
@@ -107,28 +113,59 @@ public class WriteVectors {
 				printWriter.println(sb.toString());
 			}
 		} else {
-			box.loadCorners(lshReader, doUser ? "U" : "I");
+			box.loadCP(lshReader, doUser ? "U" : "I");
+			StringBuilder sb = new StringBuilder();
+
+			for(Corner c: box.corners) {
+				int dimensions = c.hashes.length;
+				double[] values = copyHashes(c, dimensions, gridsize);
+				sb.setLength(0);
+				for(int i = 0; i < dimensions; i++) {
+					sb.append(values[i]);
+					sb.append(',');
+				}
+				sb.setLength(sb.length() -1);
+				printWriter.println(sb.toString());
+			}
+
 		}
 
 	}
 
+	private static double[] copyHashes(Corner c, int dimensions, double gridsize) {
+		double[] values = new double[dimensions];
+		for(int i = 0; i < dimensions; i++) {
+			values[i] = c.hashes[i]*gridsize;
+		}
+		return values;
+	}
+
 	private static void doMahout(boolean doUser, boolean doPoints,
-			String outFile, Reader lshReader) throws IOException {
+			double gridsize, String outFile, Reader lshReader) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
 		VectorWriter vWriter = getSeqFileWriter(outFile);
 		if (doPoints) {
 			box.loadPoints(lshReader, doUser ? "U" : "I");
 			List<Vector> one = new ArrayList<Vector>();
 			one.add(new DenseVector());
-			long sequence = 0;
 			for(Point p: box.points) {
 				Vector v = new DenseVector(p.values);
 				one.set(0, v);
-				sequence = vWriter.write(one);
+				vWriter.write(one);
 			}
 			vWriter.close();
 		} else {
-			box.loadCorners(lshReader, doUser ? "U" : "I");
+			box.loadCP(lshReader, doUser ? "U" : "I");
+			List<Vector> one = new ArrayList<Vector>();
+			one.add(new DenseVector());
+			for(Corner c: box.corners) {
+				int dimensions = c.hashes.length;
+				double[] values = copyHashes(c, dimensions, gridsize);
+				Vector v = new DenseVector(values);
+				one.set(0, v);
+				vWriter.write(one);
+			}
+			vWriter.close();
 		}
 	}
 	

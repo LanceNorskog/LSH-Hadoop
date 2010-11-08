@@ -151,7 +151,7 @@ public class Utils {
 	public static void load_corner(Reader r, Set<Point> points,
 			Set<String> ids, Map<String, Corner> id2corner, String payload) {
 		
-		
+
 	}
 
 }

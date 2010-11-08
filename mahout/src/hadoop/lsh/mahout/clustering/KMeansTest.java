@@ -42,7 +42,7 @@ public class KMeansTest {
 			vectorsTrain = CanopyTest.loadVectors(args[1]);
 
 		}
-		doKmeans(vectors, vectorsTrain, false);
+		doKmeans(vectors, vectorsTrain, true);
 //		doFuzzyKmeans(vectors);
 //		CanopyTest.canopyExample(save);
 //		doDirichlet(vectors, dimensions);
@@ -90,7 +90,8 @@ public class KMeansTest {
 
 	private static void doKmeans(List<Vector> vectors, List<Vector> vectorsTrain, boolean csv) throws Exception {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
-		List<Canopy> canopies = CanopyTest.makeCanopies((null != vectorsTrain) ? vectorsTrain : vectors, measure, 0.1, 0.045);
+		List<Canopy> canopies = CanopyTest.makeCanopies((null != vectorsTrain) ? 
+				vectorsTrain : vectors, measure, 0.1, 0.000075);
 		System.err.println("N of canopies: " + canopies.size());
 		if (canopies.size() < 5 || canopies.size() > 100) {
 			System.out.println("N of kmeans clusters: " + canopies.size());
@@ -110,10 +111,11 @@ public class KMeansTest {
 				new EuclideanDistanceMeasure(), 25, 0.1 );
 		kmout.hashCode();
 //		System.out.println("N of clusters: " + kmout.size());
-		if (kmout.get(kmout.size() - 1).size() < 5 || kmout.get(kmout.size() - 1).size() > 100) {
-			System.out.println("N of kmeans clusters: " + kmout.get(kmout.size() - 1).size());
-			throw new Exception();
-		}
+//		if (kmout.get(kmout.size() - 1).size() < 5 || kmout.get(kmout.size() - 1).size() > 100) {
+//			System.out.println("N of kmeans clusters: " + kmout.get(kmout.size() - 1).size());
+//			System.out.flush();
+//			throw new Exception();
+//		}
 		for(Cluster sc: kmout.get(kmout.size() - 1)) 
 		{ 
 			Vector center = sc.getCenter();

@@ -50,12 +50,12 @@ public class CanopyTest {
 	}
 
 	public static void canopyExample(List<Vector> vectors) {
-		List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.03);
+		List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.000075);
 		for(Canopy canopy : canopies) {
 			Vector radius = canopy.getRadius();
-			System.out.print("Canopy id: " + canopy.getId() + ", radius ");
+			System.out.print("Canopy id: " + canopy.getId() + ", center ");
 //			radius = normalizeRadius(radius);
-			summarizeVector(radius);
+			summarizeVector(canopy.getCenter());
 		}
 	}
 	
@@ -79,7 +79,7 @@ public class CanopyTest {
 	private static String trim(double maxValue) {
 		String string = Double.toString(maxValue);
 		int l = string.length();
-		return l < 5 ? string : string.substring(0, 6);
+		return l < 7 ? string : string.substring(0, 6);
 		
 	}
 
