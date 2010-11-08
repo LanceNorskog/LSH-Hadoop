@@ -9,11 +9,22 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
+import org.apache.mahout.utils.vectors.io.SequenceFileVectorWriter;
+import org.apache.mahout.utils.vectors.io.VectorWriter;
+
+import org.apache.mahout.utils.vectors.io.VectorWriter;
 
 import lsh.core.Lookup;
 import lsh.core.Point;
@@ -62,20 +73,22 @@ public class WriteVectors {
 				break;
 		}
 		File input = new File(args[n]);
-		File fOut = new File(args[n+1]);
+		String outputFile = args[n+1];
+		File fOut = new File(outputFile);
 		fOut.delete();
-		DataOutput dout;
-		OutputStream fOutStream = new FileOutputStream(fOut);
 		Reader lshReader = new FileReader(input);
-		dout = new DataOutputStream(fOutStream);
 		if (csv) {
+			fOut.delete();
+			DataOutput dout;
+			OutputStream fOutStream = new FileOutputStream(fOut);
+			dout = new DataOutputStream(fOutStream);
 			doCSV(doUser, doPoints, new PrintWriter(fOut), lshReader);
+			fOutStream.flush();
+			fOutStream.close();
 		}
 		else {
-			doMahout(doUser, doPoints, dout, lshReader);
+			doMahout(doUser, doPoints, outputFile, lshReader);
 		} 
-		fOutStream.flush();
-		fOutStream.close();
 	}
 
 	private static void doCSV(boolean doUser, boolean doPoints,
@@ -100,19 +113,33 @@ public class WriteVectors {
 	}
 
 	private static void doMahout(boolean doUser, boolean doPoints,
-			DataOutput dout, Reader lshReader) throws IOException {
+			String outFile, Reader lshReader) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
+		VectorWriter vWriter = getSeqFileWriter(outFile);
 		if (doPoints) {
 			box.loadPoints(lshReader, doUser ? "U" : "I");
-			dout.writeInt(box.points.size());
+			List<Vector> one = new ArrayList<Vector>();
+			one.add(new DenseVector());
+			long sequence = 0;
 			for(Point p: box.points) {
 				Vector v = new DenseVector(p.values);
-				VectorWritable vectorWritable = new VectorWritable(v);
-				vectorWritable.setWritesLaxPrecision(true);
-				vectorWritable.write(dout);
+				one.set(0, v);
+				sequence = vWriter.write(one);
 			}
+			vWriter.close();
 		} else {
 			box.loadCorners(lshReader, doUser ? "U" : "I");
 		}
 	}
+	
+	  private static VectorWriter getSeqFileWriter(String outFile) throws IOException {
+		    Path path = new Path(outFile);
+		    Configuration conf = new Configuration();
+		    FileSystem fs = FileSystem.get(conf);
+		    SequenceFile.Writer seqWriter = SequenceFile.createWriter(fs, conf, path, LongWritable.class,
+		      VectorWritable.class);
+		    return new SequenceFileVectorWriter(seqWriter);
+		  }
+		  
+
 }

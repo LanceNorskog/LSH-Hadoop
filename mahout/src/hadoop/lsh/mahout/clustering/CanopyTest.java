@@ -2,16 +2,21 @@ package lsh.mahout.clustering;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.mahout.clustering.canopy.Canopy;
 import org.apache.mahout.clustering.canopy.CanopyClusterer;
 import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.TanimotoDistanceMeasure;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.VectorWritable;
@@ -29,13 +34,17 @@ public class CanopyTest {
 
 	public static List<Vector> loadVectors(String path) throws IOException {
 		List<Vector> vectors = new ArrayList<Vector>();
-		DataInput din = new DataInputStream(new FileInputStream(path));
-		int nPoints = din.readInt();
-		for(int i = 0; i < nPoints; i++) {
-			VectorWritable v = new VectorWritable();
-			v.setWritesLaxPrecision(true);
-			v.readFields(din);
-			vectors.add(v.get());
+		SequenceFile.Reader reader = getSequenceFileReader(path);
+		LongWritable index = new LongWritable();
+		VectorWritable v = new VectorWritable();
+		v.setWritesLaxPrecision(true);
+		try {
+			while(reader.next(index, v)) {
+				vectors.add(v.get().clone());
+			}
+		} catch (EOFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return vectors;
 	}
@@ -81,4 +90,10 @@ public class CanopyTest {
 		return canopies;
 	}
 
+	public static SequenceFile.Reader getSequenceFileReader(String path) throws IOException {
+	    Configuration conf = new Configuration();
+	    FileSystem fs = FileSystem.get(conf);
+	    SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(path).makeQualified(fs), conf);
+        return reader;
+	}
 }
