@@ -32,6 +32,9 @@ public class RandomVector extends AbstractVector {
   final Random rnd = new Random();
   final long seed;
   final boolean gaussian;
+  final boolean limit = true;
+  
+  need way to reproduce any random matrix row or column
 
   /** For serialization purposes only */
   public RandomVector() {
@@ -76,7 +79,7 @@ public class RandomVector extends AbstractVector {
 
   @Override
   protected Matrix matrixLike(int rows, int columns) {
-    return new RandomMatrix(rows, columns, seed, gaussian);
+    return new RandomMatrix(rows, columns, seed, gaussian, limit);
   }
 
   @Override

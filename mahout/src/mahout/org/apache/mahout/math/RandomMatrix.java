@@ -32,12 +32,14 @@ public class RandomMatrix extends AbstractMatrix {
 	final Random rnd = new Random();
 	final long seed;
 	final boolean gaussian;
+	final boolean limit;
 
 	public RandomMatrix() {
 		cardinality[ROW] = 0;
 		cardinality[COL] = 0;
 		seed = 0;
 		gaussian = false;
+		limit = false;
 	}
 
 	/**
@@ -50,27 +52,41 @@ public class RandomMatrix extends AbstractMatrix {
 		cardinality[COL] = columns;
 		seed = 0;
 		gaussian = false;
+		limit = false;
 	}
 
-	public RandomMatrix(int rows, int columns, long seed, boolean gaussian) {
+	public RandomMatrix(int rows, int columns, long seed, boolean gaussian, boolean limit) {
 		cardinality[ROW] = rows;
 		cardinality[COL] = columns;
 		this.seed = seed;
 		this.gaussian = gaussian;
+		this.limit = limit;
 	}
 
 	@Override
 	public Matrix clone() {
-		RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, gaussian);
+		RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, gaussian, limit);
 		return clone;
 	}
 
 	public double getQuick(int row, int column) {
-		rnd.setSeed(seed + (row * columnSize()) + column);
-		double value = (((gaussian ? rnd.nextGaussian() : rnd.nextDouble()) -0.5) * Float.MAX_VALUE) * 1.99;
+		rnd.setSeed(getSeed(row, column));
+		double value = getRandom();
 		if (! Double.isNaN(value))
 			throw new Error("RandomMatrix: getQuick created NaN");
 		return value;
+	}
+
+	private long getSeed(int row, int column) {
+		return seed + (row * columnSize()) + column;
+	}
+
+	// give a wide range but avoid NaN land
+	private double getRandom() {
+		double raw = gaussian ? rnd.nextGaussian() : rnd.nextDouble();
+		if (limit)
+			return raw;
+		return ((raw*2 - 0.5) * Double.MAX_VALUE/2);
 	}
 
 	public Matrix like() {
@@ -139,7 +155,7 @@ public class RandomMatrix extends AbstractMatrix {
 		if (row < 0 || row >= rowSize()) {
 			throw new IndexException(row, rowSize());
 		}
-		return new RandomVector(cardinality[COL], seed + row * cardinality[COL], gaussian);
+		return new RandomVector(cardinality[ROW], seed + row * cardinality[COL], gaussian);
 	}
 
 }
