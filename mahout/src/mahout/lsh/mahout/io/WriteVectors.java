@@ -37,7 +37,7 @@ import lsh.core.Point;
  * 	-u do user values    - default is item
  *  -n add 'name'        - ID value
  * 	-m do Mahout vectors - default CSV, no header
- *  -g                   - hasher gridsize
+ *  -g                   - hasher gridsize if using VTHasher
  */
 
 public class WriteVectors {

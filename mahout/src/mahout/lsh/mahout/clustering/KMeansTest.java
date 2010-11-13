@@ -103,10 +103,18 @@ public class KMeansTest {
 			Vector center = canopy.getCenter();
 			SoftCluster cluster = new SoftCluster(center, canopy.getId(), measure);
 			clusters.add(cluster);
-			if (!csv)
+			if (csv) {
+				for(int i = 0; i < center.size(); i++) {
+					System.out.print(center.getQuick(i) + ",");
+				}
+				System.out.println();
+			}
+			else
 				System.out.println (" width L2:" + trim(Math.sqrt(cluster.getCenter().getDistanceSquared(cluster.computeCentroid()))));
-
 		}
+		
+		System.out.close();
+		System.exit(0);
 		List<List<Cluster>> kmout = KMeansClusterer.clusterPoints(vectors, clusters, 
 				new EuclideanDistanceMeasure(), 25, 0.1 );
 		kmout.hashCode();

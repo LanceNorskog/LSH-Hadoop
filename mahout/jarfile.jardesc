@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="WINDOWS-1252" standalone="no"?>
+<jardesc>
+    <jar path="C:/tmp/lsh_hadoop/lsh.jar"/>
+    <options buildIfNeeded="true" compress="true" descriptionLocation="/lsh-mahout/jarfile.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="true" manifestLocation="" manifestVersion="1.0" reuseManifest="false" saveManifest="false" usesManifest="true">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
+        <folder path="/lsh/test"/>
+        <javaElement handleIdentifier="=lsh/src\/mahout"/>
+        <javaElement handleIdentifier="=lsh-mahout/test\/src"/>
+        <file path="/lsh/README.txt"/>
+        <folder path="/lsh/src"/>
+        <folder path="/lsh-mahout/test"/>
+        <file path="/lsh/.classpath"/>
+        <javaElement handleIdentifier="=lsh/src\/solr"/>
+        <file path="/lsh/.project"/>
+        <folder path="/lsh-mahout/lib"/>
+        <file path="/lsh-mahout/.project"/>
+        <file path="/lsh-mahout/jarfile.jardesc"/>
+        <folder path="/lsh-mahout/src"/>
+        <file path="/lsh/build.xml"/>
+        <javaElement handleIdentifier="=lsh/test\/src"/>
+        <javaElement handleIdentifier="=lsh-mahout/src\/hadoop"/>
+        <javaElement handleIdentifier="=lsh-mahout/src\/solr"/>
+        <folder path="/lsh/lib"/>
+        <javaElement handleIdentifier="=lsh/src\/search"/>
+        <file path="/lsh/.gitignore"/>
+        <javaElement handleIdentifier="=lsh/src\/core"/>
+        <file path="/lsh/roadmap.txt"/>
+        <file path="/lsh-mahout/.classpath"/>
+        <file path="/lsh/georss_store.xml"/>
+    </selectedElements>
+</jardesc>

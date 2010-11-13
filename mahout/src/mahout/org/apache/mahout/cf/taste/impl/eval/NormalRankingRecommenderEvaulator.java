@@ -83,7 +83,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			Preference[] prefsR = new Preference[sampled];
 			Preference[] prefsDM = new Preference[sampled];
 			getPrefsArray(recs, userID, prefsR, rnd);
-			getMatching(userID, prefsDM, recs, dataModel);
+			getMatchesFromDataModel(userID, prefsDM, recs, dataModel);
 			int match = sampled - sloppyHamming(prefsDM, prefsR);
 			double normalW = normalWilcoxon(prefsDM, prefsR);
 			double variance = normalW/sampled;
@@ -125,7 +125,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 			Preference[] prefsR = new Preference[sampled];
 			Preference[] prefsDM = new Preference[sampled];
 			getPrefsArray(recs, userID, prefsR, rnd);
-			getMatching(userID, prefsDM, recs, recco2);
+			getMatchesFromRecommender(userID, prefsDM, recs, recco2);
 			int match = sampled - sloppyHamming(prefsDM, prefsR);
 			double normalW = normalWilcoxon(prefsDM, prefsR);
 			double variance = normalW/sampled;
@@ -159,7 +159,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		return prefs;
 	}
 
-	private Preference[] getMatching(Long userID, Preference[] prefs, List<RecommendedItem> recs,
+	private Preference[] getMatchesFromDataModel(Long userID, Preference[] prefs, List<RecommendedItem> recs,
 			DataModel dataModel) throws TasteException {
 		int nprefs = prefs.length;
 		Iterator<RecommendedItem> it = recs.iterator();
@@ -172,7 +172,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		return prefs;
 	}
 
-	private Preference[] getMatching(Long userID, Preference[] prefs, List<RecommendedItem> recs,
+	private Preference[] getMatchesFromRecommender(Long userID, Preference[] prefs, List<RecommendedItem> recs,
 			Recommender recco2) throws TasteException {
 		int nprefs = prefs.length;
 		Iterator<RecommendedItem> it = recs.iterator();
@@ -363,8 +363,6 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender pointRecco = doPointText(args[1]);
 		DataModel pointModel = pointRecco.getDataModel();
-//		Recommender simplexRecco = doSimplexDataModel(args[2]);
-//		DataModel simplexModel = simplexRecco.getDataModel();
 		Random random = new Random(0);
 		int samples = 50;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
@@ -375,14 +373,14 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 //		score = bsrv.evaluate(pointRecco, pointModel, random, samples);
 //		System.out.println("Point score: " + score);
 		
-		/*
-		This cannot find uncommons maths from the command line!
-		recco = doEstimatingUser(glModel);
+		
+//		This cannot find uncommons maths from the command line!
+		Recommender estimatingRecco = doEstimatingUser(glModel);
 		random.setSeed(0);
-		score = bsrv.evaluate(recco, pointModel, random, samples);
+		score = bsrv.evaluate(estimatingRecco, pointModel, random, samples);
 		System.out.println("Estimating score: " + score);
-		 */
-//		Recommender pearsonRecco = doReccoPearsonItem(glModel);
+		
+		Recommender pearsonRecco = doReccoPearsonItem(glModel);
 //		random.setSeed(0);
 //		score = bsrv.evaluate(pearsonRecco, pointModel, random, samples);
 //		System.out.println("Pearson v.s. point model score: " + score);
@@ -390,11 +388,13 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
 		random.setSeed(0);
 		score = bsrv.evaluate(slope1Recco, pointModel, random, samples);
 		System.out.println("Slope1 v.s. point model score: " + score);
-//		score = bsrv.evaluate(pearsonRecco, slope1Recco, random, samples);
-//		System.out.println("Slope1 v.s. Pearson score: " + score);
-////		needs namedvectors
-//		score = bsrv.evaluate(simplexRecco, pointModel, random, samples);
-//		System.out.println("Simplex v.s. point model score: " + score);
+		score = bsrv.evaluate(pearsonRecco, slope1Recco, random, samples);
+		System.out.println("Slope1 v.s. Pearson score: " + score);
+//		needs namedvectors
+		Recommender simplexRecco = doSimplexDataModel(args[2]);
+		DataModel simplexModel = simplexRecco.getDataModel();
+		score = bsrv.evaluate(simplexRecco, pointModel, random, samples);
+		System.out.println("Simplex v.s. point model score: " + score);
 //		score = bsrv.evaluate(simplexRecco, simplexModel, random, samples);
 //		System.out.println("Simplex v.s. simplex model score: " + score);
 //		score = bsrv.evaluate(simplexRecco, slope1Recco, random, samples);
@@ -463,6 +463,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
  */
 class PrefCheck implements Comparator<Preference> {
 	final int sign;
+	double epsilon = 0.0001;
 	
 	PrefCheck(int sign) {
 		this.sign = sign;
@@ -471,16 +472,16 @@ class PrefCheck implements Comparator<Preference> {
 	@Override
 	public int compare(Preference p1, Preference p2) {
 		double v1 = p1.getValue() * sign;
-		if (p1.getValue()*sign > p2.getValue()*sign)
+		if (p1.getValue()*sign > ((p2.getValue() - epsilon)*sign))
 			return 1;
-		else if (p1.getValue()*sign < p2.getValue()*sign)
+		else if (p1.getValue()*sign < (p2.getValue() + epsilon)*sign)
 			return -1;
 		else {
 			// break ties by item id
 			if (p1.getItemID() > p2.getItemID())
 				return 1;
 			else if (p1.getItemID() < p2.getItemID())
-				return 1;
+				return -1;
 			else
 				return 0;
 		}
