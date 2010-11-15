@@ -27,8 +27,10 @@ import org.apache.mahout.utils.vectors.io.VectorWriter;
 import org.apache.mahout.utils.vectors.io.VectorWriter;
 
 import lsh.core.Corner;
+import lsh.core.Hasher;
 import lsh.core.Lookup;
 import lsh.core.Point;
+import lsh.core.VertexTransitiveHasher;
 
 /*
  * Read LSH format and write as CSV or Mahout vector file.
@@ -132,14 +134,6 @@ public class WriteVectors {
 
 	}
 
-	private static double[] copyHashes(Corner c, int dimensions, double gridsize) {
-		double[] values = new double[dimensions];
-		for(int i = 0; i < dimensions; i++) {
-			values[i] = c.hashes[i]*gridsize;
-		}
-		return values;
-	}
-
 	private static void doMahout(boolean doUser, boolean doPoints,
 			double gridsize, String outFile, Reader lshReader) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
@@ -169,6 +163,13 @@ public class WriteVectors {
 		}
 	}
 	
+	private static double[] copyHashes(Corner c, int dimensions, double gridsize) {
+		double[] values = new double[dimensions];
+		Hasher hasher = new VertexTransitiveHasher(dimensions, gridsize);
+		hasher.unhash(c.hashes, values);
+		return values;
+	}
+
 	  private static VectorWriter getSeqFileWriter(String outFile) throws IOException {
 		    Path path = new Path(outFile);
 		    Configuration conf = new Configuration();

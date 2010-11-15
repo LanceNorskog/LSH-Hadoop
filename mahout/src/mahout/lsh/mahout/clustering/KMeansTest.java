@@ -91,11 +91,11 @@ public class KMeansTest {
 	private static void doKmeans(List<Vector> vectors, List<Vector> vectorsTrain, boolean csv) throws Exception {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
 		List<Canopy> canopies = CanopyTest.makeCanopies((null != vectorsTrain) ? 
-				vectorsTrain : vectors, measure, 0.1, 0.000075);
+				vectorsTrain : vectors, measure, 0.1, 0.09999999999999999999);
 		System.err.println("N of canopies: " + canopies.size());
 		if (canopies.size() < 5 || canopies.size() > 100) {
 			System.out.println("N of kmeans clusters: " + canopies.size());
-//			throw new Exception();
+			throw new Exception();
 		}
 
 		ArrayList<Cluster> clusters = new ArrayList<Cluster>();
@@ -104,9 +104,10 @@ public class KMeansTest {
 			SoftCluster cluster = new SoftCluster(center, canopy.getId(), measure);
 			clusters.add(cluster);
 			if (csv) {
-				for(int i = 0; i < center.size(); i++) {
+				for(int i = 0; i + 1 < center.size(); i++) {
 					System.out.print(center.getQuick(i) + ",");
 				}
+				System.out.print(center.getQuick(center.size() - 1));
 				System.out.println();
 			}
 			else
@@ -128,9 +129,10 @@ public class KMeansTest {
 		{ 
 			Vector center = sc.getCenter();
 			if (csv) {
-				for(int i = 0; i < center.size(); i++) {
+				for(int i = 0; i + 1 < center.size(); i++) {
 					System.out.print(center.getQuick(i) + ",");
 				}
+				System.out.print(center.getQuick(center.size() - 1));
 				System.out.println();
 			} else {
 				System.out.println("Cluster ident: " + sc.getIdentifier() + 
@@ -149,7 +151,7 @@ public class KMeansTest {
 	
 	private static void doFuzzyKmeans(List<Vector> vectors) {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
-		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, measure, 0.1, 0.03);
+		List<Canopy> canopies = CanopyTest.makeCanopies(vectors, measure, 0.1, 0.9);
 		System.out.println("N of canopies: " + canopies.size());
 
 		List<SoftCluster> clusters = new ArrayList<SoftCluster>();
