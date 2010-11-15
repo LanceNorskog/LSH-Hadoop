@@ -64,16 +64,50 @@ public class VertexTransitiveHasher implements Hasher {
 	// TODO: THIS IS WRONG! get tyler to tell me how to do it right
 	@Override
 	public void unhash(int[] hash, double[] values) {
-		double sum = 0;
+		double sum = 0.0;
 		for(int i = 0; i < hash.length; i++) {
-			values[i] = hash[i];
-			sum += values[i];
-		}	
-		double musum = MU * sum;
-		for (int i = 0; i < hash.length; i++) {
-			values[i] = S3 * (values[i] - musum);
-			values[i] *= stretch[i];
+			sum += hash[i];
 		}
+		sum = sum / (1.0 / S3 + MU * hash.length); 
+		for(int i = 0; i < hash.length; i++) {
+			values[i] = S3 * (hash[i] -  MU * sum);
+		}
+//		double sum = 0;
+//		for(int i = 0; i < hash.length; i++) {
+//			values[i] = hash[i];
+//			sum += values[i];
+//		}	
+//		double musum = MU * sum;
+//		for (int i = 0; i < hash.length; i++) {
+//			values[i] = S3 * (values[i] - musum);
+//			values[i] *= stretch[i];
+//		}
 	}
 
+	static public void main(String[] args) {
+		VertexTransitiveHasher vth = new VertexTransitiveHasher(3, 1.0);
+		double[][] orig = fillOrig();
+		for(int i = 0; i < 4; i++) {
+			double[] o = orig[i].clone();
+			int[] corners = vth.hash(o);
+			double[] unhash = new double[3];
+			vth.unhash(corners, unhash);
+			System.out.println("hashes: ");
+			for(int j = 0; j < 3; j++) {
+				System.out.println("\t" + orig[i][j] + ", " + corners[j] + ", " + unhash[j]);
+			}
+		}
+			
+			
+	}
+
+	private static double[][] fillOrig() {
+		double[][] values = new double[4][3];
+		for(int i = 0; i < 4; i++) {
+			for(int j = 0; j < 3; j++)
+				values[i][j] = i*4 + j;
+		}
+		return values;
+	}
+	
 }
