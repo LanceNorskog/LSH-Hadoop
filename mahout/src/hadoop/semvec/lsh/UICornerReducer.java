@@ -21,7 +21,7 @@ import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 
 /*
  * Receives corners from CornerMapper- with U/I as markers for user point or item grid
- * Output format of "1,2,3 id,double...double*U|...*I"
+ * Output format of "id,1,2,3 id,double...double*U|...*I"
  */
 
 public class UICornerReducer extends

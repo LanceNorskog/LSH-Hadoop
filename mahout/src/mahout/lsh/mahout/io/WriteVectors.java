@@ -50,6 +50,8 @@ public class WriteVectors {
 	 */
 	public static void main(String[] args) throws Exception {
 		boolean doUser = false;
+		boolean doItem = false;
+		String payload = null;
 		boolean doPoints = true;
 		boolean doName = false;
 		int n = 0;
@@ -63,8 +65,13 @@ public class WriteVectors {
 			} else if (args[n].equals("-p")) {
 				doPoints = true;
 				n++;
+			} else if (args[n].equals("-i")) {
+				doItem = true;
+				payload = "I";
+				n++;
 			} else if (args[n].equals("-u")) {
 				doUser = true;
+				payload = "U";
 				n++;
 			} else if (args[n].equals("-n")) {
 				doName = true;
@@ -87,23 +94,21 @@ public class WriteVectors {
 		Reader lshReader = new FileReader(input);
 		if (csv) {
 			fOut.delete();
-			DataOutput dout;
 			OutputStream fOutStream = new FileOutputStream(fOut);
-			dout = new DataOutputStream(fOutStream);
-			doCSV(doUser, doPoints, gridsize, new PrintWriter(fOut), lshReader);
+			doCSV(doUser, doPoints, gridsize, new PrintWriter(fOut), lshReader, payload);
 			fOutStream.flush();
 			fOutStream.close();
 		}
 		else {
-			doMahout(doUser, doPoints, gridsize, outputFile, lshReader);
+			doMahout(doUser, doPoints, gridsize, outputFile, lshReader, payload);
 		} 
 	}
 
 	private static void doCSV(boolean doUser, boolean doPoints, double gridsize,
-			PrintWriter printWriter, Reader lshReader) throws IOException {
+			PrintWriter printWriter, Reader lshReader, String payload) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
 		if (doPoints) {
-			box.loadPoints(lshReader, doUser ? "U" : "I");
+			box.loadPoints(lshReader, payload);
 			for(Point p: box.points) {
 				StringBuilder sb = new StringBuilder();
 				double[] values = p.values;
@@ -115,7 +120,7 @@ public class WriteVectors {
 				printWriter.println(sb.toString());
 			}
 		} else {
-			box.loadCP(lshReader, doUser ? "U" : "I");
+			box.loadCorners(lshReader, payload);
 			StringBuilder sb = new StringBuilder();
 
 			for(Corner c: box.corners) {
@@ -135,11 +140,11 @@ public class WriteVectors {
 	}
 
 	private static void doMahout(boolean doUser, boolean doPoints,
-			double gridsize, String outFile, Reader lshReader) throws IOException {
+			double gridsize, String outFile, Reader lshReader, String payload) throws IOException {
 		Lookup box = new Lookup(doPoints, !doPoints);
 		VectorWriter vWriter = getSeqFileWriter(outFile);
 		if (doPoints) {
-			box.loadPoints(lshReader, doUser ? "U" : "I");
+			box.loadPoints(lshReader, payload);
 			List<Vector> one = new ArrayList<Vector>();
 			one.add(new DenseVector());
 			for(Point p: box.points) {
@@ -149,7 +154,7 @@ public class WriteVectors {
 			}
 			vWriter.close();
 		} else {
-			box.loadCP(lshReader, doUser ? "U" : "I");
+			box.loadCorners(lshReader, payload);
 			List<Vector> one = new ArrayList<Vector>();
 			one.add(new DenseVector());
 			for(Corner c: box.corners) {

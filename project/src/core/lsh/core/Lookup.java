@@ -23,6 +23,7 @@ public class Lookup {
 	final public Set<Corner> corners;
 	final public Set<String> ids;
 	final public Map<String,Point> id2point;
+	// point.id -> corner
 	final public Map<String,Corner> id2corner;
 	final public Map<Corner,Set<String>> corner2ids;
 	final public Map<Corner, Set<Point>> corner2points;
@@ -57,17 +58,20 @@ public class Lookup {
 		Utils.load_point(r, points, ids, id2point, payload);
 	}
 
+	// untested - ids are corner.id, not point.id?
 	public void loadCorners(Reader r, String payload) throws IOException {
-		Utils.load_corner(r, points, ids, id2corner, payload);
+		Utils.load_corner(r, corners, ids, id2corner, payload);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {
 		Set<Corner> found = new HashSet<Corner>();
 		for(Corner corner: corners) {
-			for(Point point: corner2points.get(corner)) {
-				if (point.id.equals(id)) {
-					if (! found.contains(corner))
-						found.add(corner);
+			if (corner2points.containsKey(corner)) {
+				for(Point point: corner2points.get(corner)) {
+					if (point.id.equals(id)) {
+						if (! found.contains(corner))
+							found.add(corner);
+					}
 				}
 			}
 		}
@@ -84,8 +88,8 @@ public class Lookup {
 		Reader r = new FileReader(svg);
 
 		
-		int dim = Integer.parseInt(args[1]);
-		double gridsize = Double.parseDouble(args[2]);
+//		int dim = Integer.parseInt(args[1]);
+//		double gridsize = Double.parseDouble(args[2]);
 
 		Lookup lookup = new Lookup(null, true, true, true, true, true, true, true, true);
 		lookup.loadCP(r, null);

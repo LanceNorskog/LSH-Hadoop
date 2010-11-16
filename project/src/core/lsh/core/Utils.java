@@ -2,42 +2,40 @@ package lsh.core;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.LineNumberReader;
 import java.io.Reader;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /*
- * Various utilities
+ * Various utilities to load point_corner and corner_point formats
+ * and simple point and corners formats
  */
 
 public class Utils {
 
-	// load in various data structures from the grid->points format
-	// all structures are optional
-	// slower than could be but uses hashed everything
-
+	// very important - assumes multiple points per corner
+	// id2corner means point.id to corner
 	static public void load_corner_points_format(Reader r, String payload1, Lookup l1, String payload2, Lookup l2) throws IOException {
 		BufferedReader lnr = new BufferedReader(r);
 		String line;
 		int lines = 0;
-		System.err.println("Loading corners... ");
+//		System.err.println("Loading corners... ");
 		while (null != (line = lnr.readLine())) {
 			String parts[] = line.split("[ \t]");
 			String[] pipes = new String[0];
 			if (parts.length > 1)
 				pipes = parts[1].split("\\|");
-			String id = parts[0];
-			Corner corner = Corner.newCorner(id);
+			String spec = parts[0];
+			Corner corner = Corner.newCorner(spec);
 			if (null != l1.corners)
 				l1.corners.add(corner);
 			if (null != l2 && null != l2.corners)
 				l2.corners.add(corner);
 			for(int i = 0; i < pipes.length; i++) {
 				Point p = Point.newPoint(pipes[i]);
-				if (p.payload.equals(payload1)) {
+				// I cannot believe it. String returns false for a null. 
+				if (null == payload1 || p.payload.equals(payload1)) {
 					addPair(l1.ids, l1.points, l1.corners, l1.id2point, l1.id2corner, l1.corner2ids, l1.corner2points, l1.point2corners, corner, p);
 				}
 				if (null != payload2 && p.payload.equals(payload2)) {
@@ -45,17 +43,15 @@ public class Utils {
 				}
 			}
 			lines++;
-			if (lines % 1000 == 0) {
-				System.err.println("\t" + lines);
-			}
+//			if (lines % 1000 == 0) {
+//				System.err.println("\t" + lines);
+//			}
 		}		
 	}
-	// load in various data structures from the point->corners format
-	// all structures are optional
-	// slower than could be but uses hashed everything
 
+	// very important - assumes multiple points per corner
+	// id2corner means point.id to corner
 	static public void load_point_corners_format(Reader r, String payload1, Lookup l1, String payload2, Lookup l2) throws IOException {
-		//		LineNumberReader lnr = new LineNumberReader(r);
 		BufferedReader lnr = new BufferedReader(r);
 
 		String line;
@@ -79,17 +75,15 @@ public class Utils {
 		}		
 	}
 
-	// load in various data structures from the point->corners format
-	// all structures are optional
-	// slower than could be but uses hashed everything
-
+	// read point file, or point -> corner file
 	static public void load_point(Reader r, Set<Point> points, Set<String> ids,
 			Map<String, Point> id2point, String payload) throws IOException {
 		BufferedReader lnr = new BufferedReader(r);
 
 		String line;
 		while (null != (line = lnr.readLine())) {
-			Point point = Point.newPoint(line);
+			String[] parts = line.split("[ \t]");
+			Point point = Point.newPoint(parts[0]);
 			if (null != payload ) { 
 				if (null == point.payload || !payload.equals(point.payload)) {
 					continue;
@@ -147,11 +141,35 @@ public class Utils {
 		if (null != id2point)
 			id2point.put(point.id, point);
 	}
+	
+	
+	// read corners, or corner part of a corner -> points file
+	public static void load_corner(Reader r, Set<Corner> corners,
+			Set<String> ids, Map<String, Corner> id2corner, String payload) throws IOException {
+		BufferedReader lnr = new BufferedReader(r);
 
-	public static void load_corner(Reader r, Set<Point> points,
-			Set<String> ids, Map<String, Corner> id2corner, String payload) {
+		String line;
+		while (null != (line = lnr.readLine())) {
+			String[] parts = line.split("[ \t]");
+			Corner corner = Corner.newCorner(parts[0]);
+			if (null != payload ) { 
+				if (null == corner.payload || !payload.equals(corner.payload)) {
+					continue;
+				}
+			}
+			addCorner(ids, corners, id2corner, corner);
+		}		
+	}
+
+	private static void addCorner(Set<String> ids, Set<Corner> corners,
+			Map<String, Corner> id2corner, Corner corner) {
+		if (null != ids)
+			ids.add(corner.id);
+		if (null != corners)
+			corners.add(corner);
+		if (null != id2corner)
+			id2corner.put(corner.id, corner);
 		
-
 	}
 
 }
