@@ -41,6 +41,7 @@ public class VertexTransitiveHasher implements Hasher {
 		return hashed;
 	}
 
+	@Override
 	public void project(double[] values, double[] gp) {
 		double sum = 0.0d;
 		for(int i = 0; i < gp.length; i++) {

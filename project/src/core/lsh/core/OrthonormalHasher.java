@@ -1,16 +1,20 @@
 package lsh.core;
 
-import java.util.Arrays;
-
 /*
  * Orthonormal projection
  * 
  * Hash point to nearest grid corner.
  * stretch of 0.5 means grid to 0.5 instead of 1.0
+ * 
+ * Include spherical option for quantizing lat/lon.
+ * Only on Orthonormal
  */
 
 public class OrthonormalHasher implements Hasher {
 	double[] stretch;
+	// support spherical modulo for geospatial
+	double[] sphere = null;
+	int[] wrap = null;
 	
 	public OrthonormalHasher(int dim, double stretch) {
 		this.stretch = new double[dim];
@@ -26,8 +30,14 @@ public class OrthonormalHasher implements Hasher {
 		
 	}
 	
+	@Override
 	public void setStretch(double[] stretch) {
 		this.stretch = stretch;
+	}
+
+	public void setWrap(double[] wrap) {
+		this.sphere = wrap;
+		this.wrap = hash(wrap);
 	}
 
 	@Override
@@ -35,21 +45,18 @@ public class OrthonormalHasher implements Hasher {
 		int[] hashed = new int[values.length];
 		for(int i = 0; i < hashed.length; i++) {
 			hashed[i] = (int) Math.floor(values[i] / stretch[i]);
+			if (null != wrap) {
+				// wraparound
+				if (hashed[i] < 0) {
+					hashed[i] = wrap[i] + hashed[i];
+				} else if (hashed[i] >= wrap[i]) {
+					hashed[i] = hashed[i] % wrap[i];
+				}
+			}
 		}
 		return hashed;
 	}
 
-	/*
-	@Override
-	public int[] hashUp(double[] values) {
-		int[] up = hash(values);
-		for(int i = 0; i < values.length; i++) {
-			up[i]++;
-		}
-		return up;
-	}
-	*/
-	
 	@Override
 	public void project(double[] values, double[] gp) {
 		for(int i = 0; i < values.length; i++)

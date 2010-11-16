@@ -1,15 +1,11 @@
 package lsh.core;
 
 /*
- * return a set of dimension d array indexes given a point.
+ * Quantize an N-dimensional vector using either rectangles or triangles
  */
 
-// TODO: should this have a policy about how near a another hash value is?
-// is it different with VT?
-// or just use unhash
-
-
 public interface Hasher {
+	// set grid size with precision
 	public void setStretch(double[] stretch);
 	// project point to lower corner
 	public int[] hash(double[] values);
