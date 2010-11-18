@@ -10,13 +10,13 @@ public class TestCSVTextFormat extends TestCase {
 		FlexibleRecordReader frr;
 
 		frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2", null, null);
-		assertEquals("a", frr.unpackValue("a"));
-		assertEquals("a b", frr.unpackValue( frr.unpackValue("a::b")));
-		assertEquals("a b,c", frr.unpackValue("a::b::c"));
+		assertEquals("a  ", frr.unpackValue("a"));
+		assertEquals("a b ", frr.unpackValue("a::b"));
+		assertEquals("a b c", frr.unpackValue("a::b::c"));
 
 		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null, null);
 		assertEquals("id,lat,long", frr.unpackValue("id,1,2,3,4,lat,long,7"));
-		assertEquals("id,,long", frr.unpackValue("id,1,2,3,4,,,7"));
+		assertEquals("id,,long", frr.unpackValue("id,1,2,3,4,,long,7"));
 		assertEquals(",lat,", frr.unpackValue(",1,2,3,4,lat,,7"));
 		assertEquals(",,long", frr.unpackValue(",1,2,3,4,,long,7"));
 
