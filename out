@@ -1,0 +1,47 @@
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#	modified:   mahout/.classpath
+#	new file:   mahout/jarfile.jardesc
+#	renamed:    mahout/src/hadoop/lsh/mahout/clustering/CanopyTest.java -> mahout/src/mahout/lsh/mahout/clustering/CanopyTest.java
+#	renamed:    mahout/src/hadoop/lsh/mahout/clustering/KMeansTest.java -> mahout/src/mahout/lsh/mahout/clustering/KMeansTest.java
+#	renamed:    mahout/src/hadoop/lsh/mahout/io/WriteVectors.java -> mahout/src/mahout/lsh/mahout/io/WriteVectors.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/AbstractDifferenceRecommenderEvaluatorDual.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/AbstractDifferenceRecommenderEvaluatorDual.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/AbstractDifferenceRecommenderEvaluatorSimple.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/AbstractDifferenceRecommenderEvaluatorSimple.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/AverageAbsoluteDifferenceRecommenderEvaluatorDual.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/AverageAbsoluteDifferenceRecommenderEvaluatorDual.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/AverageAbsoluteDifferenceRecommenderEvaluatorSimple.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/AverageAbsoluteDifferenceRecommenderEvaluatorSimple.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/BubbleSortRecommenderEvaulator.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/BubbleSortRecommenderEvaulator.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/EstimatingItemBasedRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/EstimatingItemBasedRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/EstimatingKnnItemBasedRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/EstimatingKnnItemBasedRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/EstimatingSlopeOneRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/EstimatingSlopeOneRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/EstimatingUserBasedRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/EstimatingUserBasedRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/NormalRankingRecommenderEvaulator.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/NormalRankingRecommenderEvaulator.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/eval/RMSRecommenderEvaluatorSimple.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/eval/RMSRecommenderEvaluatorSimple.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/model/LPI.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/model/LPI.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/model/PointTextDataModel.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/model/PointTextDataModel.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/model/PointTextRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/model/PointTextRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/model/SimplexRecommender.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/model/SimplexRecommender.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/impl/model/SimplexTextDataModel.java -> mahout/src/mahout/org/apache/mahout/cf/taste/impl/model/SimplexTextDataModel.java
+#	renamed:    mahout/src/hadoop/org/apache/mahout/cf/taste/web/ReverseRescorer.java -> mahout/src/mahout/org/apache/mahout/cf/taste/web/ReverseRescorer.java
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	docs/junk.ppt
+#	docs/overshoot_diagrams.ppt
+#	docs/overshoot_diagrams_final.ppt
+#	docs/stuff.ppt
+#	docs/stuff2.ppt
+#	docs/stuff3.ppt
+#	files.txt
+#	jfiles.txt
+#	mahout/bin/
+#	mahout/build/
+#	mahout/hs_err_pid1784.log
+#	mahout/hs_err_pid2972.log
+#	mahout/hs_err_pid7740.log
+#	mahout/hs_err_pid8108.log
+#	out
+#	project/build/
+#	project/georss_store.xml
