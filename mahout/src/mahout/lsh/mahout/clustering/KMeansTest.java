@@ -91,7 +91,7 @@ public class KMeansTest {
 	private static void doKmeans(List<Vector> vectors, List<Vector> vectorsTrain, boolean csv) throws Exception {
 		DistanceMeasure measure = new TanimotoDistanceMeasure();
 		List<Canopy> canopies = CanopyTest.makeCanopies((null != vectorsTrain) ? 
-				vectorsTrain : vectors, measure, 0.1, 0.09999999999999999999);
+				vectorsTrain : vectors, measure, 1.5, 0.95);
 		System.err.println("N of canopies: " + canopies.size());
 		if (canopies.size() < 5 || canopies.size() > 100) {
 			System.out.println("N of kmeans clusters: " + canopies.size());

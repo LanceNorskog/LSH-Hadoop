@@ -103,17 +103,19 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 	 * Random distributions:
 	 * Since distance calculations drive the outputs to a normal distribution,
 	 * it is better to start with a normal distribution in the first place.
+	 * 
+	 * Both do 0->1
 	 */
 	private double uniform(Random source) {
 		return source.nextDouble();
 	}
 
+	// turns out this is faster and guaranteed band-limited
 	private double normal(Random source) {
 		double sum = 0;
 		for(int i = 0; i < 15; i++)
 			sum += source.nextDouble();
-		sum = sum / 15.0001;
-		return sum;
+		return sum / 15.0;
 	}
 
 	

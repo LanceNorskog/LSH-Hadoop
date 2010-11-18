@@ -24,7 +24,7 @@ import org.apache.mahout.math.function.PlusMult;
 
 /** Matrix of random but consistent doubles. 
  * Double.MIN_Value -> Double.MAX_VALUE 
- * linear and Gaussian distributions
+ * Linear, limited gaussian, and raw Gaussian distributions
  * 
  * Seed for [row][col] is this.seed + (row * #columns) + column.
  * This allows a RandomVector to take seed + (row * #columns) as its seed
@@ -33,24 +33,28 @@ import org.apache.mahout.math.function.PlusMult;
  * Use Float min/max to avoid Outer Limits problems.
  * */
 public class RandomMatrix extends AbstractMatrix {
+	public static final int LINEAR = 0;
+	public static final int GAUSSIAN = 1;
+	public static final int GAUSSIAN01 = 2;
 	private static final double MIN_BOUND = 0.0000000001;
 	private static final double MAX_BOUND = 0.99999999999;
 
 	//	final int rows, columns;
 	final Random rnd = new Random();
 	final long seed;
-	final boolean gaussian;
-	final double lowerBound;
-	final double upperBound;
+	final int mode;
+//	final boolean gaussian;
+//	final double lowerBound;
+//	final double upperBound;
 
 	// Some serialization thing?
 	public RandomMatrix() {
 		cardinality[ROW] = 0;
 		cardinality[COL] = 0;
 		seed = 0;
-		lowerBound = MIN_BOUND;
-		upperBound = MAX_BOUND;
-		gaussian = false;
+//		lowerBound = MIN_BOUND;
+//		upperBound = MAX_BOUND;
+		mode = LINEAR;
 	}
 
 	/**
@@ -62,24 +66,22 @@ public class RandomMatrix extends AbstractMatrix {
 		cardinality[ROW] = rows;
 		cardinality[COL] = columns;
 		seed = 0;
-		lowerBound = MIN_BOUND;
-		upperBound = MAX_BOUND;
-		gaussian = false;
+		mode = LINEAR;
 	}
 
-	public RandomMatrix(int rows, int columns, long seed, double lowerBound,
-			double upperBound, boolean gaussian) {
+	public RandomMatrix(int rows, int columns, long seed, int mode) {
 		cardinality[ROW] = rows;
 		cardinality[COL] = columns;
 		this.seed = seed;
-		this.lowerBound = lowerBound;
-		this.upperBound = upperBound;
-		this.gaussian = gaussian;
+		this.mode = mode;
+//		this.lowerBound = lowerBound;
+//		this.upperBound = upperBound;
+//		this.gaussian = gaussian;
 	}
 
 	@Override
 	public Matrix clone() {
-		RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, lowerBound, upperBound, gaussian);
+		RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, mode);
 		return clone;
 	}
 
@@ -90,7 +92,7 @@ public class RandomMatrix extends AbstractMatrix {
 			throw new CardinalityException(column, columnSize());
 		rnd.setSeed(getSeed(row, column));
 		double value = getRandom();
-		if (!(value > lowerBound && value < upperBound))
+		if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
 			throw new Error("RandomVector: getQuick created NaN");
 		return value;
 	}
@@ -99,15 +101,22 @@ public class RandomMatrix extends AbstractMatrix {
 		return seed + (row * columnSize()) + column;
 	}
 
-	// give a wide range but avoid NaN land
-	private double getRandom() {
-		double raw = gaussian ? rnd.nextGaussian() : rnd.nextDouble();
-		if (lowerBound >= 0.0 && upperBound <= 1.0)
-			return raw;
-		double range = (upperBound - lowerBound);
-		double expand = raw * range;
-		expand += lowerBound;
-		return expand;
+	double getRandom() {
+		switch (mode) {
+		case LINEAR: return rnd.nextDouble();
+		case GAUSSIAN: return rnd.nextGaussian();
+		case GAUSSIAN01: return gaussian01();
+		default: throw new Error();
+		}
+	}
+	
+	// hack: create a gaussian distribution between 0 and 1
+	private double gaussian01() {
+		double sum = 0;
+		for(int i = 0; i < 12; i++) {
+			sum += rnd.nextDouble();
+		}
+		return sum / 12.0;
 	}
 
 	public Matrix like() {
@@ -170,7 +179,7 @@ public class RandomMatrix extends AbstractMatrix {
 			throw new IndexException(column, columnSize());
 		}
 		//		return new TransposeViewVector(this, column);
-		return new RandomVector(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], lowerBound, upperBound, gaussian);
+		return new RandomVector(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], mode);
 
 	}
 
@@ -178,7 +187,7 @@ public class RandomMatrix extends AbstractMatrix {
 		if (row < 0 || row >= rowSize()) {
 			throw new IndexException(row, rowSize());
 		}
-		return new RandomVector(columnSize(), seed + row * columnSize(), 1, lowerBound, upperBound, gaussian);
+		return new RandomVector(columnSize(), seed + row * columnSize(), 1, mode);
 	}
 
 	// redo arithmetic from abstract matrix

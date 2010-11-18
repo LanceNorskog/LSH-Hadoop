@@ -25,8 +25,7 @@ public class TestRandomVector extends MahoutTestCase {
 
 	static private RandomVector test2 = new RandomVector(2);
 	static private RandomVector testFull = new RandomVector(4);
-	static private RandomVector test01 = new RandomVector(4, 0, 1, 0.0, 1.0, false);
-	static private RandomVector test5_10 = new RandomVector(4, 0, 1, 5.0, 10.0, false);
+	static private RandomVector testG = new RandomVector(4, 0, 1, RandomMatrix.GAUSSIAN);
 
 	@Test
 	public void testAsFormatString() {
@@ -42,11 +41,11 @@ public class TestRandomVector extends MahoutTestCase {
 
 	@Test
 	public void testIterator() throws Exception {
-		DenseVector copy = new DenseVector(test5_10);
+		DenseVector copy = new DenseVector(testG);
 		double[] gold = new double[copy.size()];
 		for(int i = 0; i < gold.length; i++)
 			gold[i] = copy.getQuick(i);
-		Iterator<Vector.Element> iterator = test5_10.iterateNonZero();
+		Iterator<Vector.Element> iterator = testG.iterateNonZero();
 		checkIterator(iterator, gold);
 
 
@@ -94,19 +93,19 @@ public class TestRandomVector extends MahoutTestCase {
 
 	@Test(expected = IndexException.class)
 	public void testViewPartOver() {
-		test5_10.viewPart(2, 7);
+		testG.viewPart(2, 7);
 	}
 
 	@Test(expected = IndexException.class)
 	public void testViewPartCardinality() {
-		test5_10.viewPart(1, 8);
+		testG.viewPart(1, 8);
 	}
 
 	@Test
 	public void testDecodeVector() throws Exception {
-		Vector val = AbstractVector.decodeVector(test5_10.asFormatString());
-		for (int i = 0; i < test5_10.size(); i++) {
-			assertEquals("get [" + i + ']', test5_10.get(i), val.get(i), EPSILON);
+		Vector val = AbstractVector.decodeVector(testG.asFormatString());
+		for (int i = 0; i < testG.size(); i++) {
+			assertEquals("get [" + i + ']', testG.get(i), val.get(i), EPSILON);
 		}
 	}
 
@@ -156,37 +155,40 @@ public class TestRandomVector extends MahoutTestCase {
 //
 	@Test
 	public void testMinus() throws Exception {
-		Vector val = test5_10.minus(test5_10);
-		assertEquals("size", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val = testG.minus(testG);
+		assertEquals("size", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
 			assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
 		}
 
-		val = test5_10.minus(test5_10).minus(test5_10);
-		assertEquals("cardinality", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
-			assertEquals("get [" + i + ']', 0.0, val.get(i) + test5_10.get(i), EPSILON);
+		val = testG.minus(testG).minus(testG);
+		assertEquals("cardinality", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
+			assertEquals("get [" + i + ']', 0.0, val.get(i) + testG.get(i), EPSILON);
 		}
 
-		Vector val1 = test5_10.plus(1);
-		val = val1.minus(test5_10);
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val1 = testG.plus(1);
+		val = val1.minus(testG);
+		for (int i = 0; i < testG.size(); i++) {
 			assertEquals("get [" + i + ']', 1.0, val.get(i), EPSILON);
 		}
 
-		val1 = test5_10.plus(-1);
-		val = val1.minus(test5_10);
-		for (int i = 0; i < test5_10.size(); i++) {
+		val1 = testG.plus(-1);
+		val = val1.minus(testG);
+		for (int i = 0; i < testG.size(); i++) {
 			assertEquals("get [" + i + ']', -1.0, val.get(i), EPSILON);
 		}
 	}
 
+	/*
+	 * what is all this?
+	 
 	@Test
 	public void testPlusDouble() throws Exception {
-		Vector val = test5_10.plus(1);
-		Vector gold = test5_10.getDense();
-		assertEquals("size", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val = testG.plus(1);
+		Vector gold = testG.getDense();
+		assertEquals("size", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
 			if (i % 2 == 0) {
 				assertEquals("get [" + i + ']', 1.0, val.get(i), EPSILON);
 			} else {
@@ -197,10 +199,10 @@ public class TestRandomVector extends MahoutTestCase {
 
 	@Test
 	public void testPlusVector() throws Exception {
-		Vector val = test5_10.plus(test5_10);
-		Vector gold = test5_10.getDense();
-		assertEquals("size", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val = testG.plus(testG);
+		Vector gold = testG.getDense();
+		assertEquals("size", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
 			if (i % 2 == 0) {
 				assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
 			} else {
@@ -209,17 +211,12 @@ public class TestRandomVector extends MahoutTestCase {
 		}
 	}
 
-	@Test(expected = CardinalityException.class)
-	public void testPlusVectorCardinality() {
-		test5_10.plus(new DenseVector(test5_10.size() + 1));
-	}
-
 	@Test
 	public void testTimesDouble() throws Exception {
-		Vector val = test5_10.times(3);
-		Vector gold = test5_10.getDense();
-		assertEquals("size", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val = testG.times(3);
+		Vector gold = testG.getDense();
+		assertEquals("size", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
 			if (i % 2 == 0) {
 				assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
 			} else {
@@ -230,10 +227,10 @@ public class TestRandomVector extends MahoutTestCase {
 
 	@Test
 	public void testDivideDouble() throws Exception {
-		Vector val = test5_10.divide(3);
-		Vector gold = test5_10.getDense();
-		assertEquals("size", test5_10.size(), val.size());
-		for (int i = 0; i < test5_10.size(); i++) {
+		Vector val = testG.divide(3);
+		Vector gold = testG.getDense();
+		assertEquals("size", testG.size(), val.size());
+		for (int i = 0; i < testG.size(); i++) {
 			if (i % 2 == 0) {
 				assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
 			} else {
@@ -242,7 +239,7 @@ public class TestRandomVector extends MahoutTestCase {
 		}
 	}
 
-	/*
+
 	@Test
 	public void testTimesVector() throws Exception {
 		Vector val = test5_10.times(test5_10);
@@ -259,30 +256,35 @@ public class TestRandomVector extends MahoutTestCase {
 	*/
 
 	@Test(expected = CardinalityException.class)
+	public void testPlusVectorCardinality() {
+		testG.plus(new DenseVector(testG.size() + 1));
+	}
+
+	@Test(expected = CardinalityException.class)
 	public void testTimesVectorCardinality() {
-		test5_10.times(new DenseVector(test5_10.size() + 1));
+		testG.times(new DenseVector(testG.size() + 1));
 	}
 
 	
 	@Test
 	public void testZSum() {
 		double expected = 0;
-		for (int i = 0; i < test5_10.size(); i++) {
-			expected += test5_10.getQuick(i);
+		for (int i = 0; i < testG.size(); i++) {
+			expected += testG.getQuick(i);
 		}
-		assertEquals("wrong zSum", expected, test5_10.zSum(), EPSILON);
+		assertEquals("wrong zSum", expected, testG.zSum(), EPSILON);
 	}
 	
 
 	@Test
 	public void testGetDistanceSquared() {
-		Vector other = new RandomAccessSparseVector(test5_10.size());
+		Vector other = new RandomAccessSparseVector(testG.size());
 		other.set(1, -2);
 		other.set(2, -5);
 		other.set(3, -9);
-		double expected = test5_10.minus(other).getLengthSquared();
+		double expected = testG.minus(other).getLengthSquared();
 		assertTrue("a.getDistanceSquared(b) != a.minus(b).getLengthSquared",
-				Math.abs(expected - test5_10.getDistanceSquared(other)) < 10.0E-7);
+				Math.abs(expected - testG.getDistanceSquared(other)) < 10.0E-7);
 	}
 
 /*	@Test
@@ -369,20 +371,20 @@ public class TestRandomVector extends MahoutTestCase {
 
 	@Test (expected = UnsupportedOperationException.class)
 	public void testLike() {
-		Vector other = test5_10.like();
-		assertTrue("not like", test5_10.getClass().isAssignableFrom(other.getClass()));
-		assertEquals("size", test5_10.size(), other.size());
+		Vector other = testG.like();
+		assertTrue("not like", testG.getClass().isAssignableFrom(other.getClass()));
+		assertEquals("size", testG.size(), other.size());
 	}
 
 	@Test
 	public void testCrossProduct() {
-		Matrix result = test5_10.cross(test5_10);
-		assertEquals("row size", test5_10.size(), result.size()[0]);
-		assertEquals("col size", test5_10.size(), result.size()[1]);
+		Matrix result = testG.cross(testG);
+		assertEquals("row size", testG.size(), result.size()[0]);
+		assertEquals("col size", testG.size(), result.size()[1]);
 		for (int row = 0; row < result.size()[0]; row++) {
 			for (int col = 0; col < result.size()[1]; col++) {
-				assertEquals("cross[" + row + "][" + col + ']', test5_10.getQuick(row)
-						* test5_10.getQuick(col), result.getQuick(row, col), EPSILON);
+				assertEquals("cross[" + row + "][" + col + ']', testG.getQuick(row)
+						* testG.getQuick(col), result.getQuick(row, col), EPSILON);
 			}
 		}
 	}

@@ -33,45 +33,38 @@ import org.apache.mahout.math.function.BinaryFunction;
  */
 public class RandomVector extends AbstractVector {
 
-	private static final double MIN_BOUND = 0.0000000001;
-	private static final double MAX_BOUND = 0.99999999999;
 	final int cardinality;
 	final Random rnd = new Random();
 	final long seed;
 	final long stride;
-	final boolean zero1;
-	final double lowerBound;
-	final double upperBound;
-	final boolean gaussian;
+	final int mode;
+//	final double lowerBound;
+//	final double upperBound;
+//	final boolean gaussian;
 
 	//  need way to reproduce any random matrix row or column
 
 	/** For serialization purposes only */
 	public RandomVector() {
-		this(0, 0, 0, false, 0.0, 1.0, false);
+		this(0, 0, 0, RandomMatrix.LINEAR);
 	}
 
 	/** Construct a new instance of the given cardinality */
 	public RandomVector(int cardinality) {
-		this(cardinality, 0, 1, true, 0.0, 1.0, false);
+		this(cardinality, 0, 1, RandomMatrix.LINEAR);
 	}
 
 	/** Construct a new instance of the given cardinality */
-	public RandomVector(int cardinality, long seed, long skip, double lowerBound, double upperBound, boolean gaussian) {
-		this(cardinality, seed, skip, false, lowerBound, upperBound, gaussian);
-	}
-
-	/** Construct a new instance of the given cardinality */
-	public RandomVector(int cardinality, long seed, long stride, boolean zero1, double lowerBound, double upperBound, boolean gaussian) {
+	public RandomVector(int cardinality, long seed, long stride, int mode) {
 		super(cardinality);
 		this.cardinality = cardinality;
 		this.seed = seed;
 		this.stride = stride;
-		this.zero1 = zero1;
-		this.lowerBound = lowerBound;
-		this.upperBound = upperBound;
-		this.gaussian = gaussian;
-		rnd.setSeed(seed);
+		this.mode = mode;
+//		this.zero1 = zero1;
+//		this.lowerBound = lowerBound;
+//		this.upperBound = upperBound;
+//		this.gaussian = gaussian;
 	}
 
 	/**
@@ -92,7 +85,7 @@ public class RandomVector extends AbstractVector {
 
 	@Override
 	public RandomVector clone() {
-		return new RandomVector(cardinality, seed, stride, zero1, lowerBound, upperBound, gaussian);
+		return new RandomVector(cardinality, seed, stride, mode);
 	}
 
 	/**
@@ -126,7 +119,7 @@ public class RandomVector extends AbstractVector {
 		long seed2 = getSeed(index);
 		rnd.setSeed(seed2);
 		double value = getRandom();
-		if (!(value > lowerBound && value < upperBound))
+		if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
 			throw new Error("RandomVector: getQuick created NaN");
 		return value;
 	}
@@ -136,16 +129,23 @@ public class RandomVector extends AbstractVector {
 	}
 
 	// give a wide range but avoid NaN land
-	private double getRandom() {
-		double raw = gaussian ? rnd.nextGaussian() : rnd.nextDouble();
-		if (zero1)
-			return raw;
-		double range = (upperBound - lowerBound);
-		double expand = raw * range;
-		expand += lowerBound;
-		return expand;
+	double getRandom() {
+		switch (mode) {
+		case RandomMatrix.LINEAR: return rnd.nextDouble();
+		case RandomMatrix.GAUSSIAN: return rnd.nextGaussian();
+		case RandomMatrix.GAUSSIAN01: return gaussian01();
+		default: throw new Error();
+		}
 	}
 
+	// hack: create a gaussian distribution between 0 and 1
+	private double gaussian01() {
+		double sum = 0;
+		for(int i = 0; i < 12; i++) {
+			sum += rnd.nextDouble();
+		}
+		return sum / 12.0;
+	}
 
 	public RandomVector like() {
 		throw new UnsupportedOperationException();
