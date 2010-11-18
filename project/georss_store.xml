@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:georss="http://www.georss.org/georss">
+	<channel>
+		<title>Example Solr RSS 2.0 Feed</title>
+		<link>http://localhost:8983/solr</link>
+		<description>
+			This has been formatted by the sample "example_rss.xsl" transform -
+			use your own XSLT to get a nicer RSS feed.
+         </description>
+		<language>en-us</language>
+		<docs>http://localhost:8983/solr</docs>
+		<item>
+			<title>Samsung SpinPoint P120 SP2514N - hard drive - 250 GB - ATA-133</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:SP2514N</link>
+			<description>7200RPM, 8MB cache, IDE Ultra ATA-133NoiseGuard,
+				SilentSeek technology, Fluid Dynamic Bearing (FDB) motor</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:SP2514N</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+		<item>
+			<title>Maxtor DiamondMax 11 - hard drive - 500 GB - SATA-300</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:6H500F0</link>
+			<description>SATA 3.0Gb/s, NCQ8.5ms seek16MB cache</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:6H500F0</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+		<item>
+			<title>Belkin Mobile Power Cord for iPod w/ Dock</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:F8V7067-APL-KIT</link>
+			<description>car power adapter, white</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:F8V7067-APL-KIT</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+		<item>
+			<title>iPod &amp; iPod Mini USB 2.0 Cable</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:IW-02</link>
+			<description>car power adapter for iPod, white</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:IW-02</guid>
+			<georss:point>37.7752 -122.4232</georss:point>
+		</item>
+		<item>
+			<title>Apple 60 GB iPod with Video Playback Black</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:MA147LL/A</link>
+			<description>iTunes, Podcasts, AudiobooksStores up to 15,000 songs,
+				25,000 photos, or 150 hours of video2.5-inch, 320x240 color TFT LCD
+				display with LED backlightUp to 20 hours of battery lifePlays AAC,
+				MP3, WAV, AIFF, Audible, Apple Lossless, H.264 videoNotes, Calendar,
+				Phone book, Hold button, Date display, Photo wallet, Built-in games,
+				JPEG photo playback, Upgradeable firmware, USB 2.0 compatibility,
+				Playback speed control, Rechargeable capability, Battery level
+				indication</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:MA147LL/A</guid>
+			<georss:point>37.7752 -122.4232</georss:point>
+		</item>
+		<item>
+			<title>CORSAIR XMS 2GB (2 x 1GB) 184-Pin DDR SDRAM Unbuffered DDR 400
+				(PC 3200) Dual Channel Kit System Memory - Retail</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:TWINX2048-3200PRO</link>
+			<description>CAS latency 2, 2-3-3-6 timing, 2.75v, unbuffered,
+				heat-spreader</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:TWINX2048-3200PRO</guid>
+			<georss:point>37.7752 -122.4232</georss:point>
+		</item>
+		<item>
+			<title>CORSAIR ValueSelect 1GB 184-Pin DDR SDRAM Unbuffered DDR 400
+				(PC 3200) System Memory - Retail</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:VS1GB400C3</link>
+			<description />
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:VS1GB400C3</guid>
+			<georss:point>37.7752 -122.4232</georss:point>
+		</item>
+		<item>
+			<title>A-DATA V-Series 1GB 184-Pin DDR SDRAM Unbuffered DDR 400 (PC
+				3200) System Memory - OEM</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:VDBDB1A16</link>
+			<description>CAS latency 3, 2.7v</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:VDBDB1A16</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+		<item>
+			<title>Dell Widescreen UltraSharp 3007WFP</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:3007WFP</link>
+			<description>30" TFT active matrix LCD, 2560 x 1600, .25mm dot pitch,
+				700:1 contrast</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:3007WFP</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+		<item>
+			<title>ViewSonic VA902B - flat panel display - TFT - 19"</title>
+			<link>
+				http://localhost:8983/solr/select?q=id:VA902B</link>
+			<description>19" TFT active matrix LCD, 8ms response time, 1280 x
+				1024 native resolution</description>
+			<pubDate />
+			<guid>
+				http://localhost:8983/solr/select?q=id:VA902B</guid>
+			<georss:point>45.17614 -93.87341</georss:point>
+		</item>
+	</channel>
+</rss>
