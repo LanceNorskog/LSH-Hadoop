@@ -28,16 +28,14 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-public class TestRandomMatrix extends MahoutTestCase {
+public class CopyOfTestRandomMatrix extends MahoutTestCase {
 
   protected static final int ROW = AbstractMatrix.ROW;
 
   protected static final int COL = AbstractMatrix.COL;
 
-  protected RandomMatrix testLinear;
-  protected RandomMatrix testGaussian;
-  protected RandomMatrix testGaussian01;
-
+  protected Matrix test;
+  
   int rows = 4;
   int columns = 5;
 
@@ -45,14 +43,12 @@ public class TestRandomMatrix extends MahoutTestCase {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    testLinear = new RandomMatrix(rows, columns);
-    testGaussian = new RandomMatrix(rows, columns);
-    testGaussian01 = new RandomMatrix(rows, columns);
+    test = new RandomMatrix(rows, columns);
   }
 
   @Test
   public void testCardinality() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     assertEquals("row cardinality", rows, c[ROW]);
     assertEquals("col cardinality", columns, c[COL]);
   }
@@ -64,75 +60,50 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   @Test
   public void testIterate() {
-    Iterator<MatrixSlice> it = testLinear.iterator();
+    Iterator<MatrixSlice> it = test.iterator();
     MatrixSlice m;
     while(it.hasNext() && (m = it.next()) != null) {
       Vector v = m.vector();
-      Vector w = testLinear.getRow(m.index());
+      Vector w = test instanceof SparseColumnMatrix ? test.getColumn(m.index()) : test.getRow(m.index());
       assertEquals("iterator: " + v.asFormatString() + ", randomAccess: " + w, v, w);
     }
   }
 
   @Test (expected = UnsupportedOperationException.class)
   public void testLike() {
-    Matrix like = testLinear.like();
+    Matrix like = test.like();
+    assertSame("type", like.getClass(), test.getClass());
+    assertEquals("rows", test.size()[ROW], like.size()[ROW]);
+    assertEquals("columns", test.size()[COL], like.size()[COL]);
   }
 
   @Test (expected = UnsupportedOperationException.class)
   public void testLikeIntInt() {
-    Matrix like = testLinear.like(4, 4);
+    Matrix like = test.like(4, 4);
+    assertSame("type", like.getClass(), test.getClass());
+    assertEquals("rows", 4, like.size()[ROW]);
+    assertEquals("columns", 4, like.size()[COL]);
   }
 
   @Test
   public void testSize() {
-    int[] c = testLinear.getNumNondefaultElements();
+    int[] c = test.getNumNondefaultElements();
     assertEquals("row size", rows, c[ROW]);
     assertEquals("col size", columns, c[COL]);
   }
 
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignDouble() {
-    testLinear.assign(4.53);
-  }
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignDoubleArrayArray() {
-    testLinear.assign(new double[3][2]);
-  }
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignMatrixBinaryFunction() {
-    testLinear.assign(testLinear, Functions.PLUS);
-  }
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignMatrixBinaryFunctionCardinality() {
-    testLinear.assign(testLinear.transpose(), Functions.PLUS);
-  }
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignMatrix() {
-    testLinear.assign(testLinear);
-  }
-
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testAssignUnaryFunction() {
-    testLinear.assign(Functions.mult(-1));
-  }
-
- @Test
+  @Test
   public void testViewPart() {
     int[] offset = {1, 1};
     int[] size = {2, 1};
-    Matrix view = testLinear.viewPart(offset, size);
+    Matrix view = test.viewPart(offset, size);
     assertEquals(2, view.rowSize());
     assertEquals(1, view.columnSize());
     int[] c = view.size();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row + 1, col + 1), view.getQuick(row, col), EPSILON);
+            test.getQuick(row + 1, col + 1), view.getQuick(row, col), EPSILON);
       }
     }
   }
@@ -141,92 +112,106 @@ public class TestRandomMatrix extends MahoutTestCase {
   public void testViewPartCardinality() {
     int[] offset = {1, 1};
     int[] size = {rows, columns};
-    testLinear.viewPart(offset, size);
+    test.viewPart(offset, size);
   }
 
   @Test(expected = IndexException.class)
   public void testViewPartIndexOver() {
     int[] offset = {1, 1};
     int[] size = {rows, columns};
-    testLinear.viewPart(offset, size);
+    test.viewPart(offset, size);
   }
 
   @Test(expected = IndexException.class)
   public void testViewPartIndexUnder() {
     int[] offset = {-1, -1};
     int[] size = {rows+10, columns+10};
-    testLinear.viewPart(offset, size);
+    test.viewPart(offset, size);
   }
 
-  @Test
+   @Test
   public void testRowView() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     for (int row = 0; row < c[ROW]; row++) {
-      Vector v = new DenseVector(columns);
-      for(int i = 0; i < columns; i++)
-        v.setQuick(i, testLinear.getQuick(row, i));
-      assertEquals(0.0, v.minus(testLinear.viewRow(row)).norm(1), EPSILON);
+    	Vector v = new DenseVector(columns);
+    	for(int i = 0; i < columns; i++)
+    		v.setQuick(i, test.getQuick(row, i));
+      assertEquals(0.0, v.minus(test.viewRow(row)).norm(1), EPSILON);
     }
 
-    assertEquals(c[COL], testLinear.viewRow(3).size());
-    assertEquals(c[COL], testLinear.viewRow(5).size());
+    assertEquals(c[COL], test.viewRow(3).size());
+    assertEquals(c[COL], test.viewRow(5).size());
 
+//    Random gen = RandomUtils.getRandom();
+//    for (int row = 0; row < c[ROW]; row++) {
+//      int j = gen.nextInt(c[COL]);
+//      double old = test.get(row, j);
+//      double v = gen.nextGaussian();
+//      test.viewRow(row).set(j, v);
+//      assertEquals(v, test.get(row, j), 0);
+//      assertEquals(v, test.viewRow(row).get(j), 0);
+//      test.set(row, j, old);
+//      assertEquals(old, test.get(row, j), 0);
+//      assertEquals(old, test.viewRow(row).get(j), 0);
+//    }
   }
 
   @Test
   public void testColumnView() {
-    int[] c = testLinear.size();
-    Matrix result = copyMatrix(c);
+    int[] c = test.size();
+	Matrix result = copyMatrix(c);
 
     for (int col = 0; col < c[COL]; col++) {
-      assertEquals(0.0, result.getColumn(col).minus(testLinear.viewColumn(col)).norm(1), EPSILON);
+      assertEquals(0.0, result.getColumn(col).minus(test.viewColumn(col)).norm(1), EPSILON);
     }
 
-    assertEquals(c[ROW], testLinear.viewColumn(3).size());
-    assertEquals(c[ROW], testLinear.viewColumn(5).size());
+    assertEquals(c[ROW], test.viewColumn(3).size());
+    assertEquals(c[ROW], test.viewColumn(5).size());
 
   }
 
-  private Matrix copyMatrix(int[] c) {
-    Matrix result = new DenseMatrix(testLinear.rowSize(), testLinear.columnSize());
-    for (int row = 0; row < c[ROW]; row++) {
-      for (int col = 0; col < c[COL]; col++) {
-        result.setQuick(row, col, testLinear.getQuick(row, col));
-      }
-    }
-    return result;
-  }
+private Matrix copyMatrix(int[] c) {
+	Matrix result = new DenseMatrix(test.rowSize(), test.columnSize());
+	for (int row = 0; row < c[ROW]; row++) {
+		for (int col = 0; col < c[COL]; col++) {
+			result.setQuick(row, col, test.getQuick(row, col));
+		}
+	}
+	return result;
+}
 
   @Test
   public void testAggregateRows() {
-    Vector v = testLinear.aggregateRows(new VectorFunction() {
+    Vector v = test.aggregateRows(new VectorFunction() {
       public double apply(Vector v) {
         return v.zSum();
       }
     });
 
-    for (int i = 0; i < testLinear.numRows(); i++) {
-      assertEquals(testLinear.getRow(i).zSum(), v.get(i), EPSILON);
+    for (int i = 0; i < test.numRows(); i++) {
+      assertEquals(test.getRow(i).zSum(), v.get(i), EPSILON);
     }
   }
 
   @Test
   public void testAggregateCols() {
-    Vector v = testLinear.aggregateColumns(new VectorFunction() {
+    Vector v = test.aggregateColumns(new VectorFunction() {
       public double apply(Vector v) {
         return v.zSum();
       }
     });
 
-    for (int i = 0; i < testLinear.numCols(); i++) {
-      assertEquals(testLinear.getColumn(i).zSum(), v.get(i), EPSILON * 100000);
+    for (int i = 0; i < test.numCols(); i++) {
+      assertEquals(test.getColumn(i).zSum(), v.get(i), EPSILON * 100000);
+  	System.out.println(test.getColumn(i).zSum() + "," + v.get(i) + "," + EPSILON * 100);
+
     }
   }
 
   @Test
   public void testAggregate() {
-    double total = testLinear.aggregate(Functions.PLUS, Functions.IDENTITY);
-    assertEquals(testLinear.aggregateRows(new VectorFunction() {
+    double total = test.aggregate(Functions.PLUS, Functions.IDENTITY);
+    assertEquals(test.aggregateRows(new VectorFunction() {
       public double apply(Vector v) {
         return v.zSum();
       }
@@ -235,41 +220,41 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   @Test
   public void testDivide() {
-    int[] c = testLinear.size();
-    Matrix value = testLinear.divide(4.53);
+    int[] c = test.size();
+    Matrix value = test.divide(4.53);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row, col) / 4.53, value.getQuick(row, col), EPSILON);
+            test.getQuick(row, col) / 4.53, value.getQuick(row, col), EPSILON);
       }
     }
   }
 
   @Test(expected = IndexException.class)
   public void testGetIndexUnder() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     for (int row = -1; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        testLinear.get(row, col);
+        test.get(row, col);
       }
     }
   }
 
   @Test(expected = IndexException.class)
   public void testGetIndexOver() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     for (int row = 0; row < c[ROW] + 1; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        testLinear.get(row, col);
+        test.get(row, col);
       }
     }
   }
 
   @Test
   public void testMinus() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     Matrix result = copy();
-    Matrix value = result.minus(testLinear);
+    Matrix value = result.minus(test);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']', 0.0, value.getQuick(
@@ -278,45 +263,45 @@ public class TestRandomMatrix extends MahoutTestCase {
     }
   }
 
-  private Matrix copy() {
-    Matrix result = new DenseMatrix(testLinear.rowSize(), testLinear.columnSize());
-    for (int i = 0; i < testLinear.rowSize(); i++) {
-      for(int j = 0; j < testLinear.columnSize(); j++) {
-        result.setQuick(i, j, testLinear.getQuick(i, j));
-      }
+private Matrix copy() {
+	Matrix result = new DenseMatrix(test.rowSize(), test.columnSize());
+    for (int i = 0; i < test.rowSize(); i++) {
+    	for(int j = 0; j < test.columnSize(); j++) {
+    		result.setQuick(i, j, test.getQuick(i, j));
+    	}
     }
-    return result;
-  }
+	return result;
+}
 
   @Test(expected = CardinalityException.class)
   public void testMinusCardinality() {
-    testLinear.minus(testLinear.transpose());
+    test.minus(test.transpose());
   }
 
   @Test
   public void testPlusDouble() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     Matrix dense = copy();
 
     Matrix value = dense.plus(4.53);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row, col) + 4.53, value.getQuick(row, col), EPSILON);
+            test.getQuick(row, col) + 4.53, value.getQuick(row, col), EPSILON);
       }
     }
   }
 
   @Test
   public void testPlusMatrix() {
-    Matrix result = copy();
-    int[] c = testLinear.size();
+	Matrix result = copy();
+    int[] c = test.size();
     Matrix dense = copy();
 
     Matrix value = dense.plus(result);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        assertEquals("value[" + row + "][" + col + ']', testLinear.getQuick(row, col) * 2,
+        assertEquals("value[" + row + "][" + col + ']', test.getQuick(row, col) * 2,
             value.getQuick(row, col), EPSILON);
       }
     }
@@ -324,146 +309,142 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   @Test(expected = CardinalityException.class)
   public void testPlusMatrixCardinality() {
-    testLinear.plus(testLinear.transpose());
+    test.plus(test.transpose());
   }
 
   @Test(expected = IndexException.class)
   public void testSetUnder() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     for (int row = -1; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        testLinear.set(row, col, 1.23);
+        test.set(row, col, 1.23);
       }
     }
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSetOver() {
-    int[] c = testLinear.size();
+    int[] c = test.size();
     for (int row = 0; row < c[ROW] + 1; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        testLinear.set(row, col, 1.23);
+        test.set(row, col, 1.23);
       }
     }
   }
 
   @Test
   public void testTimesDouble() {
-    int[] c = testLinear.size();
-    Matrix value = testLinear.times(4.53);
+    int[] c = test.size();
+    Matrix value = test.times(4.53);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row, col) * 4.53, value.getQuick(row, col), EPSILON);
+        		test.getQuick(row, col) * 4.53, value.getQuick(row, col), EPSILON);
       }
     }
   }
 
-  //  @Test
-  //  public void testTimesMatrix() {
-  //    int[] c = test.size();
-  //    Matrix transpose = test.transpose();
-  //    Matrix value = test.times(transpose);
-  //    int[] v = value.size();
-  //    assertEquals("rows", c[COL], v[ROW]);
-  //    assertEquals("cols", c[ROW], v[COL]);
-  //
-  //    Matrix expected = new DenseMatrix(new double[][]{{5.0, 11.0, 17.0},
-  //        {11.0, 25.0, 39.0}, {17.0, 39.0, 61.0}}).times(1.21);
-  //
-  //    for (int i = 0; i < expected.numCols(); i++) {
-  //      for (int j = 0; j < expected.numRows(); j++) {
-  //        assertTrue("Matrix times transpose not correct: " + i + ", " + j
-  //            + "\nexpected:\n\t" + expected.asFormatString() + "\nactual:\n\t"
-  //            + value.asFormatString(),
-  //            Math.abs(expected.get(i, j) - value.get(i, j)) < 1.0e-12);
-  //      }
-  //    }
-  //
-  //    Matrix timestest = new DenseMatrix(10, 1);
-  //    /* will throw ArrayIndexOutOfBoundsException exception without MAHOUT-26 */
-  //    timestest.transpose().times(timestest);
-  //  }
+//  @Test
+//  public void testTimesMatrix() {
+//    int[] c = test.size();
+//    Matrix transpose = test.transpose();
+//    Matrix value = test.times(transpose);
+//    int[] v = value.size();
+//    assertEquals("rows", c[COL], v[ROW]);
+//    assertEquals("cols", c[ROW], v[COL]);
+//
+//    Matrix expected = new DenseMatrix(new double[][]{{5.0, 11.0, 17.0},
+//        {11.0, 25.0, 39.0}, {17.0, 39.0, 61.0}}).times(1.21);
+//
+//    for (int i = 0; i < expected.numCols(); i++) {
+//      for (int j = 0; j < expected.numRows(); j++) {
+//        assertTrue("Matrix times transpose not correct: " + i + ", " + j
+//            + "\nexpected:\n\t" + expected.asFormatString() + "\nactual:\n\t"
+//            + value.asFormatString(),
+//            Math.abs(expected.get(i, j) - value.get(i, j)) < 1.0e-12);
+//      }
+//    }
+//
+//    Matrix timestest = new DenseMatrix(10, 1);
+//    /* will throw ArrayIndexOutOfBoundsException exception without MAHOUT-26 */
+//    timestest.transpose().times(timestest);
+//  }
 
   @Test(expected = UnsupportedOperationException.class)
   public void testTimesMatrixCardinality() {
-    Matrix other = testLinear.like(5, 8);
-    testLinear.times(other);
+    Matrix other = test.like(5, 8);
+    test.times(other);
   }
 
   @Test
   public void testTranspose() {
-    int[] c = testLinear.size();
-    Matrix transpose = testLinear.transpose();
+    int[] c = test.size();
+    Matrix transpose = test.transpose();
     int[] t = transpose.size();
     assertEquals("rows", c[COL], t[ROW]);
     assertEquals("cols", c[ROW], t[COL]);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row, col), transpose.getQuick(col, row), EPSILON);
+            test.getQuick(row, col), transpose.getQuick(col, row), EPSILON);
       }
     }
   }
 
-    @Test
-    public void testZSum() {
-      double sum = testLinear.zSum();
-      int[] c = testLinear.size();
-      assertTrue("zsum", sum > 0);
-      assertTrue("zsum", sum < c[0] * c[1]);
-      sum = testGaussian01.zSum();
-      c = testGaussian01.size();
-      assertTrue("zsum", sum > 0);
-      assertTrue("zsum", sum < c[0] * c[1]);
-      // TODO: what is a good assertion about zSum of proper Gaussians?
-    }
+//  @Test
+//  public void testZSum() {
+//    double sum = test.zSum();
+//    assertEquals("zsum", 23.1, sum, EPSILON);
+//  }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAssignRow() {
-      testLinear.assignRow(1, new DenseVector());
-    }
+//  @Test(expected = IndexException.class)
+//  public void testAssignRow() {
+//    double[] data = {2.1, 3.2};
+//    test.assignRow(1, new DenseVector(data));
+//    assertEquals("test[1][0]", 2.1, test.getQuick(1, 0), EPSILON);
+//    assertEquals("test[1][1]", 3.2, test.getQuick(1, 1), EPSILON);
+//  }
 
   @Test
   public void testGetRow() {
-    Vector row = testLinear.getRow(1);
+    Vector row = test.getRow(1);
     assertEquals("row size", columns, row.getNumNondefaultElements());
   }
 
   @Test(expected = IndexException.class)
   public void testGetRowIndexUnder() {
-    testLinear.getRow(-1);
+    test.getRow(-1);
   }
 
   @Test(expected = IndexException.class)
   public void testGetRowIndexOver() {
-    testLinear.getRow(5);
+    test.getRow(5);
   }
 
   @Test
   public void testGetColumn() {
-    Vector column = testLinear.getColumn(1);
+    Vector column = test.getColumn(1);
     assertEquals("row size", rows, column.getNumNondefaultElements());
   }
 
   @Test(expected = IndexException.class)
   public void testGetColumnIndexUnder() {
-    testLinear.getColumn(-1);
+    test.getColumn(-1);
   }
 
   @Test(expected = IndexException.class)
   public void testGetColumnIndexOver() {
-    testLinear.getColumn(5);
+    test.getColumn(5);
   }
 
   @Test
   public void testAsFormatString() {
-    String string = testLinear.asFormatString();
+    String string = test.asFormatString();
     int[] cardinality = {rows, columns};
     Matrix m = AbstractMatrix.decodeMatrix(string);
     for (int row = 0; row < cardinality[ROW]; row++) {
       for (int col = 0; col < cardinality[COL]; col++) {
-        assertEquals("m[" + row + ',' + col + ']', testLinear.get(row, col), m.get(
+        assertEquals("m[" + row + ',' + col + ']', test.get(row, col), m.get(
             row, col), EPSILON);
       }
     }
@@ -488,28 +469,28 @@ public class TestRandomMatrix extends MahoutTestCase {
     assertEquals("row", rowBindings, m.getRowLabelBindings());
     assertEquals("Fee", m.get(0, 1), m.get("Fee", "Bar"), EPSILON);
 
-    //    double[] newrow = {9, 8, 7};
-    //    m.set("Foe", newrow);
-    //    assertEquals("FeeBaz", m.get(0, 2), m.get("Fee", "Baz"), EPSILON);
+//    double[] newrow = {9, 8, 7};
+//    m.set("Foe", newrow);
+//    assertEquals("FeeBaz", m.get(0, 2), m.get("Fee", "Baz"), EPSILON);
   }
 
-  //  @Test(expected = UnboundLabelException.class)
-  //  public void testSettingLabelBindings() {
-  //    Matrix m = new RandomMatrix(3,3);
-  //    assertNull("row bindings", m.getRowLabelBindings());
-  //    assertNull("col bindings", m.getColumnLabelBindings());
-  //    m.set("Fee", "Foo", 1, 2, 9);
-  //    assertNotNull("row", m.getRowLabelBindings());
-  //    assertNotNull("row", m.getRowLabelBindings());
-  //    assertEquals("Fee", 1, m.getRowLabelBindings().get("Fee").intValue());
-  //    assertEquals("Fee", 2, m.getColumnLabelBindings().get("Foo").intValue());
-  //    assertEquals("FeeFoo", m.get(1, 2), m.get("Fee", "Foo"), EPSILON);
-  //    m.get("Fie", "Foe");
-  //  }
+//  @Test(expected = UnboundLabelException.class)
+//  public void testSettingLabelBindings() {
+//    Matrix m = new RandomMatrix(3,3);
+//    assertNull("row bindings", m.getRowLabelBindings());
+//    assertNull("col bindings", m.getColumnLabelBindings());
+//    m.set("Fee", "Foo", 1, 2, 9);
+//    assertNotNull("row", m.getRowLabelBindings());
+//    assertNotNull("row", m.getRowLabelBindings());
+//    assertEquals("Fee", 1, m.getRowLabelBindings().get("Fee").intValue());
+//    assertEquals("Fee", 2, m.getColumnLabelBindings().get("Foo").intValue());
+//    assertEquals("FeeFoo", m.get(1, 2), m.get("Fee", "Foo"), EPSILON);
+//    m.get("Fie", "Foe");
+//  }
 
   @Test
   public void testLabelBindingSerialization() {
-    Matrix m = new RandomMatrix(3,3);
+	    Matrix m = new RandomMatrix(3,3);
 
     assertNull("row bindings", m.getRowLabelBindings());
     assertNull("col bindings", m.getColumnLabelBindings());
