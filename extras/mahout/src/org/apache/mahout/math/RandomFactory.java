@@ -8,52 +8,72 @@ import java.util.Random;
  * Otherwise vector[2] is the same seed as matrix[1,1].
  */
 public class RandomFactory {
-  long currentSeed;
-  Random rnd;
-  
-  RandomFactory() {
+  private long currentSeed;
+  private final Random rnd;
+
+  public RandomFactory() {
     this(new Date().getTime());
   }
-  
-  RandomFactory(long seed) {
-    currentSeed = seed;
+
+  public RandomFactory(long seed) {
     rnd = new Random(seed);
+    currentSeed = seed + 1;
   }
 
-  long nextSeed() {
+  public long nextSeed() {
     return ++currentSeed;
   }
-  
-  long nextSeed(int size) {
+
+  public long nextSeed(int size) {
     currentSeed += size;
     return currentSeed;
   }
-  
-  long nextLong() {
-    return 0;
+
+  public long nextLong() {
+    return rnd.nextLong();
   }
-  
-  double nextDouble() {
-    return 0;
+
+  public double nextDouble() {
+    return rnd.nextDouble();
   }
-  
-  double nextGaussian() {
-    return 0;
+
+  public double nextGaussian() {
+    return rnd.nextGaussian();
   }
-  
-  Random getRandom() {
+
+  /*
+   * normalize and clamp to 0 -> 1 to match nextDouble()
+   */
+  public double nextGaussian01() {
+    while(true) {
+      double d = rnd.nextGaussian()/6;
+      if (d > 0.5 || d < -0.5) {
+        continue;
+      }
+      return d + 0.5;
+    }
+  }
+
+  public Random getRandom() {
     return new Random(nextSeed());
   }
-  
-  Vector getVector(int size, int mode) {
-    currentSeed += size;
-    return new RandomVector(size, currentSeed, 1, mode);
+
+  public Vector getVector(int size, int mode) {
+    long seed = nextSeed(size);
+    return new RandomVector(size, seed, 1, mode);
   }
-  
-  Matrix getMatrix(int rows, int columns, int mode) {
-    currentSeed += rows * columns;
-    Matrix m = new RandomMatrix(rows, columns, currentSeed, mode);
+
+  public Matrix getMatrix(int rows, int columns, int mode) {
+    long seed = nextSeed(rows * columns);
+    Matrix m = new RandomMatrix(rows, columns, seed, mode);
     return m;
   }
-  
+
+  public void setSeed(long seed) {
+    currentSeed = seed;
+  }
+
+  public void resetSeed() {
+    currentSeed = new Date().getTime();
+  }
 }

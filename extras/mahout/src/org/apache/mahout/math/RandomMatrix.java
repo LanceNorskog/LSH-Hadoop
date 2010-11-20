@@ -38,8 +38,8 @@ public class RandomMatrix extends AbstractMatrix {
   public static final int LINEAR = 0;
   public static final int GAUSSIAN = 1;
   public static final int GAUSSIAN01 = 2;
-  private static final double MIN_BOUND = 0.0000000001;
-  private static final double MAX_BOUND = 0.99999999999;
+//  private static final double MIN_BOUND = 0.0000000001;
+//  private static final double MAX_BOUND = 0.99999999999;
 
   //	final int rows, columns;
   final Random rnd = new Random();
