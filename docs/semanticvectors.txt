@@ -1,0 +1,52 @@
+Semantic Vectors:
+
+The Semantic Vectors algorithm projects a matrix onto a set of vectors.
+* Each position in the vector corresponds to one column of the matrix.
+* Each vector is a point in space.
+* The distance between any two vectors corresponds to the delta between those columns.
+** (there's a word for this delta, corresponding to rank of the matrix).
+
+Semantic Vectors uses Random Projection (see below) on a source matrix to create two sets of vectors, one for each row and one for each column.  The source matrix is interpreted to encode binary or numerical relationships between
+each row and each column.
+
+The algorithm is one-pass and is very simple and intuitive: each row vector "tugs" each column vector into a position that matches its relationship to all of the rows. The relative distances of the column vectors encode the average of their respective relationships with each row. If the matrix has a rank of one, all of the projected vectors will be the same; all pairs will have a distance of zero.
+
+Resolution:
+
+The problem with Semantic Vectors is the resolution of the projected vectors. In the above algorithm, the projected vectors are length one. The distances between the columns are represented with poor resolution. The secret to making Semantic Vectors useful is to do the above operation many times to create longer and longer vectors. With different random matrices, the projected vectors will contain different placements for each member of the vector. All of the vectors at index N contain the distances in the same poor resolution.
+
+
+Multiple Universes:
+
+The paper "Fuzzy Clusters in Multiple Universes" supplies the perfect analogy for Semantic Vectors: the rows represent one universe and the columns represent the other. The universes are overlaid and the row universe is allowed to exert force (the preferences) against the column universe. The universes may be of any matching dimension, where each dimension represents one of the above Random Projection/"tug" operations.
+
+Order:
+
+Order is O(dimensions * rows * columns). Interior coefficients (never forget the coefficients) are the time to iterate over the rows and columns, and the time to generate random numbers.
+
+Applications:
+* Word collocation. The rows are documents, the columns are words, and the matrix contents are the collocation function. A simple function is the number of times that word (C) appears in document (R). The resulting Semantic Vectors encode the commonality of words in different documents. For example: if the rows represent titles of Disney movies, and the columns represent the words in those titles, the Semantic Vector for "Snow" will be nearest the vector for "White". (Assuming there are no other movies with 'snow' or 'white' in the title; at this point there may be.) To find the nearness of documents, use words for the rows and documents for the columns.
+
+* Recommendation systems: If the rows are users, the columns are items, and the matrix is populated with preferences, the projected vectors will encode, in their respective distances, the similarity of two items. This is the basis of the SemanticVectorDataModel: it includes row vectors and column vectors, and the distance between two column vectors is their relative similarity. Overlaying the universes, the closest item vector is the most interesting item for a user.
+
+Random Projection:
+
+Random Projection projects a matrix onto another matrix.
+The algorithm populates a matrix with random numbers, and multiplies the source matrix with it.
+The result is a projected matrix with (roughly) the same rank as the source matrix.
+This allows the information encoded in the source matrix to be projected 
+with surprisingly good faithfulness into a projected matrix of any shape.
+
+Uses:
+If the projected matrix is smaller than the source matrix, this serves as a form of dimensional reduction.
+If a random vector projects a source matrix onto a vector, the projected vector will encode the information with very poor resolution. But the resolution will be greater than zero, and this may be enough for some algorithms.
+
+
+
+
+
+
+
+
+
+
