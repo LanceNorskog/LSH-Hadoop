@@ -25,18 +25,18 @@ import org.apache.mahout.math.VarLongWritable;
 
 /** A {@link org.apache.hadoop.io.Writable} encapsulating a User ID and a dimension index. */
 public final class UserDimWritable extends VarLongWritable {
-  
+
   private long dimension;
-  
+
   public UserDimWritable() {
     // do nothing
   }
-  
+
   public UserDimWritable(long itemID, long dimension) {
     super(itemID);
     this.dimension = dimension;
   }
-  
+
   public UserDimWritable(UserDimWritable other) {
     this(other.get(), other.dimension);
   }
@@ -53,13 +53,13 @@ public final class UserDimWritable extends VarLongWritable {
     super.set(id);
     this.dimension = dimension;
   }
-  
+
   @Override
   public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeFloat(dimension);
   }
-  
+
   @Override
   public void readFields(DataInput in) throws IOException {
     super.readFields(in);
@@ -89,5 +89,5 @@ public final class UserDimWritable extends VarLongWritable {
   public UserDimWritable clone() {
     return new UserDimWritable(get(), dimension);
   }
-  
+
 }

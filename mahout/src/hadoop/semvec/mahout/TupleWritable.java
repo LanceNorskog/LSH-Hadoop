@@ -28,100 +28,100 @@ import org.apache.mahout.math.VarLongWritable;
  * random place.
  */
 public final class TupleWritable extends VarLongWritable {
-	private long itemID;
+  private long itemID;
 
-	private double itemSpot;
-	private double pref;
-	private double userSpot;
+  private double itemSpot;
+  private double pref;
+  private double userSpot;
 
-	public TupleWritable() {
-		// do nothing
-	}
+  public TupleWritable() {
+    // do nothing
+  }
 
-	public TupleWritable(long userID, long itemID, double userSpot, double itemSpot, double pref) {
-		super.set(userID);
-		this.itemID = itemID;
-		this.userSpot = userSpot;
-		this.itemSpot = itemSpot;
-		this.pref = pref;
-	}
+  public TupleWritable(long userID, long itemID, double userSpot, double itemSpot, double pref) {
+    super.set(userID);
+    this.itemID = itemID;
+    this.userSpot = userSpot;
+    this.itemSpot = itemSpot;
+    this.pref = pref;
+  }
 
-	public TupleWritable(TupleWritable other) {
-		this(other.getUserID(), other.getItemID(), other.getUserSpot(), other.getItemSpot(), other.getPref());
-	}
+  public TupleWritable(TupleWritable other) {
+    this(other.getUserID(), other.getItemID(), other.getUserSpot(), other.getItemSpot(), other.getPref());
+  }
 
-	public long getUserID() {
-		return get();
-	}
+  public long getUserID() {
+    return get();
+  }
 
-	public double getPref() {
-		return pref;
-	}
+  public double getPref() {
+    return pref;
+  }
 
-	public double getUserSpot() {
-		return userSpot;
-	}
+  public double getUserSpot() {
+    return userSpot;
+  }
 
-	public long getItemID() {
-		return itemID;
-	}
+  public long getItemID() {
+    return itemID;
+  }
 
-	public double getItemSpot() {
-		return itemSpot;
-	}
+  public double getItemSpot() {
+    return itemSpot;
+  }
 
-	public void set(long userID, long itemID, double userSpot, double itemSpot, double pref) {
-		super.set(userID);
-		this.itemID = itemID;
-		this.userSpot = userSpot;
-		this.itemSpot = itemSpot;
-		this.pref = pref;
-	}
+  public void set(long userID, long itemID, double userSpot, double itemSpot, double pref) {
+    super.set(userID);
+    this.itemID = itemID;
+    this.userSpot = userSpot;
+    this.itemSpot = itemSpot;
+    this.pref = pref;
+  }
 
-	@Override
-	public void write(DataOutput out) throws IOException {
-		super.write(out);
-		out.writeLong(itemID);
-		out.writeDouble(userSpot);
-		out.writeDouble(itemSpot);
-		out.writeDouble(pref);
-	}
+  @Override
+  public void write(DataOutput out) throws IOException {
+    super.write(out);
+    out.writeLong(itemID);
+    out.writeDouble(userSpot);
+    out.writeDouble(itemSpot);
+    out.writeDouble(pref);
+  }
 
-	@Override
-	public void readFields(DataInput in) throws IOException {
-		super.readFields(in);
-		itemID = in.readLong();
-		userSpot = in.readDouble();
-		itemSpot = in.readDouble();
-		pref = in.readDouble();
-	}
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    super.readFields(in);
+    itemID = in.readLong();
+    userSpot = in.readDouble();
+    itemSpot = in.readDouble();
+    pref = in.readDouble();
+  }
 
-	@Override
-	public int hashCode() {
-		return super.hashCode() + ((Long) itemID).hashCode() +
-				((Double) userSpot).hashCode() + ((Double) itemSpot).hashCode() +
-				((Double) pref).hashCode()
-;
-	}
+  @Override
+  public int hashCode() {
+    return super.hashCode() + ((Long) itemID).hashCode() +
+    ((Double) userSpot).hashCode() + ((Double) itemSpot).hashCode() +
+    ((Double) pref).hashCode()
+    ;
+  }
 
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof TupleWritable)) {
-			return false;
-		}
-		TupleWritable other = (TupleWritable) o;
-		return get() == other.get() && itemID == other.itemID && pref == other.pref
-				&& userSpot == other.userSpot && itemSpot == other.itemSpot;
-	}
+  @Override
+  public boolean equals(Object o) {
+    if (!(o instanceof TupleWritable)) {
+      return false;
+    }
+    TupleWritable other = (TupleWritable) o;
+    return get() == other.get() && itemID == other.itemID && pref == other.pref
+    && userSpot == other.userSpot && itemSpot == other.itemSpot;
+  }
 
-	@Override
-	public String toString() {
-		return get() + "\t" + pref + "\t" + userSpot;
-	}
+  @Override
+  public String toString() {
+    return get() + "\t" + pref + "\t" + userSpot;
+  }
 
-	@Override
-	public TupleWritable clone() {
-		return new TupleWritable(this.getUserID(), this.getItemID(), this.getUserSpot(), this.getItemSpot(), this.getPref());
-	}
+  @Override
+  public TupleWritable clone() {
+    return new TupleWritable(this.getUserID(), this.getItemID(), this.getUserSpot(), this.getItemSpot(), this.getPref());
+  }
 
 }

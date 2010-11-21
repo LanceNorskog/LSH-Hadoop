@@ -32,28 +32,28 @@ import org.apache.mahout.cf.taste.model.Preference;
  * </p>
  */
 public final class AverageAbsoluteDifferenceRecommenderEvaluatorDual extends
-    AbstractDifferenceRecommenderEvaluatorDual {
-  
+AbstractDifferenceRecommenderEvaluatorDual {
+
   private RunningAverage average;
-  
+
   @Override
   void reset() {
     average = new FullRunningAverage();
   }
-  
+
   @Override
   void processOneEstimate(float estimatedPreference, Preference realPref) {
     average.addDatum(Math.abs(realPref.getValue() - estimatedPreference));
   }
-  
+
   @Override
   double computeFinalEvaluation() {
     return average.getAverage();
   }
-  
+
   @Override
   public String toString() {
     return "AverageAbsoluteDifferenceRecommenderEvaluatorDual";
   }
-  
+
 }

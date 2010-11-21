@@ -37,86 +37,86 @@ import lsh.hadoop.LSHDriver;
 public class UserItemPrefMapper extends
 Mapper<LongWritable,Text, LongWritable,TupleWritable> {
 
-	public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
+  public static final String TRANSPOSE_USER_ITEM = "transposeUserItem";
 
-	private static final Pattern DELIMITER = Pattern.compile("::");
+  private static final Pattern DELIMITER = Pattern.compile("::");
 
-	private boolean booleanData;
-	private boolean transpose;
-	private boolean itemKey = false;
-	private int dimension = -1;
+  private boolean booleanData;
+  private boolean transpose;
+  private boolean itemKey = false;
+  private int dimension = -1;
 
-	Random seedbase = new Random();
-	Random[] userRandom;
-	Random[] itemRandom;
-	double[] invertPyramid;
+  Random seedbase = new Random();
+  Random[] userRandom;
+  Random[] itemRandom;
+  double[] invertPyramid;
 
-	@Override
-	protected void setup(Context context) {
-		Configuration jobConf = context.getConfiguration();
-		booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
-		transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
-		String d = jobConf.get(LSHDriver.DIMENSION);
-		String r = jobConf.get(LSHDriver.RANDOMSEED);
-		Random seedbase = new Random();
-		if (null == d)
-			dimension = 2;
-		else
-			dimension = Integer.parseInt(d);
-		if (null != r) {
-			seedbase = new Random(Integer.parseInt(r));
-		}
-		userRandom = new Random[dimension];
-		for(int dim = 0; dim < dimension; dim++)
-			userRandom[dim] = new Random(seedbase.nextLong());
-		itemRandom = new Random[dimension];
-		for(int dim = 0; dim < dimension; dim++)
-			itemRandom[dim] = new Random(seedbase.nextLong());
-		invertPyramid = new double[dimension];
+  @Override
+  protected void setup(Context context) {
+    Configuration jobConf = context.getConfiguration();
+    booleanData = jobConf.getBoolean(RecommenderJob.BOOLEAN_DATA, false);
+    transpose = jobConf.getBoolean(TRANSPOSE_USER_ITEM, false);
+    String d = jobConf.get(LSHDriver.DIMENSION);
+    String r = jobConf.get(LSHDriver.RANDOMSEED);
+    Random seedbase = new Random();
+    if (null == d)
+      dimension = 2;
+    else
+      dimension = Integer.parseInt(d);
+    if (null != r) {
+      seedbase = new Random(Integer.parseInt(r));
+    }
+    userRandom = new Random[dimension];
+    for(int dim = 0; dim < dimension; dim++)
+      userRandom[dim] = new Random(seedbase.nextLong());
+    itemRandom = new Random[dimension];
+    for(int dim = 0; dim < dimension; dim++)
+      itemRandom[dim] = new Random(seedbase.nextLong());
+    invertPyramid = new double[dimension];
 
-	}
+  }
 
-	@Override
-	public void map(LongWritable key,
-			Text value,
-			Context context) throws IOException, InterruptedException {
-		String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
-		long userID = Long.parseLong(tokens[0]);
-		long itemID = Long.parseLong(tokens[1]);
-		if (itemKey ^ transpose) {
-			// If using items as keys, and not transposing items and users, then users are items!
-			// Or if not using items as keys (users are, as usual), but transposing items and users,
-			// then users are items! Confused?
-			long temp = userID;
-			userID = itemID;
-			itemID = temp;
-		}
-		for(int dim = 0; dim < dimension; dim++) {
-			float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
-			TupleWritable valueout = new TupleWritable(userID, itemID, 
-					normal(userRandom[dim]), normal(itemRandom[dim]), prefValue);	
-			context.write(new LongWritable(dim), valueout);
-		}
-	}
+  @Override
+  public void map(LongWritable key,
+      Text value,
+      Context context) throws IOException, InterruptedException {
+    String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
+    long userID = Long.parseLong(tokens[0]);
+    long itemID = Long.parseLong(tokens[1]);
+    if (itemKey ^ transpose) {
+      // If using items as keys, and not transposing items and users, then users are items!
+      // Or if not using items as keys (users are, as usual), but transposing items and users,
+      // then users are items! Confused?
+      long temp = userID;
+      userID = itemID;
+      itemID = temp;
+    }
+    for(int dim = 0; dim < dimension; dim++) {
+      float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : 1.0f;
+      TupleWritable valueout = new TupleWritable(userID, itemID, 
+          normal(userRandom[dim]), normal(itemRandom[dim]), prefValue);	
+      context.write(new LongWritable(dim), valueout);
+    }
+  }
 
-	/*
-	 * Random distributions:
-	 * Since distance calculations drive the outputs to a normal distribution,
-	 * it is better to start with a normal distribution in the first place.
-	 * 
-	 * Both do 0->1
-	 */
-	private double uniform(Random source) {
-		return source.nextDouble();
-	}
+  /*
+   * Random distributions:
+   * Since distance calculations drive the outputs to a normal distribution,
+   * it is better to start with a normal distribution in the first place.
+   * 
+   * Both do 0->1
+   */
+  private double uniform(Random source) {
+    return source.nextDouble();
+  }
 
-	// turns out this is faster and guaranteed band-limited
-	private double normal(Random source) {
-		double sum = 0;
-		for(int i = 0; i < 15; i++)
-			sum += source.nextDouble();
-		return sum / 15.0;
-	}
+  // turns out this is faster and guaranteed band-limited
+  private double normal(Random source) {
+    double sum = 0;
+    for(int i = 0; i < 15; i++)
+      sum += source.nextDouble();
+    return sum / 15.0;
+  }
 
-	
+
 }

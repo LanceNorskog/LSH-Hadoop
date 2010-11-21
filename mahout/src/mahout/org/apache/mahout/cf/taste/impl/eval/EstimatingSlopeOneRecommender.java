@@ -52,13 +52,13 @@ import org.slf4j.LoggerFactory;
  * </p>
  */
 public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
-  
+
   private static final Logger log = LoggerFactory.getLogger(EstimatingSlopeOneRecommender.class);
-  
+
   private final boolean weighted;
   private final boolean stdDevWeighted;
   private final DiffStorage diffStorage;
-  
+
   /**
    * <p>
    * Creates a default (weighted)  based on the given {@link DataModel}.
@@ -71,7 +71,7 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
     this(dataModel, Weighting.WEIGHTED, Weighting.WEIGHTED, new MemoryDiffStorage(dataModel,
         Weighting.WEIGHTED, false, Long.MAX_VALUE));
   }
-  
+
   /**
    * <p>
    * Creates a  based on the given {@link DataModel}.
@@ -91,9 +91,9 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
    *           if <code>diffStorage</code> is null, or stdDevWeighted is set when weighted is not set
    */
   public EstimatingSlopeOneRecommender(DataModel dataModel,
-                             Weighting weighting,
-                             Weighting stdDevWeighting,
-                             DiffStorage diffStorage) {
+      Weighting weighting,
+      Weighting stdDevWeighting,
+      DiffStorage diffStorage) {
     super(dataModel);
     if ((stdDevWeighting == Weighting.WEIGHTED) && (weighting == Weighting.UNWEIGHTED)) {
       throw new IllegalArgumentException("weighted required when stdDevWeighted is set");
@@ -105,36 +105,36 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
     this.stdDevWeighted = stdDevWeighting == Weighting.WEIGHTED;
     this.diffStorage = diffStorage;
   }
-  
+
   @Override
   public List<RecommendedItem> recommend(long userID, int howMany, IDRescorer rescorer) throws TasteException {
     if (howMany < 1) {
       throw new IllegalArgumentException("howMany must be at least 1");
     }
-    
+
     log.debug("Recommending items for user ID '{}'", userID);
-    
+
     FastIDSet possibleItemIDs = diffStorage.getRecommendableItemIDs(userID);
-    
+
     TopItems.Estimator<Long> estimator = new Estimator(userID);
-    
+
     List<RecommendedItem> topItems = TopItems.getTopItems(howMany, possibleItemIDs.iterator(), rescorer,
-      estimator);
-    
+        estimator);
+
     log.debug("Recommendations are: {}", topItems);
     return topItems;
   }
-  
+
   @Override
   public float estimatePreference(long userID, long itemID) throws TasteException {
-//    DataModel model = getDataModel();
-//    Float actualPref = model.getPreferenceValue(userID, itemID);
-//    if (actualPref != null) {
-//      return actualPref;
-//    }
+    //    DataModel model = getDataModel();
+    //    Float actualPref = model.getPreferenceValue(userID, itemID);
+    //    if (actualPref != null) {
+    //      return actualPref;
+    //    }
     return doEstimatePreference(userID, itemID);
   }
-  
+
   private float doEstimatePreference(long userID, long itemID) throws TasteException {
     double count = 0.0;
     double totalPreference = 0.0;
@@ -173,7 +173,7 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
       return (float) (totalPreference / count);
     }
   }
-  
+
   @Override
   public void setPreference(long userID, long itemID, float value) throws TasteException {
     DataModel dataModel = getDataModel();
@@ -187,7 +187,7 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
     super.setPreference(userID, itemID, value);
     diffStorage.updateItemPref(itemID, prefDelta, false);
   }
-  
+
   @Override
   public void removePreference(long userID, long itemID) throws TasteException {
     DataModel dataModel = getDataModel();
@@ -197,31 +197,31 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
       diffStorage.updateItemPref(itemID, oldPref, true);
     }
   }
-  
+
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
     alreadyRefreshed = RefreshHelper.buildRefreshed(alreadyRefreshed);
     RefreshHelper.maybeRefresh(alreadyRefreshed, diffStorage);
   }
-  
+
   @Override
   public String toString() {
     return "SlopeOneRecommender[weighted:" + weighted + ", stdDevWeighted:" + stdDevWeighted
-           + ", diffStorage:" + diffStorage + ']';
+    + ", diffStorage:" + diffStorage + ']';
   }
-  
+
   private final class Estimator implements TopItems.Estimator<Long> {
-    
+
     private final long userID;
-    
+
     private Estimator(long userID) {
       this.userID = userID;
     }
-    
+
     @Override
     public double estimate(Long itemID) throws TasteException {
       return doEstimatePreference(userID, itemID);
     }
   }
-  
+
 }

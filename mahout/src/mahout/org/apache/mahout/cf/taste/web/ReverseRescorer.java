@@ -27,7 +27,7 @@ import org.apache.mahout.common.LongPair;
  * </p>
  */
 public final class ReverseRescorer<T> implements Rescorer<T>, IDRescorer {
-  
+
   private static final IDRescorer USER_OR_ITEM_INSTANCE = new ReverseRescorer<Long>();
   private static final Rescorer<LongPair> ITEM_ITEM_PAIR_INSTANCE = new ReverseRescorer<LongPair>();
   private static final Rescorer<LongPair> USER_USER_PAIR_INSTANCE = new ReverseRescorer<LongPair>();
@@ -38,15 +38,15 @@ public final class ReverseRescorer<T> implements Rescorer<T>, IDRescorer {
   public static IDRescorer getItemInstance() {
     return USER_OR_ITEM_INSTANCE;
   }
-  
+
   public static IDRescorer getUserInstance() {
     return USER_OR_ITEM_INSTANCE;
   }
-  
+
   public static Rescorer<LongPair> getItemItemPairInstance() {
     return ITEM_ITEM_PAIR_INSTANCE;
   }
-  
+
   public static Rescorer<LongPair> getUserUserPairInstance() {
     return USER_USER_PAIR_INSTANCE;
   }
@@ -62,25 +62,25 @@ public final class ReverseRescorer<T> implements Rescorer<T>, IDRescorer {
   public double rescore(T thing, double originalScore) {
     return -originalScore;
   }
-  
+
   @Override
   public boolean isFiltered(T thing) {
     return false;
   }
-  
+
   @Override
   public double rescore(long id, double originalScore) {
     return -originalScore;
   }
-  
+
   @Override
   public boolean isFiltered(long id) {
     return false;
   }
-  
+
   @Override
   public String toString() {
     return "ReverseRescorer";
   }
-  
+
 }

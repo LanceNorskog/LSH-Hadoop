@@ -11,21 +11,21 @@ import org.apache.hadoop.mapreduce.Reducer;
  */
 
 public class CountReducer extends
-		Reducer<Text, Text, Text, Text> {
-	
-	@Override
-	public void reduce(Text key, Iterable<Text> values, Context context)
-	throws IOException, InterruptedException {
-		int count = 0;
+Reducer<Text, Text, Text, Text> {
 
-		Iterator<Text> it = values.iterator();
-		while(it.hasNext()){
-			count++;
-			it.next();
-		}
-		String value = Integer.toString(count);
-		context.write(new Text(key), new Text(value));
-	}
+  @Override
+  public void reduce(Text key, Iterable<Text> values, Context context)
+  throws IOException, InterruptedException {
+    int count = 0;
+
+    Iterator<Text> it = values.iterator();
+    while(it.hasNext()){
+      count++;
+      it.next();
+    }
+    String value = Integer.toString(count);
+    context.write(new Text(key), new Text(value));
+  }
 
 }
 

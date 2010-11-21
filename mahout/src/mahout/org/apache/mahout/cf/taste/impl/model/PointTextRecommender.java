@@ -25,94 +25,94 @@ import sun.org.mozilla.javascript.internal.EvaluatorException;
  */
 
 public class PointTextRecommender implements Recommender {
-	
-	final DataModel model;
-	
-	public PointTextRecommender(DataModel model) {
-		this.model = model;
-	}
 
-	@Override
-	public float estimatePreference(long userID, long itemID)
-			throws TasteException {
-		return model.getPreferenceValue(userID, itemID);
-	}
+  final DataModel model;
 
-	@Override
-	public DataModel getDataModel() {
-		return model;
-	}
+  public PointTextRecommender(DataModel model) {
+    this.model = model;
+  }
 
-	@Override
-	public List<RecommendedItem> recommend(long userID, int howMany)
-			throws TasteException {
-		List<RecommendedItem> recs = new ArrayList<RecommendedItem>();
-		PreferenceArray prefs = model.getPreferencesFromUser(userID);
-		prefs.sortByValueReversed();
-		for(Preference p: prefs) {
-			howMany--;
-			if (howMany < 0)
-				break;
-			RecommendedItem rec = new GenericRecommendedItem(p.getItemID(), p.getValue());
-			recs.add(rec);
-		}
-		return recs;
-	}
+  @Override
+  public float estimatePreference(long userID, long itemID)
+  throws TasteException {
+    return model.getPreferenceValue(userID, itemID);
+  }
 
-	@Override
-	public List<RecommendedItem> recommend(long userID, int howMany,
-			IDRescorer rescorer) throws TasteException {
-		throw new UnsupportedOperationException();
-	}
+  @Override
+  public DataModel getDataModel() {
+    return model;
+  }
 
-	@Override
-	public void removePreference(long userID, long itemID)
-			throws TasteException {
-		throw new UnsupportedOperationException();
+  @Override
+  public List<RecommendedItem> recommend(long userID, int howMany)
+  throws TasteException {
+    List<RecommendedItem> recs = new ArrayList<RecommendedItem>();
+    PreferenceArray prefs = model.getPreferencesFromUser(userID);
+    prefs.sortByValueReversed();
+    for(Preference p: prefs) {
+      howMany--;
+      if (howMany < 0)
+        break;
+      RecommendedItem rec = new GenericRecommendedItem(p.getItemID(), p.getValue());
+      recs.add(rec);
+    }
+    return recs;
+  }
 
-	}
+  @Override
+  public List<RecommendedItem> recommend(long userID, int howMany,
+      IDRescorer rescorer) throws TasteException {
+    throw new UnsupportedOperationException();
+  }
 
-	@Override
-	public void setPreference(long userID, long itemID, float value)
-			throws TasteException {
-		throw new UnsupportedOperationException();
+  @Override
+  public void removePreference(long userID, long itemID)
+  throws TasteException {
+    throw new UnsupportedOperationException();
 
-	}
+  }
 
-	@Override
-	public void refresh(Collection<Refreshable> alreadyRefreshed) {
-		throw new UnsupportedOperationException();
+  @Override
+  public void setPreference(long userID, long itemID, float value)
+  throws TasteException {
+    throw new UnsupportedOperationException();
 
-	}
+  }
 
-	/**
-	 * @param args
-	 * @throws IOException 
-	 * @throws TasteException 
-	 */
-	public static void main(String[] args) throws IOException, TasteException {
-		DataModel model = new PointTextDataModel(args[0]);
-		Recommender rec = new PointTextRecommender(model);
-//		List<RecommendedItem> x = rec.recommend(5, 3);
-//		x.hashCode();
-		RecommenderEvaluator evaluator = new AverageAbsoluteDifferenceRecommenderEvaluator();
-	    double evaluation = evaluator.evaluate(new PointTextRecommenderBuilder(),
-	    	      null,
-	    	      model,
-	    	      0.9,
-	    	      0.3);
-	    System.err.println("Evaluation: " + evaluation);
-	}
+  @Override
+  public void refresh(Collection<Refreshable> alreadyRefreshed) {
+    throw new UnsupportedOperationException();
+
+  }
+
+  /**
+   * @param args
+   * @throws IOException 
+   * @throws TasteException 
+   */
+  public static void main(String[] args) throws IOException, TasteException {
+    DataModel model = new PointTextDataModel(args[0]);
+    Recommender rec = new PointTextRecommender(model);
+    //		List<RecommendedItem> x = rec.recommend(5, 3);
+    //		x.hashCode();
+    RecommenderEvaluator evaluator = new AverageAbsoluteDifferenceRecommenderEvaluator();
+    double evaluation = evaluator.evaluate(new PointTextRecommenderBuilder(),
+        null,
+        model,
+        0.9,
+        0.3);
+    System.err.println("Evaluation: " + evaluation);
+  }
 
 }
 
 class PointTextRecommenderBuilder implements RecommenderBuilder {
 
-	@Override
-	public Recommender buildRecommender(DataModel dataModel)
-			throws TasteException {
-		return new PointTextRecommender(dataModel);
-	}
-	
+  @Override
+  public Recommender buildRecommender(DataModel dataModel)
+  throws TasteException {
+    return new PointTextRecommender(dataModel);
+  }
+
 }
 

@@ -17,30 +17,30 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 
 public class ConfigurableTextFormat extends TextInputFormat {
 
-	@Override
-	public RecordReader<LongWritable, Text> 
-		createRecordReader(InputSplit split,
-			TaskAttemptContext context) {
-		return new ElNinoRecordReader();
-	}
+  @Override
+  public RecordReader<LongWritable, Text> 
+  createRecordReader(InputSplit split,
+      TaskAttemptContext context) {
+    return new ElNinoRecordReader();
+  }
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-	}
+  /**
+   * @param args
+   */
+  public static void main(String[] args) {
+  }
 }
 
 class ElNinoRecordReader extends LineRecordReader {
 
-	@Override
-	public Text getCurrentValue() {
-		Text value = super.getCurrentValue();
-		String vs = value.toString();
-		String[] fields = vs.split("[ \t]");
+  @Override
+  public Text getCurrentValue() {
+    Text value = super.getCurrentValue();
+    String vs = value.toString();
+    String[] fields = vs.split("[ \t]");
 
-		// id,lat/long
-		return new Text(fields[0] + "," + fields[5] + "," + fields[6]);
-	}
+    // id,lat/long
+    return new Text(fields[0] + "," + fields[5] + "," + fields[6]);
+  }
 
 }

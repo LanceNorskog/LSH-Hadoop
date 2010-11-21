@@ -23,77 +23,77 @@ import org.apache.mahout.math.VectorWritable;
 
 public class CanopyTest {
 
-	/**
-	 * @param args
-	 * @throws IOException 
-	 */
-	public static void main(String[] args) throws IOException {
-		List<Vector> vectors = loadVectors(args[0]);
-		canopyExample(vectors);
-	}
+  /**
+   * @param args
+   * @throws IOException 
+   */
+  public static void main(String[] args) throws IOException {
+    List<Vector> vectors = loadVectors(args[0]);
+    canopyExample(vectors);
+  }
 
-	public static List<Vector> loadVectors(String path) throws IOException {
-		List<Vector> vectors = new ArrayList<Vector>();
-		SequenceFile.Reader reader = getSequenceFileReader(path);
-		LongWritable index = new LongWritable();
-		VectorWritable v = new VectorWritable();
-		v.setWritesLaxPrecision(true);
-		try {
-			while(reader.next(index, v)) {
-				vectors.add(v.get().clone());
-			}
-		} catch (EOFException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return vectors;
-	}
+  public static List<Vector> loadVectors(String path) throws IOException {
+    List<Vector> vectors = new ArrayList<Vector>();
+    SequenceFile.Reader reader = getSequenceFileReader(path);
+    LongWritable index = new LongWritable();
+    VectorWritable v = new VectorWritable();
+    v.setWritesLaxPrecision(true);
+    try {
+      while(reader.next(index, v)) {
+        vectors.add(v.get().clone());
+      }
+    } catch (EOFException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return vectors;
+  }
 
-	public static void canopyExample(List<Vector> vectors) {
-		List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.000075);
-		for(Canopy canopy : canopies) {
-			Vector radius = canopy.getRadius();
-			System.out.print("Canopy id: " + canopy.getId() + ", center ");
-//			radius = normalizeRadius(radius);
-			summarizeVector(canopy.getCenter());
-		}
-	}
-	
-	// Dirichlet gives radius vectors with negative values
-	public static Vector normalizeRadius(Vector radius) {
-		double min = radius.minValue();
-		double max = radius.maxValue();
-		return radius.plus(-min);
-	}
+  public static void canopyExample(List<Vector> vectors) {
+    List<Canopy> canopies = makeCanopies(vectors, new TanimotoDistanceMeasure(), 0.1, 0.000075);
+    for(Canopy canopy : canopies) {
+      Vector radius = canopy.getRadius();
+      System.out.print("Canopy id: " + canopy.getId() + ", center ");
+      //			radius = normalizeRadius(radius);
+      summarizeVector(canopy.getCenter());
+    }
+  }
 
-	public static void summarizeVector(Vector v) {
-		int dimensions = v.size();
-		StandardDeviation stddev = new StandardDeviation();
-		double[] values = new double[v.size()];
-		for(int i = 0; i < v.size(); i++) {
-			values[i] = v.getQuick(i);
-		}
-		System.out.println( "min: " + v.minValue() + ", max: " + trim(v.maxValue()) + ", norm2: " + trim(v.norm(2)) + ", stddev: " + trim(stddev.evaluate(values)));
-	}
+  // Dirichlet gives radius vectors with negative values
+  public static Vector normalizeRadius(Vector radius) {
+    double min = radius.minValue();
+    double max = radius.maxValue();
+    return radius.plus(-min);
+  }
 
-	private static String trim(double maxValue) {
-		String string = Double.toString(maxValue);
-		int l = string.length();
-		return l < 7 ? string : string.substring(0, 6);
-		
-	}
+  public static void summarizeVector(Vector v) {
+    int dimensions = v.size();
+    StandardDeviation stddev = new StandardDeviation();
+    double[] values = new double[v.size()];
+    for(int i = 0; i < v.size(); i++) {
+      values[i] = v.getQuick(i);
+    }
+    System.out.println( "min: " + v.minValue() + ", max: " + trim(v.maxValue()) + ", norm2: " + trim(v.norm(2)) + ", stddev: " + trim(stddev.evaluate(values)));
+  }
 
-	public static List<Canopy> makeCanopies(List<Vector> vectors, DistanceMeasure measure, double t1, double t2) {
-//		System.out.println("make Canopies: tanimoto " + t1 + "," + t2);
-		List<Canopy> canopies = CanopyClusterer.createCanopies(
-				vectors, measure, t1, t2);
-		return canopies;
-	}
+  private static String trim(double maxValue) {
+    String string = Double.toString(maxValue);
+    int l = string.length();
+    return l < 7 ? string : string.substring(0, 6);
 
-	public static SequenceFile.Reader getSequenceFileReader(String path) throws IOException {
-	    Configuration conf = new Configuration();
-	    FileSystem fs = FileSystem.get(conf);
-	    SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(path).makeQualified(fs), conf);
-        return reader;
-	}
+  }
+
+  public static List<Canopy> makeCanopies(List<Vector> vectors, DistanceMeasure measure, double t1, double t2) {
+    //		System.out.println("make Canopies: tanimoto " + t1 + "," + t2);
+    List<Canopy> canopies = CanopyClusterer.createCanopies(
+        vectors, measure, t1, t2);
+    return canopies;
+  }
+
+  public static SequenceFile.Reader getSequenceFileReader(String path) throws IOException {
+    Configuration conf = new Configuration();
+    FileSystem fs = FileSystem.get(conf);
+    SequenceFile.Reader reader = new SequenceFile.Reader(fs, new Path(path).makeQualified(fs), conf);
+    return reader;
+  }
 }

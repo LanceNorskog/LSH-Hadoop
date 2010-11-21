@@ -17,22 +17,22 @@ import org.apache.hadoop.mapreduce.Reducer;
  */
 
 public class PointReducer extends
-		Reducer<Text, Text, Text, Text> {
-	
-	@Override
-	public void reduce(Text key, Iterable<Text> values, Context context)
-	throws IOException, InterruptedException {
-		StringBuilder sb = new StringBuilder();
+Reducer<Text, Text, Text, Text> {
 
-		for(Text value: values) {
-			Corner corner = Corner.newCorner(value.toString());
-			sb.append(corner.toString());
-			sb.append('|');
-		}
-		sb.setLength(sb.length() - 1);
-		String value = sb.toString();
-		context.write(new Text(key), new Text(value));
-	}
+  @Override
+  public void reduce(Text key, Iterable<Text> values, Context context)
+  throws IOException, InterruptedException {
+    StringBuilder sb = new StringBuilder();
+
+    for(Text value: values) {
+      Corner corner = Corner.newCorner(value.toString());
+      sb.append(corner.toString());
+      sb.append('|');
+    }
+    sb.setLength(sb.length() - 1);
+    String value = sb.toString();
+    context.write(new Text(key), new Text(value));
+  }
 
 }
 

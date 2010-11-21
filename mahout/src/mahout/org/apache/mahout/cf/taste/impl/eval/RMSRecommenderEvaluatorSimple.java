@@ -29,28 +29,28 @@ import org.apache.mahout.cf.taste.model.Preference;
  * </p>
  */
 public final class RMSRecommenderEvaluatorSimple extends AbstractDifferenceRecommenderEvaluatorSimple {
-  
+
   private RunningAverage average;
-  
+
   @Override
   void reset() {
     average = new FullRunningAverage();
   }
-  
+
   @Override
   void processOneEstimate(float estimatedPreference, Preference realPref) {
     double diff = realPref.getValue() - estimatedPreference;
     average.addDatum(diff * diff);
   }
-  
+
   @Override
   double computeFinalEvaluation() {
     return Math.sqrt(average.getAverage());
   }
-  
+
   @Override
   public String toString() {
     return "RMSRecommenderEvaluator";
   }
-  
+
 }
