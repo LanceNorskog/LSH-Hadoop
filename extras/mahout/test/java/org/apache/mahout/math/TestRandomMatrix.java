@@ -34,12 +34,15 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   protected static final int COL = AbstractMatrix.COL;
 
+  protected Matrix matrixCache;
   protected RandomMatrix testLinear;
   protected RandomMatrix testGaussian;
   protected RandomMatrix testGaussian01;
+  protected RandomMatrix testCached;
 
   int rows = 4;
   int columns = 5;
+  int[] cardinality = {rows, columns};
 
   @Override
   @Before
@@ -48,6 +51,8 @@ public class TestRandomMatrix extends MahoutTestCase {
     testLinear = new RandomMatrix(rows, columns);
     testGaussian = new RandomMatrix(rows, columns);
     testGaussian01 = new RandomMatrix(rows, columns);
+    matrixCache = new SparseMatrix(cardinality);
+    testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN, matrixCache);
   }
 
   @Test
@@ -63,6 +68,19 @@ public class TestRandomMatrix extends MahoutTestCase {
   }
 
   @Test
+  public void testRepeatable() {
+    double d = testLinear.getQuick(1,1);
+    assertTrue("repeatable", d == testLinear.getQuick(1,1));
+  }
+
+  @Test
+  public void testCache() {
+    double d = testCached.getQuick(1,1);
+    assertTrue("cached matrix", d == testCached.getQuick(1,1));
+    assertTrue("cached value", d == matrixCache.getQuick(1,1));
+  }
+
+  @Test
   public void testIterate() {
     Iterator<MatrixSlice> it = testLinear.iterator();
     MatrixSlice m;
@@ -73,14 +91,28 @@ public class TestRandomMatrix extends MahoutTestCase {
     }
   }
 
-  @Test (expected = UnsupportedOperationException.class)
+  @Test
   public void testLike() {
     Matrix like = testLinear.like();
+    assertTrue("like", like instanceof DenseMatrix);
   }
 
-  @Test (expected = UnsupportedOperationException.class)
+  @Test
   public void testLikeIntInt() {
     Matrix like = testLinear.like(4, 4);
+    assertTrue("likeIntInt", like instanceof DenseMatrix);
+  }
+
+  @Test
+  public void testLikeCached() {
+    Matrix like = testCached.like();
+    assertTrue("like", like.getClass() == matrixCache.getClass());
+  }
+
+  @Test
+  public void testLikeIntIntCached() {
+    Matrix like = testCached.like(4, 4);
+    assertTrue("likeIntInt", like.getClass() == matrixCache.getClass());
   }
 
   @Test
@@ -121,7 +153,7 @@ public class TestRandomMatrix extends MahoutTestCase {
     testLinear.assign(Functions.mult(-1));
   }
 
- @Test
+  @Test
   public void testViewPart() {
     int[] offset = {1, 1};
     int[] size = {2, 1};
@@ -385,9 +417,9 @@ public class TestRandomMatrix extends MahoutTestCase {
   //    timestest.transpose().times(timestest);
   //  }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test(expected = CardinalityException.class)
   public void testTimesMatrixCardinality() {
-    Matrix other = testLinear.like(5, 8);
+    Matrix other = testLinear.like(testLinear.columnSize() + 1, 1);
     testLinear.times(other);
   }
 
@@ -406,23 +438,23 @@ public class TestRandomMatrix extends MahoutTestCase {
     }
   }
 
-    @Test
-    public void testZSum() {
-      double sum = testLinear.zSum();
-      int[] c = testLinear.size();
-      assertTrue("zsum", sum > 0);
-      assertTrue("zsum", sum < c[0] * c[1]);
-      sum = testGaussian01.zSum();
-      c = testGaussian01.size();
-      assertTrue("zsum", sum > 0);
-      assertTrue("zsum", sum < c[0] * c[1]);
-      // TODO: what is a good assertion about zSum of proper Gaussians?
-    }
+  @Test
+  public void testZSum() {
+    double sum = testLinear.zSum();
+    int[] c = testLinear.size();
+    assertTrue("zsum", sum > 0);
+    assertTrue("zsum", sum < c[0] * c[1]);
+    sum = testGaussian01.zSum();
+    c = testGaussian01.size();
+    assertTrue("zsum", sum > 0);
+    assertTrue("zsum", sum < c[0] * c[1]);
+    // TODO: what is a good assertion about zSum of proper Gaussians?
+  }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAssignRow() {
-      testLinear.assignRow(1, new DenseVector());
-    }
+  @Test(expected = UnsupportedOperationException.class)
+  public void testAssignRow() {
+    testLinear.assignRow(1, new DenseVector());
+  }
 
   @Test
   public void testGetRow() {
@@ -470,10 +502,8 @@ public class TestRandomMatrix extends MahoutTestCase {
   }
 
   @Test
-  public void testLabelBindings() {
+  public void testGettingLabelBindings() {
     Matrix m = new RandomMatrix(3,3);
-    assertNull("row bindings", m.getRowLabelBindings());
-    assertNull("col bindings", m.getColumnLabelBindings());
     Map<String, Integer> rowBindings = new HashMap<String, Integer>();
     rowBindings.put("Fee", 0);
     rowBindings.put("Fie", 1);
@@ -485,27 +515,49 @@ public class TestRandomMatrix extends MahoutTestCase {
     colBindings.put("Bar", 1);
     colBindings.put("Baz", 2);
     m.setColumnLabelBindings(colBindings);
-    assertEquals("row", rowBindings, m.getRowLabelBindings());
-    assertEquals("Fee", m.get(0, 1), m.get("Fee", "Bar"), EPSILON);
 
-    //    double[] newrow = {9, 8, 7};
-    //    m.set("Foe", newrow);
-    //    assertEquals("FeeBaz", m.get(0, 2), m.get("Fee", "Baz"), EPSILON);
+    double value = m.get(0, 0);
+    assertTrue("get value from label", m.get("Fee", "Foo") == m.get(0, 0));
   }
 
-  //  @Test(expected = UnboundLabelException.class)
-  //  public void testSettingLabelBindings() {
-  //    Matrix m = new RandomMatrix(3,3);
-  //    assertNull("row bindings", m.getRowLabelBindings());
-  //    assertNull("col bindings", m.getColumnLabelBindings());
-  //    m.set("Fee", "Foo", 1, 2, 9);
-  //    assertNotNull("row", m.getRowLabelBindings());
-  //    assertNotNull("row", m.getRowLabelBindings());
-  //    assertEquals("Fee", 1, m.getRowLabelBindings().get("Fee").intValue());
-  //    assertEquals("Fee", 2, m.getColumnLabelBindings().get("Foo").intValue());
-  //    assertEquals("FeeFoo", m.get(1, 2), m.get("Fee", "Foo"), EPSILON);
-  //    m.get("Fie", "Foe");
-  //  }
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings1() {
+    Matrix m = new RandomMatrix(3,3);
+    m.set("Fee", "Foo", 1, 2, 9);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings2() {
+    Matrix m = new RandomMatrix(3,3);
+    double[] row = new double[3];
+    m.set("Fee", row);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings3() {
+    Matrix m = new RandomMatrix(3,3);
+    double[] row = new double[3];
+    m.set("Fee", 2, row);
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings4() {
+    Matrix m = new RandomMatrix(3,3);
+    assertNull("row bindings", m.getRowLabelBindings());
+    assertNull("col bindings", m.getColumnLabelBindings());
+    m.set("Fee", "Foo", 2);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings5() {
+    Matrix m = new RandomMatrix(3,3);
+    assertNull("row bindings", m.getRowLabelBindings());
+    assertNull("col bindings", m.getColumnLabelBindings());
+    m.set("Fee", "Foo", 1, 2, 9);
+  }
 
   @Test
   public void testLabelBindingSerialization() {
@@ -528,4 +580,6 @@ public class TestRandomMatrix extends MahoutTestCase {
     Matrix mm = AbstractMatrix.decodeMatrix(json);
     assertEquals("Fee", m.get(0, 1), mm.get("Fee", "Bar"), EPSILON);
   }
+
+
 }
