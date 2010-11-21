@@ -418,8 +418,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   @Override
   public Matrix divide(double x) {
+    Matrix result = like();
     int[] c = size(); 
-    Matrix result = new DenseMatrix(c[ROW], c[COL]);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col) / x);
@@ -450,7 +450,7 @@ public abstract class AbstractMatrix implements Matrix {
     if (c[COL] != o[COL]) {
       throw new CardinalityException(c[COL], o[COL]);
     }
-    Matrix result = new DenseMatrix(c[ROW], c[COL]);
+    Matrix result = like();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col)
@@ -462,8 +462,8 @@ public abstract class AbstractMatrix implements Matrix {
 
   @Override
   public Matrix plus(double x) {
+    Matrix result = like();
     int[] c = size();
-    Matrix result = new DenseMatrix(c[ROW], c[COL]);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col) + x);
@@ -482,7 +482,7 @@ public abstract class AbstractMatrix implements Matrix {
     if (c[COL] != o[COL]) {
       throw new CardinalityException(c[COL], o[COL]);
     }
-    Matrix result = new DenseMatrix(c[ROW], c[COL]);
+    Matrix result = like();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col)
@@ -522,7 +522,7 @@ public abstract class AbstractMatrix implements Matrix {
   @Override
   public Matrix times(double x) {
     int[] c = size();
-    Matrix result = new DenseMatrix(c[ROW], c[COL]);
+    Matrix result = like();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col) * x);
@@ -585,7 +585,7 @@ public abstract class AbstractMatrix implements Matrix {
   @Override
   public Matrix transpose() {
     int[] c = size();
-    Matrix result = new DenseMatrix(c[COL], c[ROW]);
+    Matrix result = like(c[COL], c[ROW]);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(col, row, getQuick(row, col));
