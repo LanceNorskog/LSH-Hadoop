@@ -11,6 +11,18 @@ each row and each column.
 
 The algorithm is one-pass and is very simple and intuitive: each row vector "tugs" each column vector into a position that matches its relationship to all of the rows. The relative distances of the column vectors encode the average of their respective relationships with each row. If the matrix has a rank of one, all of the projected vectors will be the same; all pairs will have a distance of zero.
 
+Definition:
+The formal definition is: for all (U, I, preference) in R(0 -> 1),
+choose a random number u in the numerical space for every U. Choose a random position for I. Define the 'tug' function as: 
+
+	I (in the parallel universe) = SUM for all u: (preference/(I - u))/2. 
+
+The preference values completely override the original position of I, so the original I can be anything. if I = 0, then the function is:
+
+	I = SUM for all u: (preference/-u)/2
+
+The intuition is that each item tugs or repels I according to 1/2 of its preference for I. I then moves one-half of the distances between it and U. This guarantees that "lowest U" < I < "highest U". 
+
 Resolution:
 
 The problem with Semantic Vectors is the resolution of the projected vectors. In the above algorithm, the projected vectors are length one. The distances between the columns are represented with poor resolution. The secret to making Semantic Vectors useful is to do the above operation many times to create longer and longer vectors. With different random matrices, the projected vectors will contain different placements for each member of the vector. All of the vectors at index N contain the distances in the same poor resolution.
@@ -45,7 +57,7 @@ To find the right number of dimensions for your application. Given a User->Item 
 U
 U
 
-Set the distance between User and Item in each position. Now, do this at various dimensions. Use a very high dimension as a gold standard (i.e., the best you're going to get). Now, pick an epsilon and drop the dimension while it satisfies the epsilon. This is your lowest adequate dimension.
+Set the distance between User and Item in each position. Now, do this at various dimensions. Use a very high dimension as a gold standard (i.e., the best you're going to get). Now, pick an epsilon and drop the dimension while it satisfies the epsilon. This is your lowest usable dimension.
 
 
 

@@ -7,7 +7,7 @@ U 0.3     0.6
 U     0.1 0.2
 
 
-A note on interpretation: these values encode the relative strength of user U's preference for item I. The numbers are unitless. I am not sure whether a value of 0.6 means "twice as strong" as 0.3 in a linear, logarthmic or gaussian distribution.
+A note on interpretation: these values encode the relative strength of user U's preference for item I. The numbers are unitless. I am not sure whether a value of 0.6 means "twice as strong" as 0.3 in a linear, logarythmic or gaussian distribution.
 
 Now, let's make a separate universe pair. Since the GroupLens movie rating data also includes the date/time of when the user recorded the rating, we will make a third parallel universe of days of the week. This time, the item universe exerts gravity on the D-O-W universe. With the three items above, the resulting matrix is:
 
@@ -26,8 +26,6 @@ U                 I                  U
                   I
 
 The resulting User v.s. Day-Of-Week gives the relative frequency of user X making a rating on a particular day of whe week. 
-
-A note on interpretation: these values encode the relative strength of user U's preference for item I. The numbers are unitless. It is possible that in the 0.6 is twice as strong as 0.3
 
 Now, let's create two matrices by decomposing this last matrix. SVD gives 3 matrices: U v.s. U, a diagonal matrix I don't know what to do with, and Day Of Week v.s. Day Of Week.
 
@@ -49,7 +47,8 @@ S
 Both of these matrices should be triangular, since UU.(0,1) is the same User as UU.(1,0). The values represent bi-directional relationships.
 
 The U v.s. U matrix gives the relative number of times that user(row) and user(column) both rated the same item. If row 0 column 1 is 0, this means that the two users never rated the same item. If it is 1, the two users only rated the same items.
-The Day Of Week v.s. DOW matrix gives the relative number of times that a rating involving either user U or item I occurred on this day. Example: if row 0 column 3 has a high number, that mean that a) a user rated many things on both Wednesdays and Sundays, b) an item was rated many times on Wednesdays and Sundays, or c) many users rated many items on Wednesdays and Sundays. Interpretation: Wednesday and Sunday are common days for the Catholic Mass ceremony, and books are the items. Maybe lots of people buy books about Catholicism on those two days. If they each buy one unique book (item) on both days, or one persons buys all of the books (items) on those two days, both cases should give the same value for Day-Of-Week.(row,column).
+
+The Day Of Week v.s. DOW matrix gives the relative number of times that a rating involving either user U or item I occurred on this day. Example: Items are books, preferences are a purchase. If matrix(S,W) has a high number, that mean that a) a user purchased many books on both Wednesdays and Sundays, b) a book was purchased many times on Wednesdays and Sundays, or c) many users purchased many books on Wednesdays and Sundays. Interpretation: Wednesday and Sunday are common days for the Catholic Mass ceremony. Maybe lots of people buy books about Catholicism on those two days. If they each buy one unique book (item) on both days, or one persons buys all of the books (items) on those two days, both cases should give the same value for Day-Of-Week.(row,column).
 
 
 
