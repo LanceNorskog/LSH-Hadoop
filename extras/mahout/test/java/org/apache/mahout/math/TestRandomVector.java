@@ -38,7 +38,7 @@ public class TestRandomVector extends MahoutTestCase {
 
   @Test
   public void testCardinality() {
-    assertEquals("size", 4, testBig.size());
+    assertEquals("size", 500, testBig.size());
   }
 
   @Test
@@ -281,18 +281,11 @@ public class TestRandomVector extends MahoutTestCase {
     testBig.assign(testBig, Functions.PLUS);
   }
 
-  @Test (expected = UnsupportedOperationException.class)
+  @Test
   public void testLike() {
     Vector other = testG.like();
-    assertTrue("not like", testG.getClass().isAssignableFrom(other.getClass()));
     assertEquals("size", testG.size(), other.size());
-  }
-
-  @Test (expected = UnsupportedOperationException.class)
-  public void testLike2() {
-    Vector other = testG.like();
-    assertTrue("not like", testG.getClass().isAssignableFrom(other.getClass()));
-    assertEquals("size", testG.size(), other.size());
+    other.assign(3.0);
   }
 
   @Test

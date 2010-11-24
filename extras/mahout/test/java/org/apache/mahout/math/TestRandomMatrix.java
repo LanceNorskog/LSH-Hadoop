@@ -17,7 +17,6 @@
 
 package org.apache.mahout.math;
 
-import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.function.Functions;
 import org.apache.mahout.math.function.VectorFunction;
 import org.junit.Before;
@@ -26,7 +25,6 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
 
 public class TestRandomMatrix extends MahoutTestCase {
 
@@ -34,7 +32,6 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   protected static final int COL = AbstractMatrix.COL;
 
-  protected Matrix matrixCache;
   protected RandomMatrix testLinear;
   protected RandomMatrix testGaussian;
   protected RandomMatrix testGaussian01;
@@ -51,8 +48,7 @@ public class TestRandomMatrix extends MahoutTestCase {
     testLinear = new RandomMatrix(rows, columns);
     testGaussian = new RandomMatrix(rows, columns);
     testGaussian01 = new RandomMatrix(rows, columns);
-    matrixCache = new SparseMatrix(cardinality);
-    testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN, matrixCache);
+    testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN);
   }
 
   @Test
@@ -73,14 +69,7 @@ public class TestRandomMatrix extends MahoutTestCase {
     assertTrue("repeatable", d == testLinear.getQuick(1,1));
   }
 
-  @Test
-  public void testCache() {
-    double d = testCached.getQuick(1,1);
-    assertTrue("cached matrix", d == testCached.getQuick(1,1));
-    assertTrue("cached value", d == matrixCache.getQuick(1,1));
-  }
-
-  @Test
+   @Test
   public void testIterate() {
     Iterator<MatrixSlice> it = testLinear.iterator();
     MatrixSlice m;
@@ -101,18 +90,6 @@ public class TestRandomMatrix extends MahoutTestCase {
   public void testLikeIntInt() {
     Matrix like = testLinear.like(4, 4);
     assertTrue("likeIntInt", like instanceof DenseMatrix);
-  }
-
-  @Test
-  public void testLikeCached() {
-    Matrix like = testCached.like();
-    assertTrue("like", like.getClass() == matrixCache.getClass());
-  }
-
-  @Test
-  public void testLikeIntIntCached() {
-    Matrix like = testCached.like(4, 4);
-    assertTrue("likeIntInt", like.getClass() == matrixCache.getClass());
   }
 
   @Test
@@ -516,7 +493,6 @@ public class TestRandomMatrix extends MahoutTestCase {
     colBindings.put("Baz", 2);
     m.setColumnLabelBindings(colBindings);
 
-    double value = m.get(0, 0);
     assertTrue("get value from label", m.get("Fee", "Foo") == m.get(0, 0));
   }
 

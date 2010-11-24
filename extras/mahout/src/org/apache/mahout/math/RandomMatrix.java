@@ -19,6 +19,7 @@ package org.apache.mahout.math;
 
 import java.util.Random;
 
+import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.function.BinaryFunction;
 import org.apache.mahout.math.function.UnaryFunction;
 
@@ -47,13 +48,6 @@ public class RandomMatrix extends AbstractMatrix {
   final private long seed;
   final private int distribution;
   
-  /*
-   * cache has two jobs:
-   *    cache the values
-   *    supply the 'like()' matrix with the same dense/sparsity profile
-   */
-  Matrix cache = null;
-
   /**
    * Constructs a zero-size matrix.
    * Some serialization thing?
@@ -88,18 +82,17 @@ public class RandomMatrix extends AbstractMatrix {
    * @param distribution Random distribution: LINEAR, GAUSSIAN, GAUSSIAN01.
    * @param cache Vector to use as cache. Doubles as 'like' source.
   */
-  public RandomMatrix(int rows, int columns, long seed, int distribution, Matrix cache) {
+  public RandomMatrix(int rows, int columns, long seed, int distribution) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
     this.seed = seed;
     this.distribution = distribution;
-    this.cache = cache;
   }
   
   @Override
   public Matrix clone() {
     // it would thread-safe to pass the cache object itself.
-    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, distribution, cache.clone());
+    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, distribution);
     if (rowLabelBindings != null) {
       clone.rowLabelBindings = Maps.newHashMap(rowLabelBindings);
     }
@@ -115,18 +108,10 @@ public class RandomMatrix extends AbstractMatrix {
       throw new CardinalityException(row, rowSize());
     if (column < 0 || column >= columnSize())
       throw new CardinalityException(column, columnSize());
-    if (cache != null) {
-      // already did cardinality checks
-      double d = cache.get(row, column);
-      if (d != 0)
-        return d;
-    }
     rnd.setSeed(getSeed(row, column));
     double value = getRandom();
     if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
       throw new Error("RandomVector: getQuick created NaN");
-    if (null != cache)
-      cache.setQuick(row, column, value);
     return value;
   }
 
@@ -143,27 +128,23 @@ public class RandomMatrix extends AbstractMatrix {
     }
   }
 
-  // Gaussian.java has better one
+  // normal distribution between zero and one
   private double gaussian01() {
-    double sum = 0;
-    for(int i = 0; i < 12; i++) {
-      sum += rnd.nextDouble();
+    double d = rnd.nextGaussian()/6;
+    while(d > 0.5 || d < -0.5) {
+      d = rnd.nextGaussian()/6;
     }
-    return sum / 12.0;
+    return d;
   }
 
   @Override
   public Matrix like() {
-    if (null == cache)
-      return new DenseMatrix(rowSize(), columnSize());
-    return cache.like();
+    return new DenseMatrix(rowSize(), columnSize());
   }
 
   @Override
  public Matrix like(int rows, int columns) {
-    if (null == cache)
-      return new DenseMatrix(rows, columns);
-    return cache.like(rows, columns);
+    return new DenseMatrix(rows, columns);
   }
 
   @Override
@@ -173,10 +154,7 @@ public class RandomMatrix extends AbstractMatrix {
 
   @Override
   public int[] getNumNondefaultElements() {
-    if (null != cache)
-      return cache.getNumNondefaultElements();
-    else
-      return size();
+    return size();
   }
 
   @Override
@@ -236,13 +214,11 @@ public class RandomMatrix extends AbstractMatrix {
     throw new UnsupportedOperationException();
   }
   
-  // TODO: make matching cache vector for RandomVector
   @Override
   public Vector getColumn(int column) {
     if (column < 0 || column >= columnSize()) {
       throw new IndexException(column, columnSize());
     }
-    //		return new TransposeViewVector(this, column);
     return new RandomVector(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], distribution);
 
   }
@@ -420,5 +396,21 @@ public class RandomMatrix extends AbstractMatrix {
   void set(String rowLabel, int row, double[] rowData) {		
     throw new UnsupportedOperationException();
   }
+  
+  @Override
+  public boolean equals(Object o) {
+    if (o.getClass() == RandomMatrix.class) {
+      RandomMatrix r = (RandomMatrix) o;
+      return rowSize() == r.rowSize() && columnSize() == r.columnSize() && this.seed == r.seed;
+    }
+    return false;
+  }
+  
+  @Override
+  public int hashCode() {
+    return RandomUtils.hashLong(seed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize());
+  }
+
+
 
 }

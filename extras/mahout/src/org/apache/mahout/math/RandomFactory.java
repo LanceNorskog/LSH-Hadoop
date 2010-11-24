@@ -63,9 +63,9 @@ public class RandomFactory {
     return new RandomVector(size, seed, 1, mode);
   }
 
-  public Matrix getMatrix(int rows, int columns, int mode, Matrix cache) {
+  public Matrix getMatrix(int rows, int columns, int mode) {
     long seed = nextSeed(rows * columns);
-    Matrix m = new RandomMatrix(rows, columns, seed, mode, cache);
+    Matrix m = new RandomMatrix(rows, columns, seed, mode);
     return m;
   }
 
