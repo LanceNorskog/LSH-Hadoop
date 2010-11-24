@@ -19,5 +19,6 @@
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/google-collections-1.0-rc2.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/extras"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
