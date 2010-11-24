@@ -3,59 +3,59 @@ package org.apache.hadoop.mapreduce.lib.input;
 import junit.framework.TestCase;
 
 public class TestCSVTextFormat extends TestCase {
-	
-	// TODO: Add tests for payload management
 
-	public void testGood() {
-		FlexibleRecordReader frr;
+  // TODO: Add tests for payload management
 
-		frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2", null, null);
-		assertEquals("a  ", frr.unpackValue("a"));
-		assertEquals("a b ", frr.unpackValue("a::b"));
-		assertEquals("a b c", frr.unpackValue("a::b::c"));
+  public void testGood() {
+    FlexibleRecordReader frr;
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null, null);
-		assertEquals("id,lat,long", frr.unpackValue("id,1,2,3,4,lat,long,7"));
-		assertEquals("id,,long", frr.unpackValue("id,1,2,3,4,,long,7"));
-		assertEquals(",lat,", frr.unpackValue(",1,2,3,4,lat,,7"));
-		assertEquals(",,long", frr.unpackValue(",1,2,3,4,,long,7"));
+    frr = new FlexibleRecordReader("::", null, " ", null, "0,1,2", null, null);
+    assertEquals("a  ", frr.unpackValue("a"));
+    assertEquals("a b ", frr.unpackValue("a::b"));
+    assertEquals("a b c", frr.unpackValue("a::b::c"));
 
-	}
-	
-	public void testBad() {
-		FlexibleRecordReader frr;
+    frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null, null);
+    assertEquals("id,lat,long", frr.unpackValue("id,1,2,3,4,lat,long,7"));
+    assertEquals("id,,long", frr.unpackValue("id,1,2,3,4,,long,7"));
+    assertEquals(",lat,", frr.unpackValue(",1,2,3,4,lat,,7"));
+    assertEquals(",,long", frr.unpackValue(",1,2,3,4,,long,7"));
 
-		frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null, null);
-		try {
-			frr.unpackValue(null);
-		} catch(Exception e) {
-			
-		}
-		try {
-			frr.unpackValue("");
-		} catch(Exception e) {
-			
-		}
-		try {
-			frr.unpackValue("x");
-		} catch(Exception e) {
-			
-		}
-		try {
-			frr.unpackValue("x,y");
-		} catch(Exception e) {
-			
-		}
-		try {
-			frr.unpackValue("x,y,z");
-		} catch(Exception e) {
-			
-		}
-		try {
-			frr.unpackValue(null);
-		} catch(Exception e) {
-			
-		}
-	}
+  }
+
+  public void testBad() {
+    FlexibleRecordReader frr;
+
+    frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6", null, null);
+    try {
+      frr.unpackValue(null);
+    } catch(Exception e) {
+
+    }
+    try {
+      frr.unpackValue("");
+    } catch(Exception e) {
+
+    }
+    try {
+      frr.unpackValue("x");
+    } catch(Exception e) {
+
+    }
+    try {
+      frr.unpackValue("x,y");
+    } catch(Exception e) {
+
+    }
+    try {
+      frr.unpackValue("x,y,z");
+    } catch(Exception e) {
+
+    }
+    try {
+      frr.unpackValue(null);
+    } catch(Exception e) {
+
+    }
+  }
 
 }

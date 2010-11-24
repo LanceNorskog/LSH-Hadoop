@@ -37,6 +37,8 @@ import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
  *  Includes option for sampling, allowing disjoint sampled sets from different passes
  * 
  *  See main() for examples
+ *  
+ *  TODO: add date format interpretation: extract Day Of Week from date strings in GroupLens
  */
 
 public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
