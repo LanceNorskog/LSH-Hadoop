@@ -1,0 +1,1 @@
+Various standalone things for Hadoop and Mahout unrelated to the LSH stuff.

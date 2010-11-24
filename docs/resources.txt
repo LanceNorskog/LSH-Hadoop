@@ -2,10 +2,12 @@ http://www.cs.cmu.edu/~christos/courses/826-resources/FOILS3-pdf/260_svd2.pdf
 
 Where the hell is Dunning's matrix x matrix slideshow?
 
-
+http://www.slideshare.net/tdunning/intelligent-search
+slides 35-36
 
 
 
 
 http://www.puffinwarellc.com/index.php/news-and-articles/articles/30-singular-value-decomposition-tutorial.html
 Golf players thing with interpretation of SVD output matrices.
+
