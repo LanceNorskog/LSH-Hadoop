@@ -66,6 +66,7 @@ public class TestRandomMatrix extends MahoutTestCase {
   @Test
   public void testRepeatable() {
     double d = testLinear.getQuick(1,1);
+    testLinear.getQuick(2,2);
     assertTrue("repeatable", d == testLinear.getQuick(1,1));
   }
 
@@ -368,36 +369,26 @@ public class TestRandomMatrix extends MahoutTestCase {
     }
   }
 
-  //  @Test
-  //  public void testTimesMatrix() {
-  //    int[] c = test.size();
-  //    Matrix transpose = test.transpose();
-  //    Matrix value = test.times(transpose);
-  //    int[] v = value.size();
-  //    assertEquals("rows", c[COL], v[ROW]);
-  //    assertEquals("cols", c[ROW], v[COL]);
-  //
-  //    Matrix expected = new DenseMatrix(new double[][]{{5.0, 11.0, 17.0},
-  //        {11.0, 25.0, 39.0}, {17.0, 39.0, 61.0}}).times(1.21);
-  //
-  //    for (int i = 0; i < expected.numCols(); i++) {
-  //      for (int j = 0; j < expected.numRows(); j++) {
-  //        assertTrue("Matrix times transpose not correct: " + i + ", " + j
-  //            + "\nexpected:\n\t" + expected.asFormatString() + "\nactual:\n\t"
-  //            + value.asFormatString(),
-  //            Math.abs(expected.get(i, j) - value.get(i, j)) < 1.0e-12);
-  //      }
-  //    }
-  //
-  //    Matrix timestest = new DenseMatrix(10, 1);
-  //    /* will throw ArrayIndexOutOfBoundsException exception without MAHOUT-26 */
-  //    timestest.transpose().times(timestest);
-  //  }
+  public void testTimesMatrix() {
+    int[] c = testLinear.size();
+    Matrix multiplier = new DenseMatrix(testLinear.rowSize(), testLinear.columnSize());
+    for(int row = 0; row < testLinear.rowSize(); row++)
+      for(int column = 0; column < testLinear.columnSize(); column++)
+        multiplier.setQuick(row, column, 4.53);
+        
+    Matrix value = testLinear.times(multiplier);
+    for (int row = 0; row < c[ROW]; row++) {
+      for (int col = 0; col < c[COL]; col++) {
+        assertEquals("value[" + row + "][" + col + ']',
+            testLinear.getQuick(row, col) * 4.53, value.getQuick(row, col), EPSILON);
+      }
+    }
+  }
 
   @Test(expected = CardinalityException.class)
   public void testTimesMatrixCardinality() {
-    Matrix other = testLinear.like(testLinear.columnSize() + 1, 1);
-    testLinear.times(other);
+    Matrix toobig = testLinear.like(testLinear.columnSize() + 1, 1);
+    testLinear.times(toobig);
   }
 
   @Test

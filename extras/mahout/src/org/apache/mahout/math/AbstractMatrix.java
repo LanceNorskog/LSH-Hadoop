@@ -195,8 +195,7 @@ public abstract class AbstractMatrix implements Matrix {
     builder.registerTypeAdapter(VectorList.class, new VectorList.JsonVectorListAdapter());
     builder.registerTypeAdapter(Vector.class, new JsonVectorAdapter());
     builder.registerTypeAdapter(Matrix.class, new JsonMatrixAdapter());
-    Gson gson = builder.create();
-    return gson;
+    return builder.create();
   }
 
   public Matrix assign(double value) {
@@ -335,9 +334,9 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public double determinant() {
-    int[] c = size();
-    int rowSize = c[ROW];
-    int columnSize = c[COL];
+    int[] card = size();
+    int rowSize = card[ROW];
+    int columnSize = card[COL];
     if (rowSize != columnSize) {
       throw new CardinalityException(rowSize, columnSize);
     }
@@ -389,7 +388,7 @@ public abstract class AbstractMatrix implements Matrix {
 
   public Matrix divide(double x) {
     Matrix result = like();
-    int[] c = size(); 
+    int[] c = size();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col) / x);
@@ -484,8 +483,8 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public Matrix times(double x) {
-    int[] c = size();
     Matrix result = like();
+    int[] c = size();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         result.setQuick(row, col, getQuick(row, col) * x);
@@ -543,10 +542,10 @@ public abstract class AbstractMatrix implements Matrix {
   }
 
   public Matrix transpose() {
-    int[] c = size();
-    Matrix result = like(c[COL], c[ROW]);
-    for (int row = 0; row < c[ROW]; row++) {
-      for (int col = 0; col < c[COL]; col++) {
+    int[] card = size();
+    Matrix result = like(card[COL], card[ROW]);
+    for (int row = 0; row < card[ROW]; row++) {
+      for (int col = 0; col < card[COL]; col++) {
         result.setQuick(col, row, getQuick(row, col));
       }
     }

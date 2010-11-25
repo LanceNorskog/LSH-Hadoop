@@ -27,11 +27,9 @@ import org.apache.mahout.math.function.BinaryFunction;
 /** Implements vector as reproducible random numbers: 
  * the same index always returns the same double 
  * 
- * Use Float min/max as limits just to avoid Outer Limits problems.
+ * 'stride' allows this to be a RandomMatrix column view
  */
 public class RandomVector extends AbstractVector {
-  
-
   final int cardinality;
   final Random rnd = new Random();
   final long seed;
@@ -64,13 +62,13 @@ public class RandomVector extends AbstractVector {
    * @param vector
    */
   public RandomVector(Vector vector) {
-    super(0);   // Java requires this
+    super(0);   // Java requires this.
     throw new UnsupportedOperationException();
   }
 
   @Override
   protected Matrix matrixLike(int rows, int columns) {
-    throw new UnsupportedOperationException();
+    return new DenseMatrix(rows, columns);
 
   }
 
@@ -93,25 +91,9 @@ public class RandomVector extends AbstractVector {
     return true;
   }
 
-  @Override
-  public double dotSelf() {
-    double result = 0.0;
-    int max = size();
-    for (int i = 0; i < max; i++) {
-      double value = this.getQuick(i);
-      result += value * value;
-    }
-    return result;
-  }
-
-  // maybe it doesn't have to be so crazy?
   public double getQuick(int index) {
-    long seed2 = getSeed(index);
-    rnd.setSeed(seed2);
-    double value = getRandom();
-    if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
-      throw new Error("RandomVector: getQuick created NaN");
-    return value;
+    rnd.setSeed(getSeed(index));
+    return getRandom();
   }
 
   private long getSeed(int index) {
@@ -124,7 +106,8 @@ public class RandomVector extends AbstractVector {
     case RandomMatrix.LINEAR: return rnd.nextDouble();
     case RandomMatrix.GAUSSIAN: return rnd.nextGaussian();
     case RandomMatrix.GAUSSIAN01: return gaussian01();
-    default: throw new Error();
+    default: 
+      throw new Error("Not a random distribution: " + mode);
     }
   }
 
@@ -162,17 +145,6 @@ public class RandomVector extends AbstractVector {
     return cardinality;
   }
 
-  @Override
-  public Vector viewPart(int offset, int length) {
-    if (offset < 0) {
-      throw new IndexException(offset, size());
-    }
-    if (offset + length > size()) {
-      throw new IndexException(offset + length, size());
-    }
-    return new VectorView(this, offset, length);
-  }
-
   public Iterator<Element> iterateNonZero() {
     return new AllIterator();
   }
@@ -194,28 +166,12 @@ public class RandomVector extends AbstractVector {
   public int hashCode() {
     return RandomUtils.hashLong(seed)^ Long.toString(cardinality).hashCode();
   }
-
-  @Override
-  public void addTo(Vector v) {
+  
+  public void addAll(Vector v) {
     if (size() != v.size()) {
       throw new CardinalityException(size(), v.size());
     }
-    for (int i = 0; i < cardinality; i++) {
-      v.setQuick(i, getQuick(i) + v.getQuick(i));
-    }
-  }
-
-  public void addAll(Vector v) {
     throw new UnsupportedOperationException();
-  }
-  
-  // AbstractVector uses a more general implementation.
-  public Matrix cross(Vector other) {
-    Matrix result = new DenseMatrix(size(), other.size());
-    for (int row = 0; row < size(); row++) {
-      result.assignRow(row, other.times(getQuick(row)));
-    }
-    return result;
   }
 
   private final class AllIterator implements Iterator<Element> {
