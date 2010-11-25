@@ -11,7 +11,6 @@ import lsh.core.Point;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 
 /*
  * Create point->corner output with User points and Item grids.

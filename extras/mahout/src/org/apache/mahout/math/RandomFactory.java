@@ -6,9 +6,12 @@ import java.util.Random;
 /*
  * Generate random objects using one seed stream to avoid correlations between objects.
  * Otherwise vector[2] is the same seed as matrix[1,1].
+ * NOT THREAD-SAFE
  */
 public class RandomFactory {
+  // next available seed
   private long currentSeed;
+  // random engine
   private final Random rnd;
 
   public RandomFactory() {
@@ -16,17 +19,12 @@ public class RandomFactory {
   }
 
   public RandomFactory(long seed) {
-    rnd = new Random(seed);
-    currentSeed = seed + 1;
+    currentSeed = seed;
+    rnd = new Random(nextSeed());
   }
 
   public long nextSeed() {
-    return ++currentSeed;
-  }
-
-  public long nextSeed(int size) {
-    currentSeed += size;
-    return currentSeed;
+    return currentSeed++;
   }
 
   public long nextLong() {
@@ -71,9 +69,18 @@ public class RandomFactory {
 
   public void setSeed(long seed) {
     currentSeed = seed;
+    rnd.setSeed(currentSeed);
+    currentSeed++;
   }
 
+  // there is a problem: two in a row can get the same milliseconds
   public void resetSeed() {
-    currentSeed = new Date().getTime();
+    setSeed(new Date().getTime());
   }
+  
+  private long nextSeed(int size) {
+    currentSeed += size;
+    return currentSeed;
+  }
+
 }

@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.clustering.canopy.Canopy;
 import org.apache.mahout.clustering.canopy.CanopyClusterer;
 import org.apache.mahout.common.distance.DistanceMeasure;
@@ -68,12 +69,13 @@ public class CanopyTest {
 
   public static void summarizeVector(Vector v) {
     int dimensions = v.size();
-    StandardDeviation stddev = new StandardDeviation();
+    RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
     double[] values = new double[v.size()];
     for(int i = 0; i < v.size(); i++) {
       values[i] = v.getQuick(i);
+      stdev.addDatum(values[i]);
     }
-    System.out.println( "min: " + v.minValue() + ", max: " + trim(v.maxValue()) + ", norm2: " + trim(v.norm(2)) + ", stddev: " + trim(stddev.evaluate(values)));
+    System.out.println( "min: " + v.minValue() + ", max: " + trim(v.maxValue()) + ", norm2: " + trim(v.norm(2)) + ", stddev: " + trim(stdev.getStandardDeviation()));
   }
 
   private static String trim(double maxValue) {

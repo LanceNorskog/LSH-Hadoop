@@ -84,35 +84,6 @@ public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
     return codec == null;
   }
 
-  /**
-   * @param args
-   * @throws Exception 
-   */
-  public static void main(String[] args) throws Exception {
-    FlexibleRecordReader frr;
-
-    String test;
-    frr = new FlexibleRecordReader("::", null, " ", null, "0,1", null, null);
-    test = frr.unpackValue("id::lat,long");
-    if (!test.equals("id lat,long")) {
-      throw new Exception("unpack multiple filled values failed");
-    }
-
-    frr = new FlexibleRecordReader(",", ",", ",", ",", "0,5,6","|", null);
-    String orig = "id,1,2,3,4,lat,long,7";
-    test = frr.unpackValue(orig);
-    if (!test.equals("id,lat,long")) {
-      throw new Exception("unpack multiple filled values failed");
-    }
-    orig = ",1,2,3,4,,long,7";
-    test = frr.unpackValue(orig);
-    if (!test.equals(",,long")) {
-      throw new Exception("unpack multiple empty values failed");
-    }
-    // need some test of sampling
-    // requires a real I/O test of this damn thing
-
-  }
 }
 
 class FlexibleRecordReader extends LineRecordReader {

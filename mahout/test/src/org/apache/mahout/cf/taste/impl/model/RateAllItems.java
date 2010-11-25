@@ -13,12 +13,13 @@ import java.util.Random;
 
 import lsh.hadoop.LSHDriver;
 
-import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommender;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommenderBuilder;
+import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.knn.KnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
@@ -191,8 +192,9 @@ public class RateAllItems {
           prefsU.hashCode();
         int uprefs = uIDs.length;
         LongPrimitiveIterator items = model.getItemIDs();
-        StandardDeviation stdR = new StandardDeviation();
-        StandardDeviation stdM = new StandardDeviation();
+        RunningAverageAndStdDev stdR = new CompactRunningAverageAndStdDev();
+        RunningAverageAndStdDev stdM = new CompactRunningAverageAndStdDev();
+
         int count = 0;
         while (items.hasNext()) {
           long itemID = items.nextLong();
@@ -203,12 +205,12 @@ public class RateAllItems {
             float rec = recco.estimatePreference(userID, itemID);
             if (rec < 1000000.0) {
               count++;
-              stdR.increment(rec);
-              stdM.increment(pref);
+              stdR.addDatum(rec);
+              stdM.addDatum(pref);
             }
           }
         }
-        System.out.println(userID + "," + uprefs + "," + stdR.getResult() + "," + stdM.getResult());
+        System.out.println(userID + "," + uprefs + "," + stdR.getStandardDeviation() + "," + stdM.getStandardDeviation());
       } catch (TasteException te) {
         ;
       }
@@ -222,7 +224,7 @@ public class RateAllItems {
     LongPrimitiveIterator items = model.getItemIDs();
     Random rnd = new Random();
     while (items.hasNext()) {
-      StandardDeviation stddev = new StandardDeviation();
+      RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
       long itemID = items.nextLong();
       double sum = 0;
       int count = 0;
@@ -232,12 +234,12 @@ public class RateAllItems {
         float pref = recco.estimatePreference(userID, itemID);
         if (pref != Float.NaN) {
           sum += pref;
-          stddev.increment((double) pref);
+          stdev.addDatum((double) pref);
           count++;
         }
       }
       String rating = (sum > 0 && count > 0) ? Double.toString(sum / count) : "0";
-      String stdstr = (stddev.getResult()) > 0 ? Double.toString(stddev.getResult()) : "0";
+      String stdstr = (stdev.getStandardDeviation()) > 0 ? Double.toString(stdev.getStandardDeviation()) : "0";
       System.out.println(itemID + "," + count + "," + stdstr + "," + rating);
     }
     items.hashCode();
@@ -271,7 +273,7 @@ public class RateAllItems {
     LongPrimitiveIterator items = model.getItemIDs();
     Random rnd = new Random();
     while (items.hasNext()) {
-      StandardDeviation stddev = new StandardDeviation();
+      RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
       long itemID = items.nextLong();
       double sum = 0;
       int count = 0;
@@ -287,12 +289,12 @@ public class RateAllItems {
           if (pref < 4.0)
             users.hashCode();
           sum += pref;
-          stddev.increment((double) pref);
+          stdev.addDatum((double) pref);
           count++;
         }
       }
       String rating = (sum > 0 && count > 0) ? Double.toString(sum / count) : "0";
-      String stdstr = (stddev.getResult()) > 0 ? Double.toString(stddev.getResult()) : "0";
+      String stdstr = (stdev.getStandardDeviation()) > 0 ? Double.toString(stdev.getStandardDeviation()) : "0";
       System.out.println(itemID + "," + count + "," + stdstr + "," + rating);
     }
     items.hashCode();

@@ -13,13 +13,14 @@ import java.util.TreeMap;
 
 import lsh.hadoop.LSHDriver;
 
-import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
+import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
 import org.apache.mahout.cf.taste.impl.model.PointTextRecommender;
@@ -69,7 +70,7 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
     if (doCSV)
       System.out.println("user,count,match,normal");
 
-    StandardDeviation std = new StandardDeviation();
+    RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
     while (users.hasNext()) {
       long userID = users.nextLong();
       // TreeMap preserves order of insertion
@@ -102,7 +103,7 @@ public class BubbleSortRecommenderEvaulator implements RecommenderEvaluator {
       if (doCSV)
         System.out.println(userID + "," + nprefs + "," + match + "," + variance);
       scores += variance;
-      std.increment(variance);
+      stdev.addDatum(variance);
       this.hashCode();
       //	points gets more trash but need measure that finds it
     }
