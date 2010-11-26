@@ -45,7 +45,7 @@ public class TestRandomMatrix extends MahoutTestCase {
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    testLinear = new RandomMatrix(rows, columns);
+    testLinear = new RandomMatrix(rows, columns, 500, RandomMatrix.LINEAR);
     testGaussian = new RandomMatrix(rows, columns);
     testGaussian01 = new RandomMatrix(rows, columns);
     testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN);
@@ -70,7 +70,7 @@ public class TestRandomMatrix extends MahoutTestCase {
     assertTrue("repeatable", d == testLinear.getQuick(1,1));
   }
 
-   @Test
+  @Test
   public void testIterate() {
     Iterator<MatrixSlice> it = testLinear.iterator();
     MatrixSlice m;
@@ -186,7 +186,7 @@ public class TestRandomMatrix extends MahoutTestCase {
   @Test
   public void testColumnView() {
     int[] c = testLinear.size();
-    Matrix result = copyMatrix(c);
+    Matrix result = copyMatrix(testLinear, c);
 
     for (int col = 0; col < c[COL]; col++) {
       assertEquals(0.0, result.getColumn(col).minus(testLinear.viewColumn(col)).norm(1), EPSILON);
@@ -197,11 +197,11 @@ public class TestRandomMatrix extends MahoutTestCase {
 
   }
 
-  private Matrix copyMatrix(int[] c) {
-    Matrix result = new DenseMatrix(testLinear.rowSize(), testLinear.columnSize());
+  private Matrix copyMatrix(Matrix input, int[] c) {
+    Matrix result = new DenseMatrix(testLinear.rowSize(), input.columnSize());
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        result.setQuick(row, col, testLinear.getQuick(row, col));
+        result.setQuick(row, col, input.getQuick(row, col));
       }
     }
     return result;
@@ -216,7 +216,9 @@ public class TestRandomMatrix extends MahoutTestCase {
     });
 
     for (int i = 0; i < testLinear.numRows(); i++) {
-      assertEquals(testLinear.getRow(i).zSum(), v.get(i), EPSILON);
+      double oldZ = v.get(i);
+      double newZ = testLinear.getRow(i).zSum();
+      assertEquals(oldZ, newZ, EPSILON);
     }
   }
 
@@ -375,7 +377,7 @@ public class TestRandomMatrix extends MahoutTestCase {
     for(int row = 0; row < testLinear.rowSize(); row++)
       for(int column = 0; column < testLinear.columnSize(); column++)
         multiplier.setQuick(row, column, 4.53);
-        
+
     Matrix value = testLinear.times(multiplier);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
@@ -417,6 +419,13 @@ public class TestRandomMatrix extends MahoutTestCase {
     assertTrue("zsum", sum > 0);
     assertTrue("zsum", sum < c[0] * c[1]);
     // TODO: what is a good assertion about zSum of proper Gaussians?
+  }
+
+  @Test
+  public void testRank() {
+    int[] c = testLinear.size();
+    SingularValueDecomposition svd = new SingularValueDecomposition(testLinear);
+    assertTrue("Random Matrix must be full rank", svd.rank() == testLinear.rowSize());
   }
 
   @Test(expected = UnsupportedOperationException.class)

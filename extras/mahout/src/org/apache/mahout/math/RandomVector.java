@@ -35,7 +35,7 @@ public class RandomVector extends AbstractVector {
   final long seed;
   final long stride;
   final int mode;
-  
+
   //  need way to reproduce any random matrix row or column
 
   /** For serialization purposes only */
@@ -78,6 +78,7 @@ public class RandomVector extends AbstractVector {
   }
 
   /**
+   * This can be whatever it needs to be.
    * @return true
    */
   public boolean isDense() {
@@ -85,6 +86,7 @@ public class RandomVector extends AbstractVector {
   }
 
   /**
+   * This can be whatever it needs to be.
    * @return true
    */
   public boolean isSequentialAccess() {
@@ -96,9 +98,13 @@ public class RandomVector extends AbstractVector {
     return getRandom();
   }
 
+  // as it turns out, numbers from consecutive seeds are highly correlated.
   private long getSeed(int index) {
-    return seed + (index * stride);
+    long starter = seed + index;
+    rnd.setSeed(starter);
+    return rnd.nextLong();
   }
+
 
   // give a wide range but avoid NaN land
   double getRandom() {
@@ -161,12 +167,12 @@ public class RandomVector extends AbstractVector {
     }
     return false;
   }
-  
+
   @Override
   public int hashCode() {
     return RandomUtils.hashLong(seed)^ Long.toString(cardinality).hashCode();
   }
-  
+
   public void addAll(Vector v) {
     if (size() != v.size()) {
       throw new CardinalityException(size(), v.size());

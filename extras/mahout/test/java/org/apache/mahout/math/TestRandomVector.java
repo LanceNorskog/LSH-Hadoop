@@ -20,14 +20,14 @@ package org.apache.mahout.math;
 import org.apache.mahout.math.function.Functions;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.Iterator;
 
 public class TestRandomVector extends MahoutTestCase {
 
   static private RandomVector testLinear = new RandomVector(2);
   static private RandomVector testBig = new RandomVector(500);
-  static private RandomVector testG = new RandomVector(4, 0, 1, RandomMatrix.GAUSSIAN);
-  static private RandomVector testG01 = new RandomVector(4, 0, 1, RandomMatrix.GAUSSIAN01);
+  static private RandomVector testG = new RandomVector(4, 0, new Date().getTime(), RandomMatrix.GAUSSIAN);
 
   @Test
   public void testAsFormatString() {
@@ -202,7 +202,7 @@ public class TestRandomVector extends MahoutTestCase {
     }
   }
 
-   @Test
+  @Test
   public void testTimesDouble() throws Exception {
     Vector val = testBig.times(3);
     assertEquals("size", testBig.size(), val.size());
@@ -242,11 +242,15 @@ public class TestRandomVector extends MahoutTestCase {
 
   @Test
   public void testZSum() {
-    assertTrue("linear zSum > 0", testLinear.zSum() > 0);
-    assertTrue("linear zSum < length", testLinear.zSum() <= testG.size());
-    assertTrue("linear zSum > 0", testG01.zSum() > 0);
-    assertTrue("linear zSum < length", testG01.zSum() <= testG.size());
-    // TODO: good assertion about gaussian zsum?
+    double zSum = testLinear.zSum();
+    assertTrue("linear zSum > 0", zSum > 0);
+    assertTrue("linear zSum < length", zSum <= testG.size());
+    zSum = 0.0;
+    for(int index = 0; index < testG.size(); index++) {
+      zSum += testG.getQuick(index);
+    }
+    assertTrue("gaussian zSum correct", zSum == testG.zSum());
+    assertTrue("gaussian zSum range", testG.zSum() > -10.0 && testG.zSum() < 10.0);
   }
 
   @Test
@@ -299,6 +303,27 @@ public class TestRandomVector extends MahoutTestCase {
             * testG.getQuick(col), result.getQuick(row, col), EPSILON);
       }
     }
+  }
+
+  @Test
+  public void testRank() {
+    int seed = 1000;
+    Matrix rm = new DenseMatrix(30,50);
+    for(int row = 0; row < 30; row++) {
+      Vector v = new RandomVector(50, seed, 1, RandomMatrix.LINEAR);
+      rm.assignRow(row, v);
+      seed += 1000;
+    }
+    SingularValueDecomposition svd = new SingularValueDecomposition(rm);
+    assertTrue("Random Vector rows must be full rank", svd.rank() == rm.rowSize());
+    for(int column = 0; column < 50; column++) {
+      Vector v = new RandomVector(30, seed, 1, RandomMatrix.LINEAR);
+      rm.assignColumn(column, v);
+      seed += 1000;
+    }
+    svd = new SingularValueDecomposition(rm);
+    assertTrue("Random Vector columns must be full rank", svd.rank() == rm.rowSize());
+
   }
 
 }
