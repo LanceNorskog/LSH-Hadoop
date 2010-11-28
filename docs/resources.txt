@@ -11,3 +11,20 @@ slides 35-36
 http://www.puffinwarellc.com/index.php/news-and-articles/articles/30-singular-value-decomposition-tutorial.html
 Golf players thing with interpretation of SVD output matrices.
 
+=------------------------
+Widdows/Ferraro
+http://code.google.com/p/semanticvectors/
+
+Dominic Widdows,Kathleen Ferraro
+basic idea
+http://www.google.com/research/pubs/archive/33477.pdf
+
+Package docs
+http://lombablog.mercubuana.ac.id/01/300_paper.pdf
+
+
+
+Package documentation
+http://static.googleusercontent.com/external_content/untrusted_dlcp/www.google.com/en/us/research/pubs/archive/33477.pdf
+
+Used at CELI in COCOA (somehow).
