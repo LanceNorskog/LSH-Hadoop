@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!--
+    Test/sample configuration file for the CSVTextInputFormat class.
+-->
+
+<configuration>
+	<property>
+		<name>mapreduce.csvinput.pattern1</name>
+		<value>|</value>
+		<description>CSV input field separator #1</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.pattern2</name>
+		<value>|</value>
+		<description>CSV input field separator #2</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.replace1</name>
+		<value>,</value>
+		<description>CSV input field separator replacement #1</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.replace2</name>
+		<value>,</value>
+		<description>CSV input field separator replacement #1</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.order</name>
+		<value>0,5</value>
+		<description>CSV input field harvest order.</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.payload</name>
+		<value>*</value>
+		<description>CSV input field harvest order.</description>
+	</property>
+
+<!--
+	<property>
+		<name>mapreduce.csvinput.sample.seed</name>
+		<value>0</value>
+		<description>Starting seed for sampling (0 means generate one) </description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.sample.min</name>
+		<value>0.0</value>
+		<description>Bottom of range (inclusive)</description>
+	</property>
+
+	<property>
+		<name>mapreduce.csvinput.sample.max</name>
+		<value>0.2</value>
+		<description>Top of range (exclusive) - also triggers use of sampler</description>
+	</property>
+-->
+
+</configuration>
