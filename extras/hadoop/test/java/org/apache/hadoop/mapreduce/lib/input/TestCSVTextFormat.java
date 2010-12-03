@@ -5,11 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.JobHistory.TaskAttempt;
-import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
-import org.hsqldb.lib.StringInputStream;
 import org.junit.Test;
 
 import junit.framework.TestCase;
@@ -73,8 +70,11 @@ public class TestCSVTextFormat extends TestCase {
   public void testCSVTIFConfig() throws IOException {
     CSVTextInputFormat csvtif = new CSVTextInputFormat();
     Configuration conf = new Configuration();
-    InputStream is = new StringInputStream(simpleConf);
-    conf.addResource(is);
+//    InputStream is = new InputStream(simpleConf);
+//    conf.addResource();
+    conf.set(simpleConf[0][0], simpleConf[0][1]);
+    conf.set(simpleConf[1][0], simpleConf[1][1]);
+    conf.set(simpleConf[2][0], simpleConf[2][1]);
     TaskAttemptID tid = new TaskAttemptID();
     TaskAttemptContext tac = new TaskAttemptContext(conf, tid);
     FlexibleRecordReader frr = (FlexibleRecordReader) csvtif.createRecordReader(null, tac);
@@ -82,27 +82,10 @@ public class TestCSVTextFormat extends TestCase {
   }
 
   // TODO: payload and sampler tests
-
-  static final String simpleConf = 
-    "<?xml version=\"1.0\"?>" +
-    "<configuration>\r\n" + 
-    "    <property>\r\n" + 
-    "        <name>mapreduce.csvinput.pattern1</name>\r\n" + 
-    "        <value>::</value>\r\n" + 
-    "        <description>CSV input field separator #1</description>\r\n" + 
-    "    </property>\r\n" + 
-    "\r\n" + 
-    "    <property>\r\n" + 
-    "        <name>mapreduce.csvinput.replace1</name>\r\n" + 
-    "        <value>,</value>\r\n" + 
-    "        <description>CSV input field separator replacement #1</description>\r\n" + 
-    "    </property>\r\n" + 
-    "\r\n" + 
-    "    <property>\r\n" + 
-    "        <name>mapreduce.csvinput.order</name>\r\n" + 
-    "        <value>0,1,2</value>\r\n" + 
-    "        <description>CSV input field harvest order.</description>\r\n" + 
-    "    </property>\r\n" + 
-    "</configuration>" +
-    "";
+  
+  String[][] simpleConf = {
+      {"mapreduce.csvinput.pattern1", "::"},
+      {"mapreduce.csvinput.replace1", ","},
+      {"mapreduce.csvinput.order", "0,1,2"}
+  };
 }
