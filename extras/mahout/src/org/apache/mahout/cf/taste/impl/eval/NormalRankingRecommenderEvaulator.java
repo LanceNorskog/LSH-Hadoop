@@ -14,6 +14,7 @@ import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.hadoop.item.PrefAndSimilarityColumnWritable;
+import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.model.DataModel;
@@ -84,6 +85,86 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
     return scores / foundusers;
   } 
 
+  public double evaluate_bits(Recommender recco,
+      DataModel model, Random rnd, int samples, String tag) throws TasteException {
+    double scores = 0;
+    int allItems = model.getNumItems();
+    LongPrimitiveIterator users = model.getUserIDs();
+    if (doCSV)
+      System.out.println("tag,user,sampled,match,normal");
+
+    int foundusers = 0;
+    while (users.hasNext()) {
+      long userID = users.nextLong();
+      allItems = Math.min(allItems, samples);
+
+      PreferenceArray prefsArray = model.getPreferencesFromUser(userID);
+      FastIDSet modelSet = new FastIDSet();
+      setBits(modelSet, prefsArray);
+//      List<RecommendedItem> recs = getRecs(recco, userID, modelSet, allItems);
+      int sampled = prefsArray.length();
+//      if (sampled == 0)
+//        continue;
+      foundusers++;
+      Preference[] prefsR = new Preference[sampled];
+      Preference[] prefsDM = new Preference[sampled];
+      getPrefsArray(userID, prefsR, prefsArray);
+      getMatchesFromRecco(userID, prefsDM, recco, modelSet);
+      double match = (sampled - sloppyHamming(prefsDM, prefsR))/ (double) sampled;
+      double normalW = normalWilcoxon(prefsDM, prefsR);
+      double variance = normalW/sampled;
+      if (doCSV)
+        System.out.println(tag + "," + userID + "," + sampled + "," + match + "," + variance);
+      scores += variance;
+      this.hashCode();
+      //	points gets more trash but need measure that finds it
+    }
+    return scores / foundusers;
+  } 
+
+  private void getPrefsArray(long userID, Preference[] prefsR,
+      PreferenceArray prefsArray) {
+    for(int i = 0; i < prefsR.length; i++) 
+      prefsR[i] = prefsArray.get(i);
+  }
+
+  private void getMatchesFromRecco(long userID, Preference[] prefsDM,
+      Recommender recco, FastIDSet modelSet) throws TasteException {
+    List<RecommendedItem> recs = new ArrayList<RecommendedItem>();
+    int index = 0;
+    LongPrimitiveIterator it = modelSet.iterator();
+    while(it.hasNext()) {
+      Long itemID = it.next();
+      float rec = recco.estimatePreference(userID, itemID);
+      prefsDM[index++] = new GenericPreference(userID, itemID, rec);
+    }
+    if (index != prefsDM.length)
+      throw new TasteException("wrong length in getMatchesFromRecco");
+  }
+
+  private List<RecommendedItem> getRecs(Recommender recco, long userID,
+      FastIDSet modelSet, int allItems) {
+    //    List<RecommendedItem> recs = new ArrayList<RecommendedItem>();
+    //    LongPrimitiveIterator it = modelSet.iterator();
+    //    while(it.hasNext()) {
+    //      Long item = it.next();
+    //      rec = recco.
+    //    }
+    return null;
+  }
+
+  private void setBits(FastIDSet modelSet, PreferenceArray prefs) {
+    for(int i = 0; i < prefs.length(); i++) {
+      modelSet.add(prefs.getItemID(i));
+    }
+  }
+
+  private void setBits(FastIDSet modelSet, Preference[] prefs) {
+    for(int i = 0; i < prefs.length; i++) {
+      modelSet.add(prefs[i].getItemID());
+    }
+  }
+
   public double evaluate(Recommender recco,
       DataModel model, Random rnd, int samples, String tag) throws TasteException {
     double scores = 0;
@@ -96,7 +177,6 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
     while (users.hasNext()) {
       long userID = users.nextLong();
       allItems = Math.min(allItems, samples);
-      allItems = Math.min(allItems, 10);
       List<RecommendedItem> recs;
       try {
         recs = recco.recommend(userID, allItems);
@@ -118,7 +198,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
         System.out.println(tag + "," + userID + "," + sampled + "," + match + "," + variance);
       scores += variance;
       this.hashCode();
-      //	points gets more trash but need measure that finds it
+      //    points gets more trash but need measure that finds it
     }
     return scores / foundusers;
   } 
@@ -210,7 +290,7 @@ public class NormalRankingRecommenderEvaulator implements RecommenderEvaluator {
         common.add(item);
       if (common.size() == max)
         return;
-   }
+    }
   }
 
   private Preference[] getMatchesFromPrefsArray(Long userID, Preference[] prefs, 

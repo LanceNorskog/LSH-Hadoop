@@ -62,20 +62,20 @@ public class TestNormalRankingRecommenderEvaulator {
 		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
 		Recommender pointRecco = doPointText(args[1]);
         DataModel pointModel = pointRecco.getDataModel();
-        DataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k_B/part-r-00000");
+        DataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
 
 		Random random = new Random(0);
-		int samples = 50;
+		int samples = 10;
 		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
-//		bsrv.doCSV = true;
+		bsrv.doCSV = true;
 
 		double score ;
-        random.setSeed(0);
-        score = bsrv.evaluate(pointRecco, pointModel, random, samples, "point_point");
-        System.out.println("Point score: " + score);
-        random.setSeed(0);
-        score = bsrv.evaluate(pointModel, pointModel, random, samples, "training_point");
-        System.out.println("Point/self score: " + score);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(pointRecco, pointModel, random, samples, "point_point");
+//        System.out.println("Point score: " + score);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(pointModel, pointModel, random, samples, "training_point");
+//        System.out.println("Point/self score: " + score);
 		random.setSeed(0);
 		score = bsrv.evaluate(pointModelTraining, pointModel, random, samples, "training_point");
 		System.out.println("Point/training score: " + score);
@@ -107,7 +107,7 @@ public class TestNormalRankingRecommenderEvaulator {
         score = bsrv.evaluate(reccoKNN, pointModel, random, samples, "knn_point");
         System.out.println("KNN v.s. point model score: " + score);
         random.setSeed(0);
-        score = bsrv.evaluate(reccoKNN, pointModelTraining, random, samples, "knn_point");
+        score = bsrv.evaluate(reccoKNN, pointModelTraining, random, samples, "knn_training");
         System.out.println("KNN v.s. point training model score: " + score);
 //		score = bsrv.evaluate(slope1Recco, pearsonRecco, random, samples, "slope1_pearson");
 //		System.out.println("Slope1 v.s. Pearson score: " + score);
