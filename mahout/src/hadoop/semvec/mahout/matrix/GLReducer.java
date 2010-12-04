@@ -13,6 +13,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
+import org.apache.mahout.math.RandomFactory;
+import org.apache.mahout.math.RandomMatrix;
 import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
@@ -36,6 +38,7 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
 
   private int dimension = -1;
   private int randomSeed = 0;
+  private RandomFactory factory = null;
 
   @Override
   protected void setup(org.apache.hadoop.mapreduce.Reducer<LongWritable,MyTupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
@@ -48,6 +51,7 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
       dimension = Integer.parseInt(d);
     if (null != r)
       randomSeed = Integer.parseInt(r);
+    factory = new RandomFactory(randomSeed);
   }
 
   protected void reduce(
@@ -58,26 +62,35 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
     
     Vector column = new RandomAccessSparseVector(Integer.MAX_VALUE/2);
     long itemID = -1;
+    int samples = 0;
     for (MyTupleWritable data : values) {
       long userID = ((LongWritable) data.get(0)).get();
       itemID = ((LongWritable) data.get(1)).get();
       Float prefValue = ((FloatWritable) data.get(2)).get();
+      if (prefValue == 0.0)
+        prefValue = 0.0000001f;
       column.set((int) userID, prefValue);
+      samples++;
     }
-    int users = column.size();
+    // how we get 0 samples I don't know.
+    // one sample is not enough
+    if (samples < 2)
+      return;
     Vector item = new DenseVector(dimension);
-    Vector random = new RandomVector(randomSeed + (int) itemID);
     for(int dim = 0; dim < dimension; dim++) {
+      Vector random = new RandomVector(Integer.MAX_VALUE/2, randomSeed + itemID*samples + dim, 1, RandomMatrix.GAUSSIAN01);
+      random = factory.getVector(100000, RandomMatrix.GAUSSIAN01);
       Iterator<Element> sparse = column.iterateNonZero();
       double userSum = 0;
       double prefSum = 0;
       while(sparse.hasNext()) {
         Element e = sparse.next();
-        userSum += random.getQuick(e.index());
+        int index = e.index();
+        userSum += random.getQuick(index);
         prefSum += e.get();
       }
-      double value = (userSum + prefSum / users)/2;
-      value /= users;
+      double value = ((userSum + (prefSum / samples)/2))/samples;
+      value = Math.min(0.9999999999, value);
       item.setQuick(dim, value);
     }
     NamedVector namedItem = new NamedVector(item, Long.toString(itemID));

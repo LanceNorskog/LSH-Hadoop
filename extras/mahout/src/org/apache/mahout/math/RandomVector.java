@@ -119,11 +119,11 @@ public class RandomVector extends AbstractVector {
 
   // normal distribution between zero and one
   private double gaussian01() {
-    double d = rnd.nextGaussian()/6;
+    double d = rnd.nextGaussian()/3;
     while(d > 0.5 || d < -0.5) {
-      d = rnd.nextGaussian()/6;
+      d = rnd.nextGaussian()/3;
     }
-    return d;
+    return d + 0.5;
   }
 
   public Vector like() {

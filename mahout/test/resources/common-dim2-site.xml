@@ -49,7 +49,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.bias</name>
-		<value>3</value>
+		<value>1</value>
 		<description>bias factor for preferences in semantic vectors.</description>
 	</property>
 
