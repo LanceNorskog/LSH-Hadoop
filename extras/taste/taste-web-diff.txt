@@ -1,0 +1,295 @@
+diff --git a/core/.classpath b/core/.classpath
+index 9b86d56..388295a 100755
+--- a/core/.classpath
++++ b/core/.classpath
+@@ -5,5 +5,6 @@
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+ 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/lsh"/>
+ 	<classpathentry kind="output" path="target/classes"/>
+ </classpath>
+diff --git a/core/src/main/java/org/apache/mahout/cf/taste/impl/recommender/slopeone/MemoryDiffStorage.java b/core/src/main/java/org/apache/mahout/cf/taste/impl/recommender/slopeone/MemoryDiffStorage.java
+index 64811b7..2b15cbc 100644
+--- a/core/src/main/java/org/apache/mahout/cf/taste/impl/recommender/slopeone/MemoryDiffStorage.java
++++ b/core/src/main/java/org/apache/mahout/cf/taste/impl/recommender/slopeone/MemoryDiffStorage.java
+@@ -292,6 +292,8 @@ public final class MemoryDiffStorage implements DiffStorage {
+     log.debug("Processing prefs for user {}", userID);
+     // Save off prefs for the life of this loop iteration
+     PreferenceArray userPreferences = dataModel.getPreferencesFromUser(userID);
++    if (null == userPreferences)
++    	return averageCount; // ???
+     int length = userPreferences.length();
+     for (int i = 0; i < length - 1; i++) {
+       float prefAValue = userPreferences.getValue(i);
+diff --git a/examples/.classpath b/examples/.classpath
+index 1567551..11127d7 100755
+--- a/examples/.classpath
++++ b/examples/.classpath
+@@ -3,7 +3,47 @@
+ 	<classpathentry kind="src" output="target/classes" path="src/main/java"/>
+ 	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+-	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
++	<classpathentry kind="lib" path="target/dependency/cglib-nodep-2.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-beanutils-1.7.0.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-cli-1.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-cli-2.0-mahout.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-codec-1.3.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-collections-3.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-dbcp-1.2.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-digester-1.7.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-httpclient-3.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-lang-2.4.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-logging-1.1.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-math-1.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/commons-pool-1.4.jar"/>
++	<classpathentry kind="lib" path="target/dependency/easymock-2.5.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/easymockclassextension-2.5.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/google-collections-1.0-rc2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/gson-1.3.jar"/>
++	<classpathentry kind="lib" path="target/dependency/guava-r03.jar"/>
++	<classpathentry kind="lib" path="target/dependency/hadoop-core-0.20.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/hbase-0.20.0.jar"/>
++	<classpathentry kind="lib" path="target/dependency/jets3t-0.7.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/junit-4.7.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-analyzers-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-benchmark-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-core-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-demos-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-highlighter-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-memory-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/lucene-wikipedia-3.0.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/objenesis-1.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/slf4j-api-1.6.0.jar"/>
++	<classpathentry kind="lib" path="target/dependency/slf4j-jcl-1.6.0.jar"/>
++	<classpathentry kind="lib" path="target/dependency/uncommons-maths-1.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/watchmaker-framework-0.6.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/watchmaker-swing-0.6.2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/xml-apis-1.0.b2.jar"/>
++	<classpathentry kind="lib" path="target/dependency/xpp3_min-1.1.4c.jar"/>
++	<classpathentry kind="lib" path="target/dependency/xstream-1.3.1.jar"/>
++	<classpathentry kind="lib" path="target/dependency/mahout-collections-1.0.jar"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mahout-utils"/>
+ 	<classpathentry kind="output" path="target/classes"/>
+ </classpath>
+diff --git a/examples/src/main/java/org/apache/mahout/cf/taste/example/grouplens/GroupLensRecommenderBuilder.java b/examples/src/main/java/org/apache/mahout/cf/taste/example/grouplens/GroupLensRecommenderBuilder.java
+index 5867498..fe7f736 100644
+--- a/examples/src/main/java/org/apache/mahout/cf/taste/example/grouplens/GroupLensRecommenderBuilder.java
++++ b/examples/src/main/java/org/apache/mahout/cf/taste/example/grouplens/GroupLensRecommenderBuilder.java
+@@ -22,7 +22,7 @@ import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
+ import org.apache.mahout.cf.taste.model.DataModel;
+ import org.apache.mahout.cf.taste.recommender.Recommender;
+ 
+-final class GroupLensRecommenderBuilder implements RecommenderBuilder {
++public final class GroupLensRecommenderBuilder implements RecommenderBuilder {
+   
+   @Override
+   public Recommender buildRecommender(DataModel dataModel) throws TasteException {
+diff --git a/math/.classpath b/math/.classpath
+index 00fadc9..94eb416 100755
+--- a/math/.classpath
++++ b/math/.classpath
+@@ -1,10 +1,10 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+ 	<classpathentry excluding="**" kind="src" output="target/test-classes" path="src/test/resources"/>
++	<classpathentry kind="src" path="src/main/java"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+ 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
+ 	<classpathentry exported="true" kind="lib" path="target/dependency/commons-math-1.2.jar"/>
+-	<classpathentry exported="true" kind="lib" path="target/mahout-math-0.4-SNAPSHOT.jar"/>
+ 	<classpathentry kind="output" path="target/classes"/>
+ </classpath>
+diff --git a/taste-web/.classpath b/taste-web/.classpath
+index 2511409..23b335a 100755
+--- a/taste-web/.classpath
++++ b/taste-web/.classpath
+@@ -6,5 +6,8 @@
+ 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
+ 	<classpathentry kind="lib" path="C:/cygwin/home/lance/open/hadoop/hadoop-0.20.2/lib/servlet-api-2.5-6.1.14.jar"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/lsh"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/lsh-mahout"/>
++	<classpathentry kind="src" path="/hadoop-20.0.2"/>
+ 	<classpathentry kind="output" path="target/classes"/>
+ </classpath>
+diff --git a/taste-web/recommender.properties b/taste-web/recommender.properties
+index 3bd4806..0d4991c 100644
+--- a/taste-web/recommender.properties
++++ b/taste-web/recommender.properties
+@@ -13,13 +13,18 @@
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+ 
++recommender.class=org.apache.mahout.cf.taste.impl.model.GLSimplexRecommender
++tastewebproperties.file=/tmp/lsh_hadoop/taste-web.properties
++filedatamodel.file=/tmp/lsh_hadoop/short.csv
++
++# grouplens + metadata
+ #Set this to the Recommender class value.
+-recommender.class=org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommender
+-filedatamodel.class=org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel
++#recommender.class=org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommender
++#filedatamodel.class=org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel
+ #filedatamodel.file=/cygwin/home/lance/datasets/grouplens/ml-data-1M/ratings.dat
+ #users.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-1M/users.dat
+ #items.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-1M/items.dat
+-filedatamodel.file=/cygwin/home/lance/datasets/grouplens/ml-data-10k/10k.ratings.dat
+-users.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-10k/users.dat
+-items.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-10k/movies.dat
++#filedatamodel.file=/cygwin/home/lance/datasets/grouplens/ml-data-10k/10k.ratings.dat
++#users.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-10k/users.dat
++#items.grouplens=/cygwin/home/lance/datasets/grouplens/ml-data-10k/movies.dat
+ 
+diff --git a/taste-web/src/main/java/org/apache/mahout/cf/taste/web/RecommenderServlet.java b/taste-web/src/main/java/org/apache/mahout/cf/taste/web/RecommenderServlet.java
+index f68379b..53aabf7 100755
+--- a/taste-web/src/main/java/org/apache/mahout/cf/taste/web/RecommenderServlet.java
++++ b/taste-web/src/main/java/org/apache/mahout/cf/taste/web/RecommenderServlet.java
+@@ -50,6 +50,7 @@ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
++import java.util.Properties;
+ 
+ /**
+  * <p>A servlet which returns recommendations, as its name implies. The servlet accepts GET and POST
+@@ -101,7 +102,8 @@ public final class RecommenderServlet extends HttpServlet {
+     if (recommender == null)
+       try {
+         makeRecommender(config);
+-        doGroupLens(config);
++        if (recommender.getClass().getName().startsWith("GroupLens"))
++          doGroupLens(config);
+       } catch (Exception e) {
+         throw new ServletException(e);
+       }
+@@ -114,22 +116,35 @@ public final class RecommenderServlet extends HttpServlet {
+     }
+     String dataModelClassName = config.getInitParameter("filedatamodel-class");
+     String dataModelFile = config.getInitParameter("filedatamodel-file");
+-    if (null == dataModelFile || !(new File(dataModelFile).exists())) 
++    String tastewebpropertiesFile = config.getInitParameter("tastewebproperties-file");
++    if (null != tastewebpropertiesFile && tastewebpropertiesFile.length() > 0) {
++      Class<Recommender> recommenderClass = (Class<Recommender>) Class.forName(recommenderClassName);
++      Constructor<Recommender> recCons = recommenderClass.getConstructor(Properties.class, String.class);
++      Properties props = new Properties();
++      try {
++        props.load(new FileReader(tastewebpropertiesFile));
++      } catch (Throwable e) {
++        throw new ServletException(e);
++      }
++      recommender = recCons.newInstance(props, dataModelFile);
++      dataModel = recommender.getDataModel();
++    } else if (null == dataModelFile || dataModelFile.length() == 0) {
+       recommender = RecommenderSingleton.getInstance().getRecommender();
+-    else {
++    } else {
+       File inputFile = new File(dataModelFile);
+       Class<DataModel> dataModelClass = (Class<DataModel>) Class.forName(dataModelClassName);
+       Constructor<DataModel> modelCons = dataModelClass.getConstructor(File.class);
+       dataModel = modelCons.newInstance(inputFile);
+-      dataModel.getNumItems();
+-      dataModel.getNumUsers();
+-      plusModel = new PlusAnonymousUserDataModel(dataModel);
+-      plusModel.getNumItems();
+-      plusModel.getNumUsers();
+       Class<Recommender> recommenderClass = (Class<Recommender>) Class.forName(recommenderClassName);
+       Constructor<Recommender> recCons = recommenderClass.getConstructor(DataModel.class);
+       recommender = recCons.newInstance(plusModel);
+     }
++    dataModel.getNumItems();
++    dataModel.getNumUsers();
++    plusModel = new PlusAnonymousUserDataModel(dataModel);
++    plusModel.getNumItems();
++    plusModel.getNumUsers();
++
+   }
+ 
+   // if this is the GroupLens dataset, load them up!
+@@ -179,13 +194,13 @@ public final class RecommenderServlet extends HttpServlet {
+     synchronized(plusModel) {
+       // it seems like there has to be a separate recommender object for each
+       // thread for this to be multi-threaded
+-      plusModel.setTempPrefs(null);
++//      plusModel.setTempPrefs(null);
+       try {
+         recommendItems(request, response);
+       } catch (Throwable t) {
+         throw new ServletException(t);
+       }
+-      plusModel.setTempPrefs(null);
++//      plusModel.setTempPrefs(null);
+     }
+   }
+ 
+@@ -198,7 +213,7 @@ public final class RecommenderServlet extends HttpServlet {
+     String loveItems = request.getParameter("love");
+     String hateItems = request.getParameter("hate");
+     long userID = -1;
+-    plusModel.setTempPrefs(null);
++//    plusModel.setTempPrefs(null);
+     if (null != loveItems  || null != hateItems) {
+       userID = PlusAnonymousUserDataModel.TEMP_USER_ID;
+       List<Preference> prefs = new ArrayList<Preference>();
+@@ -216,7 +231,7 @@ public final class RecommenderServlet extends HttpServlet {
+           prefs.add(pref);
+         }
+       }
+-      plusModel.setTempPrefs(new GenericUserPreferenceArray(prefs));
++//      plusModel.setTempPrefs(new GenericUserPreferenceArray(prefs));
+     } else {
+       String userIDString = request.getParameter("userID");
+       if (userIDString == null) {
+@@ -229,7 +244,7 @@ public final class RecommenderServlet extends HttpServlet {
+     if (format == null) {
+       format = "text";
+     }
+-    
++
+     List<RecommendedItem> items = recommender.recommend(userID, howMany);
+     List<RecommendedItem> reverse = null;
+     if (tail)
+@@ -334,7 +349,7 @@ public final class RecommenderServlet extends HttpServlet {
+       writer.println(profile.toString());
+     }
+     writer.print("Recommender: ");
+-    writer.println(recommender);
++    writer.println(recommender.getClass().getCanonicalName());
+     writer.println();
+     PreferenceArray rawPrefs = dataModel.getPreferencesFromUser(userID);
+     writer.print("Top ");
+diff --git a/taste-web/src/main/webapp/WEB-INF/web.xml b/taste-web/src/main/webapp/WEB-INF/web.xml
+index 17f4191..b23fb67 100644
+--- a/taste-web/src/main/webapp/WEB-INF/web.xml
++++ b/taste-web/src/main/webapp/WEB-INF/web.xml
+@@ -34,7 +34,11 @@
+       <param-name>filedatamodel-class</param-name>
+       <param-value>${filedatamodel.class}</param-value>
+     </init-param>
+-  <init-param>
++    <init-param>
++      <param-name>tastewebproperties-file</param-name>
++      <param-value>${tastewebproperties.file}</param-value>
++    </init-param>
++    <init-param>
+       <param-name>filedatamodel-file</param-name>
+       <param-value>${filedatamodel.file}</param-value>
+     </init-param>
+diff --git a/utils/.classpath b/utils/.classpath
+index 8334379..2e03010 100755
+--- a/utils/.classpath
++++ b/utils/.classpath
+@@ -2,6 +2,8 @@
+ <classpath>
+ 	<classpathentry kind="src" output="target/classes" path="src/main/java"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+-	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
+ 	<classpathentry kind="output" path="target/classes"/>
+ </classpath>

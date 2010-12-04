@@ -78,8 +78,7 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
       return;
     Vector item = new DenseVector(dimension);
     for(int dim = 0; dim < dimension; dim++) {
-      Vector random = new RandomVector(Integer.MAX_VALUE/2, randomSeed + itemID*samples + dim, 1, RandomMatrix.GAUSSIAN01);
-      random = factory.getVector(100000, RandomMatrix.GAUSSIAN01);
+      Vector random = factory.getVector(100000, RandomMatrix.GAUSSIAN01);
       Iterator<Element> sparse = column.iterateNonZero();
       double userSum = 0;
       double prefSum = 0;
@@ -95,7 +94,7 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
     }
     NamedVector namedItem = new NamedVector(item, Long.toString(itemID));
    // write namedItem
-    System.err.println(namedItem.getName() + item.toString());
+//    System.err.println(namedItem.getName() + item.toString());
   }
 
   @Override
