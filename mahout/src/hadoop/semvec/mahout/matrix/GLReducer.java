@@ -1,12 +1,7 @@
 package semvec.mahout.matrix;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 
 import lsh.hadoop.LSHDriver;
 
@@ -14,14 +9,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.join.TupleWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.RandomVector;
-import org.apache.mahout.math.SparseMatrix;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -39,14 +31,14 @@ import org.apache.mahout.math.Vector.Element;
  */
 
 
-public class UserItemPrefReducer extends
-Reducer<LongWritable, TupleWritable, Text, Text> {
+public class GLReducer extends
+Reducer<LongWritable, MyTupleWritable, Text, Text> {
 
   private int dimension = -1;
   private int randomSeed = 0;
 
   @Override
-  protected void setup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
+  protected void setup(org.apache.hadoop.mapreduce.Reducer<LongWritable,MyTupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
     Configuration conf = context.getConfiguration();
     String d = conf.get(LSHDriver.DIMENSION);
     String r = conf.get(LSHDriver.RANDOMSEED);
@@ -60,16 +52,16 @@ Reducer<LongWritable, TupleWritable, Text, Text> {
 
   protected void reduce(
       LongWritable key,
-      Iterable<TupleWritable> values,
-      Reducer<LongWritable, TupleWritable, Text, Text>.Context context)
+      Iterable<MyTupleWritable> values,
+      Reducer<LongWritable, MyTupleWritable, Text, Text>.Context context)
   throws java.io.IOException, InterruptedException {
     
     Vector column = new RandomAccessSparseVector(Integer.MAX_VALUE/2);
     long itemID = -1;
-    for (TupleWritable data : values) {
+    for (MyTupleWritable data : values) {
       long userID = ((LongWritable) data.get(0)).get();
       itemID = ((LongWritable) data.get(1)).get();
-      float prefValue = ((FloatWritable) data.get(1)).get();
+      Float prefValue = ((FloatWritable) data.get(2)).get();
       column.set((int) userID, prefValue);
     }
     int users = column.size();
@@ -94,7 +86,7 @@ Reducer<LongWritable, TupleWritable, Text, Text> {
   }
 
   @Override
-  protected void cleanup(org.apache.hadoop.mapreduce.Reducer<LongWritable,TupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
+  protected void cleanup(org.apache.hadoop.mapreduce.Reducer<LongWritable,MyTupleWritable,Text,Text>.Context context) throws IOException ,InterruptedException {
   };
 
 }

@@ -22,11 +22,9 @@ import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapred.join.TupleWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
-import java.util.Random;
 import java.util.regex.Pattern;
 
 import lsh.hadoop.LSHDriver;
@@ -38,8 +36,8 @@ import lsh.hadoop.LSHDriver;
  * prefs are mapped to 0 -> 1 via BIAS and SCALE
  */
 
-public class UserItemPrefMapper extends
-Mapper<LongWritable,Text, LongWritable,TupleWritable> {
+public class GLMapper extends
+Mapper<LongWritable,Text, LongWritable,MyTupleWritable> {
   private static final Pattern DELIMITER = Pattern.compile("::");
 
   public Float bias = 0.0f;
@@ -60,7 +58,7 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
   public void map(LongWritable key,
       Text value,
       Context context) throws IOException, InterruptedException {
-    String[] tokens = UserItemPrefMapper.DELIMITER.split(value.toString());
+    String[] tokens = GLMapper.DELIMITER.split(value.toString());
     long userID = Long.parseLong(tokens[0]);
     long itemID = Long.parseLong(tokens[1]);
     float prefValue = tokens.length > 2 ? Float.parseFloat(tokens[2]) : scale;
@@ -68,8 +66,8 @@ Mapper<LongWritable,Text, LongWritable,TupleWritable> {
     Writable[] tuple = new Writable[3];
     tuple[0] = new LongWritable(userID);
     tuple[1] = new LongWritable(itemID);
-    tuple[0] = new FloatWritable(prefValue);
-    TupleWritable valueout = new TupleWritable(tuple);	
+    tuple[2] = new FloatWritable(prefValue);
+    MyTupleWritable valueout = new MyTupleWritable(tuple);	
     context.write(new LongWritable(itemID), valueout);
   }
 

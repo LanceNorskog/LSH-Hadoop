@@ -21,13 +21,13 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.mapper</name>
-		<value>semvec.mahout.UserItemPrefMapper</value>
+		<value>semvec.mahout.matrix.GLMapper</value>
 		<description>Mapper class.</description>
 	</property>
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.reducer</name>
-		<value>semvec.mahout.UserItemPrefReducer</value>
+		<value>semvec.mahout.matrix.GLReducer</value>
 		<description>Reducer class.</description>
 	</property>
 
@@ -39,7 +39,7 @@
 
 	<property>
 		<name>lsh.hadoop.LSHDriver.outputValueClass</name>
-		<value>semvec.mahout.TupleWritable</value>
+		<value>semvec.mahout.matrix.MyTupleWritable</value>
 		<description>Internal value class.</description>
 	</property>
 
