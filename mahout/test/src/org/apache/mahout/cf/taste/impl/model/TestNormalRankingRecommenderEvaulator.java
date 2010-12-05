@@ -61,14 +61,14 @@ public class TestNormalRankingRecommenderEvaulator {
 	 */
 	public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
 //		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); doesn't sort by prefs!
-		Recommender pointRecco = doPointText(args[1]);
-        DataModel pointModel = pointRecco.getDataModel();
+//		Recommender pointRecco = doPointText(args[1]);
+//        DataModel pointModel = pointRecco.getDataModel();
         DataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
         DataModel pointModelTest = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_3k/part-r-00000");
-        DataModel pointModelBoth = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
+//        DataModel pointModelBoth = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
 
 		Random random = new Random(0);
-		int samples = 20;
+		int samples = 50;
 		OrderBasedRecommenderEvaulator bsrv = new OrderBasedRecommenderEvaulator();
 		bsrv.csvOut = System.out;
 		

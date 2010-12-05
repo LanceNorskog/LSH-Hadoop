@@ -69,18 +69,11 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
       int max = Math.max(prefs1.length(), prefs2.length());
       max = Math.min(max, samples);
 
-      FastIDSet common = new FastIDSet();
-//      List<Long> list1 = getItemList(prefs1, max);
-//      List<Long> list2 = getItemList(prefs2, max);  
-      // Highest index in either prefs of a common item
-      int total = minimalSet(prefs1, prefs2, common, 20);
-      Long[] items1 = getCommonItems(common, prefs1, max);
-      Long[] items2 = getCommonItems(common, prefs2, max);
-//      getMatchesFromPrefsArray(userID, items1, prefs1, common);
-//      getMatchesFromPrefsArray(userID, items2, prefs2, common);
-      
-      total = Math.max((int) Math.sqrt(total), common.size());
-      double variance = scoreResults(tag, userID, total, common.size(), items1, items2);
+      FastIDSet commonSet = new FastIDSet();
+      int subset = minimalSet(prefs1, prefs2, commonSet, max);
+      Long[] items1 = getCommonItems(commonSet, prefs1, max);
+      Long[] items2 = getCommonItems(commonSet, prefs2, max);
+      double variance = scoreResults(tag, userID, max, subset, commonSet, items1, items2);
       scores += variance;
       this.hashCode();
       //  points gets more trash but need measure that finds it
@@ -94,17 +87,17 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
       csvOut.println("tag,user,sampled,common,hamming,rank,normal,score");
   } 
 
-  private double scoreResults(String tag, long userID, int sampled, int common,
+  private double scoreResults(String tag, long userID, int sampled, int subset, FastIDSet commonSet,
       Long[] itemsL, Long[] itemsR) {
+    FastIDSet setL = new FastIDSet();
     FastIDSet setR = new FastIDSet();
-    FastIDSet setDM = new FastIDSet();
+    setBits(setL, itemsL);
     setBits(setR, itemsR);
-    setBits(setDM, itemsR);
     int found = itemsL.length;
-
+    
     int[] vectorZ = new int[found];
     int[] vectorZabs = new int[found];
-    double hamming = sloppyHamming(itemsR, itemsL);
+    double hamming = slidingWindowHamming(itemsR, itemsL, sampled);
     getVectorZ(itemsR, itemsL, vectorZ, vectorZabs);
     double normalW = normalWilcoxon(vectorZ, vectorZabs);
     double meanRank = getMeanRank(vectorZabs);
@@ -115,18 +108,18 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
 
     variance = Math.sqrt(variance);
     if (null != csvOut)
-      csvOut.println(tag + "," + userID + "," + sampled + "," + common + "," + hamming + "," + meanRank + "," + normalW + "," + variance);
+      csvOut.println(tag + "," + userID + "," + sampled + "," + subset + "," + hamming + "," + meanRank + "," + normalW + "," + variance);
 
     return variance;
   } 
 
 
-  private Long[] getCommonItems(FastIDSet common, PreferenceArray prefs1, int max) {
-    Long[] commonItems = new Long[Math.min(common.size(), max)];
+  private Long[] getCommonItems(FastIDSet commonSet, PreferenceArray prefs1, int max) {
+    Long[] commonItems = new Long[Math.min(commonSet.size(), max)];
     int index = 0;
     for(int i = 0; i < prefs1.length(); i++) {
       Long item = prefs1.getItemID(i);
-      if (common.contains(item))
+      if (commonSet.contains(item))
         commonItems[index++] = item;
       if (index == max)
         break;
@@ -138,52 +131,28 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
 
   // find minimal set of common recommended items - in order of first prefs array
   // cap at 'max'
-  // return highest index in either array of common items, or max, whichever is less
-  private int minimalSet(PreferenceArray prefs1, PreferenceArray prefs2, FastIDSet common, int max) {
+  // return number of shared recommendations in the first->max entries
+  private int minimalSet(PreferenceArray prefs1, PreferenceArray prefs2, FastIDSet commonSet, int max) {
     FastIDSet set1 = new FastIDSet();
-    for(int i = 0; i < prefs1.length(); i++) {
+    for(int i = 0; i < prefs1.length() && i < max; i++) {
       Long item = prefs1.getItemID(i);
       set1.add(item);
     }
-    int limit = 0;
-    for(int i = 0; i < prefs2.length(); i++) {
+    for(int i = 0; i < prefs2.length() && i < max; i++) {
       Long item = prefs2.getItemID(i);
       if (set1.contains(item))
-        common.add(item);
-      if (common.size() == max)
+        commonSet.add(item);
+      if (commonSet.size() == max)
         break;
-      limit = i;
     }
-    for(int i = 0; i < prefs1.length(); i++) {
-      Long item = prefs1.getItemID(i);
-      if (common.contains(item))
-        limit = Math.max(limit, i);
+    int subset = 0;
+    for(int i = 0; i < max; i++) {
+      if (commonSet.contains(prefs1.getItemID(i)) || commonSet.contains(prefs2.getItemID(i))) {
+        subset++;
+      }
      }
-    return limit;
+    return subset;
   }
-
-  // find minimal set of common recommended items - in order of first prefs array
-  //  private List<Long> minimalSet(FastIDSet FastIDSet common, int max) {
-  //    FastIDSet set1 = new FastIDSet();
-  //    for(int i = 0; i < prefs1.length(); i++) {
-  //      Long item = prefs1.getItemID(i);
-  //      set1.add(item);
-  //    }
-  //    for(int i = 0; i < prefs2.length(); i++) {
-  //      Long item = prefs2.getItemID(i);
-  //      if (set1.contains(item))
-  //        common.add(item);
-  //      if (common.size() == max)
-  //        break;
-  //    }
-  //    List<Long> items = new ArrayList<Long>();
-  //    for(int i = 0; i < prefs1.length(); i++) {
-  //      Long item = prefs1.getItemID(i);
-  //      if (set1.contains(item))
-  //        items.add(item);
-  //    }
-  //    return items;
-  //  }
 
   // find minimal set of common recommended items - in order of first prefs array
   private List<Long> getItemList(PreferenceArray prefs, int max) {
@@ -232,14 +201,17 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
     }
   }
 
-  private int sloppyHamming(Long[] itemsR, Long[] itemsL) {
+  // simple sliding-window hamming distance: a[i+-1] == b[i]
+  private int slidingWindowHamming(Long[] itemsR, Long[] itemsL, int sampled) {
     int count = 0;
     try {
-      for(int i = 1; i < itemsR.length - 1; i++) {
+      if (itemsR[0] == itemsL[0] || itemsR[0] == itemsL[1])
+        count++;
+      for(int i = 1; i < sampled && i < itemsR.length - 1; i++) {
         long itemID = itemsL[i];
-        if ((itemsR[i] != itemID) &&
-            (itemsR[i+1] != itemID)&&
-            (itemsR[i-1] != itemID)) {
+        if ((itemsR[i] == itemID) ||
+            (itemsR[i-1] == itemID)||
+            (itemsR[i+1] == itemID)) {
           count++;
         } else {
           //					System.out.println("xxx");
