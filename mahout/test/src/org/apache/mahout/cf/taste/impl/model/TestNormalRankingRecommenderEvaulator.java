@@ -17,6 +17,7 @@ import org.apache.mahout.cf.taste.eval.DataModelBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
+import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
@@ -60,15 +61,15 @@ public class TestNormalRankingRecommenderEvaulator {
 	 * @throws InstantiationException 
 	 */
 	public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-//		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); doesn't sort by prefs!
+//	  GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
 //		Recommender pointRecco = doPointText(args[1]);
 //        DataModel pointModel = pointRecco.getDataModel();
         DataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
         DataModel pointModelTest = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_3k/part-r-00000");
-//        DataModel pointModelBoth = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
+        DataModel pointModel = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
 
 		Random random = new Random(0);
-		int samples = 50;
+		int samples = 500;
 		OrderBasedRecommenderEvaulator bsrv = new OrderBasedRecommenderEvaulator();
 		bsrv.csvOut = System.out;
 		
