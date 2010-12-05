@@ -23,6 +23,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.NormalRankingRecommenderEvaulator;
+import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaulator;
 import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
 import org.apache.mahout.cf.taste.impl.model.PointTextRecommender;
@@ -59,70 +60,76 @@ public class TestNormalRankingRecommenderEvaulator {
 	 * @throws InstantiationException 
 	 */
 	public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0]));
+//		GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); doesn't sort by prefs!
 		Recommender pointRecco = doPointText(args[1]);
         DataModel pointModel = pointRecco.getDataModel();
         DataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
+        DataModel pointModelTest = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_3k/part-r-00000");
+        DataModel pointModelBoth = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
 
 		Random random = new Random(0);
-		int samples = 10;
-		NormalRankingRecommenderEvaulator bsrv = new NormalRankingRecommenderEvaulator();
-		bsrv.doCSV = true;
+		int samples = 20;
+		OrderBasedRecommenderEvaulator bsrv = new OrderBasedRecommenderEvaulator();
+		bsrv.csvOut = System.out;
+		
+//		WANT: each recommends top N out of all. Find common items. COunt up distances between items. sqrt.
+//		add factor for number of singulars. This is score.
+//		Add bubblesort? needs same set.
 
 		double score ;
 //        random.setSeed(0);
 //        score = bsrv.evaluate(pointRecco, pointModel, random, samples, "point_point");
-//        System.out.println("Point score: " + score);
+//        System.err.println("Point score: " + score);
 //        random.setSeed(0);
 //        score = bsrv.evaluate(pointModel, pointModel, random, samples, "training_point");
-//        System.out.println("Point/self score: " + score);
+//        System.err.println("Point/self score: " + score);
 		random.setSeed(0);
-		score = bsrv.evaluate(pointModelTraining, pointModel, random, samples, "training_point");
-		System.out.println("Point/training score: " + score);
-		Recommender estimatingRecco = doEstimatingUser(glModel);
-		random.setSeed(0);
-		score = bsrv.evaluate(estimatingRecco, pointModel, random, samples, "estimating_point");
-		System.out.println("Estimating score: " + score);
-		random.setSeed(0);
-		score = bsrv.evaluate(estimatingRecco, pointModelTraining, random, samples, "estimating_training");
-		System.out.println("Estimating training score: " + score);
-		
-		Recommender slope1Recco = doReccoSlope1(glModel);
-		random.setSeed(0);
-		score = bsrv.evaluate(slope1Recco, pointModel, random, samples, "slope1_point");
-		System.out.println("Slope1 v.s. point model score: " + score);
-        random.setSeed(0);
-        score = bsrv.evaluate(slope1Recco, pointModelTraining, random, samples, "slope1_training");
-        System.out.println("Slope1 v.s. point training model score: " + score);
-        Recommender pearsonRecco = doReccoPearsonItem(glModel);
-        random.setSeed(0);
-        score = bsrv.evaluate(pearsonRecco, pointModel, random, samples, "pearson_point");
-        System.out.println("Pearson1 v.s. point model score: " + score);
-        random.setSeed(0);
-        score = bsrv.evaluate(pearsonRecco, pointModelTraining, random, samples, "pearson_training");
-        System.out.println("Pearson1 v.s. point training model score: " + score);
-		bsrv.doCSV = true;
-        Recommender reccoKNN = doReccoKNN_LL_NegQO(glModel);
-        random.setSeed(0);
-        score = bsrv.evaluate(reccoKNN, pointModel, random, samples, "knn_point");
-        System.out.println("KNN v.s. point model score: " + score);
-        random.setSeed(0);
-        score = bsrv.evaluate(reccoKNN, pointModelTraining, random, samples, "knn_training");
-        System.out.println("KNN v.s. point training model score: " + score);
+		score = bsrv.evaluate(pointModelTraining, pointModelTest, random, samples, "training_test");
+		System.err.println("training v.s. test score: " + score);
+//		Recommender estimatingRecco = doEstimatingUser(glModel);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(estimatingRecco, pointModel, random, samples, "estimating_point");
+//		System.err.println("Estimating score: " + score);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(estimatingRecco, pointModelTraining, random, samples, "estimating_training");
+//		System.err.println("Estimating training score: " + score);
+//		
+//		Recommender slope1Recco = doReccoSlope1(glModel);
+//		random.setSeed(0);
+//		score = bsrv.evaluate(slope1Recco, pointModel, random, samples, "slope1_point");
+//		System.err.println("Slope1 v.s. point model score: " + score);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(slope1Recco, pointModelTraining, random, samples, "slope1_training");
+//        System.err.println("Slope1 v.s. point training model score: " + score);
+//        Recommender pearsonRecco = doReccoPearsonItem(glModel);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(pearsonRecco, pointModel, random, samples, "pearson_point");
+//        System.err.println("Pearson1 v.s. point model score: " + score);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(pearsonRecco, pointModelTraining, random, samples, "pearson_training");
+//        System.err.println("Pearson1 v.s. point training model score: " + score);
+//		bsrv.doCSV = true;
+//        Recommender reccoKNN = doReccoKNN_LL_NegQO(glModel);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(reccoKNN, pointModel, random, samples, "knn_point");
+//        System.err.println("KNN v.s. point model score: " + score);
+//        random.setSeed(0);
+//        score = bsrv.evaluate(reccoKNN, pointModelTraining, random, samples, "knn_training");
+//        System.err.println("KNN v.s. point training model score: " + score);
 //		score = bsrv.evaluate(slope1Recco, pearsonRecco, random, samples, "slope1_pearson");
-//		System.out.println("Slope1 v.s. Pearson score: " + score);
+//		System.err.println("Slope1 v.s. Pearson score: " + score);
 //		needs namedvectors
 //		Recommender simplexRecco = doSimplexDataModel(args[2]);
 //		DataModel simplexModel = simplexRecco.getDataModel();
 //		score = bsrv.evaluate(simplexRecco, pointModel, random, samples, "simplex_point");
-//		System.out.println("Simplex v.s. point model score: " + score);
+//		System.err.println("Simplex v.s. point model score: " + score);
 //		score = bsrv.evaluate(simplexRecco, simplexModel, random, samples);
-//		System.out.println("Simplex v.s. simplex model score: " + score);
+//		System.err.println("Simplex v.s. simplex model score: " + score);
 //		score = bsrv.evaluate(simplexRecco, slope1Recco, random, samples);
-//		System.out.println("Simplex v.s. Slope1 score: " + score);
+//		System.err.println("Simplex v.s. Slope1 score: " + score);
 //		score = bsrv.evaluate(pearsonRecco, simplexRecco, random, samples);
 
-//		System.out.println("Simplex v.s. Pearson score: " + score);
+//		System.err.println("Simplex v.s. Pearson score: " + score);
 	}
 
 	private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
