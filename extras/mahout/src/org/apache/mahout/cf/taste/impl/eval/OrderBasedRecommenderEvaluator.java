@@ -52,25 +52,23 @@ public class OrderBasedRecommenderEvaluator {
   public void evaluate(Recommender recco,
       DataModel model, int samples, RunningAverage tracker, String tag) throws TasteException {
     printHeader();
-    tracker = new CompactRunningAverageAndStdDev();
     LongPrimitiveIterator users = recco.getDataModel().getUserIDs();
-    int numItems = recco.getDataModel().getNumItems();
     int userCount = 0;
     while (users.hasNext()) {
       long userID = users.nextLong();
-      List<RecommendedItem> recs = recco.recommend(userID, model.getNumItems());
+      List<RecommendedItem> recs1 = recco.recommend(userID, model.getNumItems());
       PreferenceArray prefs2 = model.getPreferencesFromUser(userID);
       prefs2.sortByValueReversed();
       FastIDSet commonSet = new FastIDSet();
-      setBits(commonSet, recs, samples);
+      long maxItemID = setBits(commonSet, recs1, samples);
       FastIDSet otherSet = new FastIDSet();
-      setBits(otherSet, prefs2, samples);
-      int max = mask(commonSet, otherSet, numItems);
+      maxItemID = Math.max(maxItemID, setBits(otherSet, prefs2, samples));
+      int max = mask(commonSet, otherSet, maxItemID);
       max = Math.min(max, samples);
       if (max < 2)
         continue;
       userCount++;
-      Long[] items1 = getCommonItems(commonSet, recs, max);
+      Long[] items1 = getCommonItems(commonSet, recs1, max);
       Long[] items2 = getCommonItems(commonSet, prefs2, max);
       double variance = scoreCommonSubset(tag, userID, samples, max, items1, items2);
       tracker.addDatum(variance);
@@ -81,7 +79,6 @@ public class OrderBasedRecommenderEvaluator {
       DataModel model2, int samples, RunningAverage tracker, String tag) throws TasteException {
     printHeader();
     LongPrimitiveIterator users = model1.getUserIDs();
-    int numItems = Math.max(model1.getNumItems(), model2.getNumItems());
     int userCount = 0;
     while (users.hasNext()) {
       long userID = users.nextLong();
@@ -90,10 +87,10 @@ public class OrderBasedRecommenderEvaluator {
       prefs1.sortByValueReversed();
       prefs2.sortByValueReversed();
       FastIDSet commonSet = new FastIDSet();
-      setBits(commonSet, prefs1, samples);
+      long maxItemID = setBits(commonSet, prefs1, samples);
       FastIDSet otherSet = new FastIDSet();
-      setBits(otherSet, prefs2, samples);
-      int max = mask(commonSet, otherSet, numItems);
+      maxItemID = Math.max(maxItemID, setBits(otherSet, prefs2, samples));
+      int max = mask(commonSet, otherSet, maxItemID);
       max = Math.min(max, samples);
       if (max < 2)
         continue;

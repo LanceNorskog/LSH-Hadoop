@@ -85,8 +85,12 @@ public class TestNormalRankingRecommenderEvaluator {
 //    System.err.println("Point/self score: " + tracker.getAverage());
     bsrv.evaluate(pointModelTraining, pointModelTest, samples, tracker, "training_test");
     System.err.println("training v.s. test score: " + tracker.getAverage());
+    System.out.flush();
     bsrv.evaluate(estimatingRecco, pointModel, samples, tracker, "estimating_point");
     System.err.println("Estimating score: " + tracker.getAverage());
+    System.out.flush();
+
+    System.exit(0);
     bsrv.evaluate(estimatingRecco, pearsonRecco, samples, tracker, "estimating_pearson");
     System.err.println("Estimating v.s pearson score: " + tracker.getAverage());
     bsrv.evaluate(estimatingRecco, pointModelTraining, samples, tracker, "estimating_training");
@@ -119,7 +123,7 @@ public class TestNormalRankingRecommenderEvaluator {
     System.err.println("Simplex v.s. Pearson score: " + tracker.getAverage());
   }
 
-  private static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
+   static PointTextDataModel doPointTextDataModel(String pointsFile) throws IOException {
     PointTextDataModel model = new PointTextDataModel(pointsFile);
     return model;
   }
