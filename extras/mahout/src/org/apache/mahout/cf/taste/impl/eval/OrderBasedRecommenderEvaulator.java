@@ -3,12 +3,7 @@ package org.apache.mahout.cf.taste.impl.eval;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.DataModelBuilder;
@@ -16,9 +11,7 @@ import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
@@ -27,181 +20,148 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  * Evaluate recommender by comparing order of all raw prefs with order in recommender's output for that user.
  */
 
-public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
+public class OrderBasedRecommenderEvaulator {
   float minPreference, maxPreference;
   public PrintStream csvOut = null;
 
-
-
-  @Override
-  public double evaluate(RecommenderBuilder recommenderBuilder,
-      DataModelBuilder dataModelBuilder, DataModel dataModel,
-      double trainingPercentage, double evaluationPercentage)
-  throws TasteException {
-    return 0;
-  }
-
-  /*
-   * Get randomly samples recommendations
-   * Data model v.s. Data model : use for semvec training v.s. test 
-   */
-
-  //  public double evaluate(DataModel model1,
-  //      DataModel model2, Random rnd, int samples, String tag) throws TasteException {
-  //    printHeader();
-  //    double scores = 0;
-  //    LongPrimitiveIterator users = model1.getUserIDs();
-  //
-  //    int foundusers = 0;
-  //    while (users.hasNext()) {
-  //      long userID = users.nextLong();
-  //      PreferenceArray prefs1, prefs2;
-  //
-  //      prefs1 = model1.getPreferencesFromUser(userID);
-  //      prefs1.sortByValueReversed();
-  //      prefs2 = model2.getPreferencesFromUser(userID);
-  //      prefs2.sortByValueReversed();
-  //      int found = Math.min(prefs1.length(), prefs2.length());
-  //      found = Math.min(found, samples);
-  //      if (found < 2)
-  //        continue;
-  //      foundusers++;
-  //      int max = Math.max(prefs1.length(), prefs2.length());
-  //      max = Math.min(max, samples);
-  //
-  //      FastIDSet commonSet = new FastIDSet();
-  //      int subset = minimalSet(prefs1, prefs2, commonSet, max);
-  //      Long[] items1 = getCommonItems(commonSet, prefs1, max);
-  //      Long[] items2 = getCommonItems(commonSet, prefs2, max);
-  //      double variance = scoreResults(tag, userID, max, subset, commonSet, items1, items2);
-  //      scores += variance;
-  //      this.hashCode();
-  //      //  points gets more trash but need measure that finds it
-  //    }
-  //    return scores / foundusers;
-  //  }
-
   public double evaluate(Recommender recco1, Recommender recco2,
-      Random rnd, int samples, String tag) throws TasteException {
+      int samples, String tag) throws TasteException {
     printHeader();
     double scores = 0;
     LongPrimitiveIterator users = recco1.getDataModel().getUserIDs();
-    int numItems = recco1.getDataModel().getNumItems();
+
     int userCount = 0;
     while (users.hasNext()) {
       long userID = users.nextLong();
 
-      List<RecommendedItem> recs1 = recco1.recommend(userID, numItems);
-      List<RecommendedItem> recs2 = recco2.recommend(userID, numItems);
+      List<RecommendedItem> recs1 = recco1.recommend(userID, samples);
+      List<RecommendedItem> recs2 = recco2.recommend(userID, samples);
       FastIDSet commonSet = new FastIDSet();
-      setBits(commonSet, recs1, samples);
+      long maxItemID = setBits(commonSet, recs1, samples);
       FastIDSet otherSet = new FastIDSet();
-      setBits(otherSet, recs2, samples);
+      maxItemID = Math.max(maxItemID, setBits(otherSet, recs2, samples));
       // AKA 'mask' in the rest of computer science
-      commonSet.retainAll(otherSet);
-      int max = Math.min(commonSet.size(), samples);
+      int max = mask(commonSet, otherSet, maxItemID);
+      max = Math.min(max, samples);
       if (max < 2)
         continue;
       userCount++;
 
+      if (max > 10)
+        this.hashCode();
+
       Long[] items1 = getCommonItems(commonSet, recs1, max);
       Long[] items2 = getCommonItems(commonSet, recs2, max);
-      double variance = scoreResults(tag, userID, samples, commonSet, items1, items2);
+      double variance = scoreCommonSubset(tag, userID, samples, max, items1, items2);
       scores += variance;
       this.hashCode();
-      //  points gets more trash but need measure that finds it
     }
     return scores / userCount;
   }
 
   public double evaluate(Recommender recco,
-      DataModel model, Random rnd, int samples, String tag) throws TasteException {
+      DataModel model, int samples, String tag) throws TasteException {
     printHeader();
     double scores = 0;
     LongPrimitiveIterator users = recco.getDataModel().getUserIDs();
-
+    int numItems = recco.getDataModel().getNumItems();
     int userCount = 0;
     while (users.hasNext()) {
       long userID = users.nextLong();
-
       List<RecommendedItem> recs = recco.recommend(userID, model.getNumItems());
       PreferenceArray prefs2 = model.getPreferencesFromUser(userID);
-      prefs2.sortByValue(); // values backwards?!!
+      prefs2.sortByValueReversed(); // values backwards?!!
       FastIDSet commonSet = new FastIDSet();
       setBits(commonSet, recs, samples);
       FastIDSet otherSet = new FastIDSet();
       setBits(otherSet, prefs2, samples);
       // AKA 'mask'
-      commonSet.retainAll(otherSet);
-      int max = Math.min(commonSet.size(), samples);
+      int max = mask(commonSet, otherSet, numItems);
+      max = Math.min(max, samples);
       if (max < 2)
         continue;
       userCount++;
-
       Long[] items1 = getCommonItems(commonSet, recs, max);
       Long[] items2 = getCommonItems(commonSet, prefs2, max);
-      double variance = scoreResults(tag, userID, samples, commonSet, items1, items2);
+      double variance = scoreCommonSubset(tag, userID, samples, max, items1, items2);
       scores += variance;
-      this.hashCode();
-      //  points gets more trash but need measure that finds it
     }
     return scores / userCount;
   }
 
   public double evaluate(DataModel model1,
-      DataModel model2, Random rnd, int samples, String tag) throws TasteException {
+      DataModel model2, int samples, String tag) throws TasteException {
     printHeader();
     double scores = 0;
     LongPrimitiveIterator users = model1.getUserIDs();
-
+    int numItems = Math.max(model1.getNumItems(), model2.getNumItems());
     int userCount = 0;
     while (users.hasNext()) {
       long userID = users.nextLong();
-
       PreferenceArray prefs1 = model1.getPreferencesFromUser(userID);
       PreferenceArray prefs2 = model2.getPreferencesFromUser(userID);
-      prefs1.sortByValue(); // values backwards?!!
-      prefs2.sortByValue(); // values backwards?!!
+      prefs1.sortByValueReversed();
+      prefs2.sortByValueReversed();
       FastIDSet commonSet = new FastIDSet();
       setBits(commonSet, prefs1, samples);
       FastIDSet otherSet = new FastIDSet();
       setBits(otherSet, prefs2, samples);
       // AKA 'mask'
-      commonSet.retainAll(otherSet);
-      int max = Math.min(commonSet.size(), samples);
+      int max = mask(commonSet, otherSet, numItems);
+      max = Math.min(max, samples);
       if (max < 2)
         continue;
       userCount++;
-
       Long[] items1 = getCommonItems(commonSet, prefs1, max);
       Long[] items2 = getCommonItems(commonSet, prefs2, max);
-      double variance = scoreResults(tag, userID, samples, commonSet, items1, items2);
+      double variance = scoreCommonSubset(tag, userID, samples, max, items1, items2);
       scores += variance;
-      this.hashCode();
-      //  points gets more trash but need measure that finds it
     }
     return scores / userCount;
   }
 
+  private int mask(FastIDSet commonSet, FastIDSet otherSet, long maxItemID) {
+    int count = 0;
+    for(int i = 0; i < maxItemID; i++) {
+      if (commonSet.contains(i)) {
+        if (!otherSet.contains(i))
+          commonSet.remove(i);
+        else
+          count++;
+      }
+    }
+    return count;
+  }
 
   private void printHeader() {
     if (null != csvOut)
       csvOut.println("tag,user,samples,common,hamming,rank,normal,score");
   } 
 
-  private double scoreResults(String tag, long userID, int samples, FastIDSet commonSet,
+  /*
+   * Common Subset Scoring
+   * 
+   * These measurements are given the set of results that are common to both
+   * recommendation lists. They only get ordered lists.
+   */
+  private double scoreCommonSubset(String tag, long userID, int samples, int subset,
       Long[] itemsL, Long[] itemsR) {
-    int subset = commonSet.size();
-
     int[] vectorZ = new int[subset];
     int[] vectorZabs = new int[subset];
+    
+    /*
+     * These measures all return raw numbers do not correlate among the tests.
+     * The numbers are not corrected against the total number of samples or the
+     * number of common items.
+     * The one contract is that all measures are 0 for an exact match and an 
+     * increasing positive number as differences increase.
+     */
     int hamming = slidingWindowHamming(itemsR, itemsL);
     if (hamming > samples)
       ((Object)null).hashCode();
     getVectorZ(itemsR, itemsL, vectorZ, vectorZabs);
     double normalW = normalWilcoxon(vectorZ, vectorZabs);
     double meanRank = getMeanRank(vectorZabs);
-
     double variance = 0;
     // case statement for requested value
     variance = meanRank;
@@ -217,7 +177,7 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
 
   private Long[] getCommonItems(FastIDSet commonSet,
       List<RecommendedItem> recs, int max) {
-    Long[] commonItems = new Long[Math.min(commonSet.size(), max)];
+    Long[] commonItems = new Long[max];
     int index = 0;
     for(int i = 0; i < recs.size(); i++) {
       Long item = recs.get(i).getItemID();
@@ -227,13 +187,13 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
         break;
     }
     // debugging
-    if (index != Math.min(commonItems.length, max))
+    if (index != max)
       ((Object)null).hashCode();
     return commonItems;
   }
 
   private Long[] getCommonItems(FastIDSet commonSet, PreferenceArray prefs1, int max) {
-    Long[] commonItems = new Long[Math.min(commonSet.size(), max)];
+    Long[] commonItems = new Long[max];
     int index = 0;
     for(int i = 0; i < prefs1.length(); i++) {
       Long item = prefs1.getItemID(i);
@@ -247,151 +207,56 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
     return commonItems;
   }
 
-  // find minimal set of common recommended items - in order of first prefs array
-  // cap at 'max'
-  // return number of shared recommendations in the first->max entries
-  //  private int minimalSet(PreferenceArray prefs1, PreferenceArray prefs2, FastIDSet commonSet, int max) {
-  //    FastIDSet set1 = new FastIDSet();
-  //    for(int i = 0; i < prefs1.length() && i < max; i++) {
-  //      Long item = prefs1.getItemID(i);
-  //      set1.add(item);
-  //    }
-  //    for(int i = 0; i < prefs2.length() && i < max; i++) {
-  //      Long item = prefs2.getItemID(i);
-  //      if (set1.contains(item))
-  //        commonSet.add(item);
-  //      if (commonSet.size() == max)
-  //        break;
-  //    }
-  //    int subset = 0;
-  //    for(int i = 0; i < max; i++) {
-  //      if (commonSet.contains(prefs1.getItemID(i)) || commonSet.contains(prefs2.getItemID(i))) {
-  //        subset++;
-  //      }
-  //     }
-  //    return subset;
-  //  }
+  private long setBits(FastIDSet modelSet, List<RecommendedItem> items, int max) {
+    long maxItem = -1;
+    for(int i = 0; i < items.size() && i < max; i++) {
+      long itemID = items.get(i).getItemID();
+      modelSet.add(itemID);
+      if (itemID > maxItem)
+        maxItem = itemID;
+    }
+    return maxItem;
+  }
+
+  private long setBits(FastIDSet modelSet, PreferenceArray prefs, int max) {
+    long maxItem = -1;
+    for(int i = 0; i < prefs.length() && i < max; i++) {
+      long itemID = prefs.getItemID(i);
+      modelSet.add(itemID);
+      if (itemID > maxItem)
+        maxItem = itemID;
+    }
+    return maxItem;
+  }
 
   /*
-   * Count first N common recommendations 'max'.
+   * Fairly lame order measurements.
+   * Standard Wilcoxon not used because it requires a lookup table.
    */
 
-  private int minimalSet(PreferenceArray prefs1, PreferenceArray prefs2,
-      FastIDSet commonSet, int max) {
-    int subset = 0;
-    for(int i = 0; i < max; i++) {
-      if (commonSet.contains(prefs1.getItemID(i)) || commonSet.contains(prefs2.getItemID(i))) {
-        subset++;
-      }
-    }
-    return subset;
-  }
-
-  private int minimalSet(List<RecommendedItem> recs1, PreferenceArray prefs2,
-      FastIDSet commonSet, int max) {
-    int subset = 0;
-    for(int i = 0; i < max; i++) {
-      if (commonSet.contains(recs1.get(i).getItemID()) || commonSet.contains(prefs2.getItemID(i))) {
-        subset++;
-      }
-    }
-    return subset;
-
-  }
-
-  private int minimalSet(List<RecommendedItem> recs1, List<RecommendedItem> recs2,
-      FastIDSet commonSet, int max) {
-    int subset = 0;
-    for(int i = 0; i < max; i++) {
-      if (commonSet.contains(recs1.get(i).getItemID()) || commonSet.contains(recs2.get(i).getItemID())) {
-        subset++;
-      }
-    }
-    return subset;
-
-  }
-
-  // find minimal set of common recommended items - in order of first prefs array
-  private List<Long> getItemList(PreferenceArray prefs, int max) {
-    List<Long> items = new ArrayList<Long>();
-    for(int i = 0; i < prefs.length(); i++) {
-      Long item = prefs.getItemID(i);
-      items.add(item);
-      if (items.size() == max)
-        break;
-    }
-    return items;
-  }
-
-  private void getMatchesFromPrefsArray(Long userID, Long[] itemsL, 
-      PreferenceArray prefsArray,
-      FastIDSet common) throws TasteException {
-    int index = 0;
-    for(int i = 0; i < prefsArray.length(); i++) {
-      Long itemID = prefsArray.getItemID(i);
-      if (common.contains(itemID))
-        itemsL[index++] = prefsArray.getItemID(i);
-      this.hashCode();
-    }
-    if (index != common.size()) {
-      System.err.println("Must have pulled common.size() prefs! got: " + index + " instead of: " + common.size());
-
-    }
-  }
-
-
-  private void setBits(FastIDSet modelSet, List<RecommendedItem> items, int max) {
-    for(int i = 0; i < items.size() && i < max; i++) {
-      modelSet.add(items.get(i).getItemID());
-    }
-  }
-
-  private void setBits(FastIDSet modelSet, Long[] items, int max) {
-    for(int i = 0; i < items.length && i < max; i++) {
-      modelSet.add(items[i]);
-    }
-  }
-
-  private void setBits(FastIDSet modelSet, Preference[] prefs, int max) {
-    for(int i = 0; i < prefs.length && i < max; i++) {
-      modelSet.add(prefs[i].getItemID());
-    }
-  }
-
-  private void setBits(FastIDSet modelSet, PreferenceArray prefs, int max) {
-    for(int i = 0; i < prefs.length() && i < max; i++) {
-      modelSet.add(prefs.getItemID(i));
-    }
-  }
-
-  // simple sliding-window hamming distance: a[i+-1] == b[i]
+  // simple sliding-window hamming distance: a[i or plus/minus 1] == b[i]
   private int slidingWindowHamming(Long[] itemsR, Long[] itemsL) {
     int count = 0;
     int samples = itemsR.length;
-    try {
-      if (itemsR[0].equals(itemsL[0]) || itemsR[0].equals(itemsL[1]))
+
+    if (itemsR[0].equals(itemsL[0]) || itemsR[0].equals(itemsL[1]))
+      count++;
+    for(int i = 1; i < samples -1; i++) {
+      long itemID = itemsL[i];
+      if ((itemsR[i] == itemID) ||
+          (itemsR[i-1] == itemID)||
+          (itemsR[i+1] == itemID)) {
         count++;
-      for(int i = 1; i < samples -1; i++) {
-        long itemID = itemsL[i];
-        if ((itemsR[i] == itemID) ||
-            (itemsR[i-1] == itemID)||
-            (itemsR[i+1] == itemID)) {
-          count++;
-        } else {
-          //					System.out.println("xxx");
-          this.hashCode();
-        }
       }
-      if (itemsR[samples-1].equals(itemsL[samples-1]) || itemsR[samples-1].equals(itemsL[samples-2]));
-        count++;
-    } catch (Exception e) {
-      this.hashCode();
     }
+    if (itemsR[samples-1].equals(itemsL[samples-1]) || itemsR[samples-1].equals(itemsL[samples-2]))
+      count++;
     return count;
   }
 
   /*
-   * Normal-distribution probability value for matched sets of values
+   * Normal-distribution probability value for matched sets of values.
+   * Based upon:
    * http://comp9.psych.cornell.edu/Darlington/normscor.htm
    */
   double normalWilcoxon(int[] vectorZ, int[] vectorZabs) {
@@ -405,7 +270,6 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
     //		mean = getMeanRank(ranks);
     //		mean = Math.abs(mean) * (Math.sqrt(nitems));
     mean = Math.min(getMeanWplus(ranks), getMeanWminus(ranks));
-    mean = mean * (Math.sqrt(nitems));
     return mean;
   }
 
@@ -506,26 +370,6 @@ public class OrderBasedRecommenderEvaulator implements RecommenderEvaluator {
     }
     double mean = sum / nitems;
     return mean;
-  }
-
-  @Override
-  public float getMaxPreference() {
-    return maxPreference;
-  }
-
-  @Override
-  public float getMinPreference() {
-    return minPreference;
-  }
-
-  @Override
-  public void setMaxPreference(float maxPreference) {
-    this.maxPreference = maxPreference;
-  }
-
-  @Override
-  public void setMinPreference(float minPreference) {
-    this.minPreference = minPreference;
   }
 
 }
