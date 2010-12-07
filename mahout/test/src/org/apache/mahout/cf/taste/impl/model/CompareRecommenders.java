@@ -28,8 +28,8 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
  * 
- * Usage: CompareRecommenders /path/of/GL/ratings.dat
- *                            training.dat test.dat
+ * Usage: CompareRecommenders /path/of/GL/ratings.dat   <-- compare different recommenders
+ *                            training.dat test.dat     <-- compare training and test data
  */
 
 public class CompareRecommenders {
@@ -61,7 +61,6 @@ public class CompareRecommenders {
     Recommender estimatingRecco = doEstimatingUser(glModel);
     Recommender slope1Recco = doSlope1Recco(glModel);
     Recommender pearsonRecco = doPearsonItemRecco(glModel);
-//    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
     OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
     RunningAverage tracker = null;
 
@@ -76,24 +75,22 @@ public class CompareRecommenders {
     System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
 
     // this is really slow.
+    //    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
     //    tracker = new CompactRunningAverage();
     //    bsrv.evaluate(slope1Recco, knnLLRecco, SAMPLES, tracker, "slope1_knn_ll");
     //    System.err.println("Slope1 v.s. KNN Log Likelihood score: " + tracker.getAverage());
   }
+  
+  /*
+   * Recommender generators
+   * These are all from examples in the web site and the book. Given that none of them 
+   * generate similar recommendations, I'd say they are suspect.
+   */
 
   private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
     UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
     UserNeighborhood neighborhood = new NearestNUserNeighborhood(10, 0.2, similarity, bcModel, 0.2);
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
-  }
-
-  // This is really slow, but try it if you like
-  private static Recommender doKNN_LL_NegQO_Recco(DataModel model) {
-    Recommender recco;
-    ItemSimilarity similarity = new LogLikelihoodSimilarity(model);
-    Optimizer optimizer = new NonNegativeQuadraticOptimizer();
-    recco = new EstimatingKnnItemBasedRecommender(model, similarity, optimizer, 6040);
-    return recco;
   }
 
   private static Recommender doPearsonItemRecco(DataModel model)
@@ -108,5 +105,14 @@ public class CompareRecommenders {
   throws TasteException {
     return new EstimatingSlopeOneRecommender(model);
   }
+  // This is really slow, but try it if you like
+  private static Recommender doKNN_LL_NegQO_Recco(DataModel model) {
+    Recommender recco;
+    ItemSimilarity similarity = new LogLikelihoodSimilarity(model);
+    Optimizer optimizer = new NonNegativeQuadraticOptimizer();
+    recco = new EstimatingKnnItemBasedRecommender(model, similarity, optimizer, 6040);
+    return recco;
+  }
+
 
 }

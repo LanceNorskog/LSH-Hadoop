@@ -362,11 +362,18 @@ public class OrderBasedRecommenderEvaluator {
       sortable[i] = itemsR[i];
     }
     while (sorted < length - 1) {
+      // opportunistically trim back the top
+      while(length > 0 && reference[length - 1] == sortable[length - 1]) {
+        length--;
+      }
+      if (length == 0)
+        break;
       if (reference[sorted] == sortable[sorted]) {
         sorted++;
         continue;
       } else {
         for(int j = sorted; j < length - 1; j++) {
+          
           // do not swap anything already in place
           int jump = 1;
           if (reference[j] == sortable[j]) {
@@ -379,8 +386,8 @@ public class OrderBasedRecommenderEvaluator {
             sortable[j] = sortable[j + 1];
             sortable[j + 1] = tmp;
             swaps++;
-//            if (swaps % 10000 == 0)
-//              System.out.print(".");
+            //            if (swaps % 10000 == 0)
+            //              System.out.print(".");
           }
         }
       }
