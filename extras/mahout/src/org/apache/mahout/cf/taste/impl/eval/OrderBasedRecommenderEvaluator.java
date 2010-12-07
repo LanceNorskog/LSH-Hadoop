@@ -5,12 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
@@ -346,49 +344,42 @@ public class OrderBasedRecommenderEvaluator {
   }
 
   /*
-   * Do bubble sort and return number of swaps needed to match preference lists
+   * Do bubble sort and return number of swaps needed to match preference lists.
+   * Sort itemsR using itemsL as the reference order.
    */
   long sort(Long[] itemsL, Long[] itemsR) {
     int length = itemsL.length;
-//    System.err.println("sort: " + length);
     if (length < 2)
       return 0;
     if (length == 2)
       return itemsL[0].longValue() == itemsR[0].longValue() ? 0 : 1;
     long swaps = 0;
     int sorted = 0; 
-    boolean[] matches = new boolean[length];
     long[] reference = new long[length];
     long[] sortable = new long[length];
     for(int i = 0; i < length; i++) {
       reference[i] = itemsL[i];
       sortable[i] = itemsR[i];
     }
-    for(int i = 0; i < length ; i++) {
-      matches[i] = reference[i] == sortable[i];
-    }
-
     while (sorted < length - 1) {
-      if (matches[sorted]) {
+      if (reference[sorted] == sortable[sorted]) {
         sorted++;
         continue;
       } else {
         for(int j = sorted; j < length - 1; j++) {
           // do not swap anything already in place
           int jump = 1;
-          if (matches[j]) {
-            while ((j + jump < length) && matches[j + jump] && (j + jump) < length) {
+          if (reference[j] == sortable[j]) {
+            while ((j + jump < length) && reference[j + jump] == sortable[j + jump] && (j + jump) < length) {
               jump++;
             }
           }
-          if ((j + jump < length) && !(matches[j] && matches[j + jump])) {
+          if ((j + jump < length) && !(reference[j] == sortable[j] && reference[j + jump] == sortable[j + jump])) {
             long tmp = sortable[j];
             sortable[j] = sortable[j + 1];
             sortable[j + 1] = tmp;
-            matches[j] = reference[j] == sortable[j];
-            matches[j+1] = reference[j+1] == sortable[j+1];
             swaps++;
-//            if (swaps % 100000 == 0)
+//            if (swaps % 10000 == 0)
 //              System.out.print(".");
           }
         }
