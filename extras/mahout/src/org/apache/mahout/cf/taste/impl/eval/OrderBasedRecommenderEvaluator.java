@@ -221,7 +221,8 @@ public class OrderBasedRecommenderEvaluator {
         count++;
       }
     }
-    if (itemsR[samples-1].equals(itemsL[samples-1]) || itemsR[samples-1].equals(itemsL[samples-2]))
+    if (itemsR[samples-1].equals(itemsL[samples-1]) || 
+        itemsR[samples-1].equals(itemsL[samples-2]))
       count++;
     return count;
   }
@@ -355,6 +356,7 @@ public class OrderBasedRecommenderEvaluator {
       return itemsL[0].longValue() == itemsR[0].longValue() ? 0 : 1;
     long swaps = 0;
     int sorted = 0; 
+    // avoid changing originals; primitive type is more efficient
     long[] reference = new long[length];
     long[] sortable = new long[length];
     for(int i = 0; i < length; i++) {
@@ -373,33 +375,29 @@ public class OrderBasedRecommenderEvaluator {
         continue;
       } else {
         for(int j = sorted; j < length - 1; j++) {
-          
           // do not swap anything already in place
           int jump = 1;
           if (reference[j] == sortable[j]) {
-            while ((j + jump < length) && reference[j + jump] == sortable[j + jump] && (j + jump) < length) {
+            while ((j + jump < length) && 
+                  reference[j + jump] == sortable[j + jump] && (j + jump) < length) {
               jump++;
             }
           }
-          if ((j + jump < length) && !(reference[j] == sortable[j] && reference[j + jump] == sortable[j + jump])) {
+          if ((j + jump < length) && 
+              !(reference[j] == sortable[j] && reference[j + jump] == sortable[j + jump])) {
             long tmp = sortable[j];
             sortable[j] = sortable[j + 1];
             sortable[j + 1] = tmp;
             swaps++;
-            //            if (swaps % 10000 == 0)
-            //              System.out.print(".");
           }
         }
       }
     }
-    for(int i = 0; i < length; i++) {
-      if (reference[i] != sortable[i])
-        throw new Error("Sorting error?");      
-    }
-
+//    for(int i = 0; i < length; i++) {
+//      if (reference[i] != sortable[i])
+//        throw new Error("Sorting error?");      
+//    }
     return swaps;
-  }
-
-
+   }
 
 }
