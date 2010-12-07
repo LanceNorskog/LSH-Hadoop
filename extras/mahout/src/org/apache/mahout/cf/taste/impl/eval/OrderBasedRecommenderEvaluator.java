@@ -10,6 +10,7 @@ import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
@@ -109,7 +110,7 @@ public class OrderBasedRecommenderEvaluator {
    */
   private int mask(FastIDSet commonSet, FastIDSet otherSet, long maxItemID) {
     int count = 0;
-    for(int i = 0; i < maxItemID; i++) {
+    for(int i = 0; i <= maxItemID; i++) {
       if (commonSet.contains(i)) {
         if (!otherSet.contains(i))
           commonSet.remove(i);
@@ -134,7 +135,7 @@ public class OrderBasedRecommenderEvaluator {
    */
   private void printHeader() {
     if (null != csvOut)
-      csvOut.println("tag,user,samples,common,hamming,rank,normal,score");
+      csvOut.println("tag,user,samples,common,hamming,bubble,rank,normal,score");
   } 
 
   private double scoreCommonSubset(String tag, long userID, int samples, int subset,
@@ -142,6 +143,7 @@ public class OrderBasedRecommenderEvaluator {
     int[] vectorZ = new int[subset];
     int[] vectorZabs = new int[subset];
 
+    long bubble = sort(itemsL, itemsR);
     int hamming = slidingWindowHamming(itemsR, itemsL);
     if (hamming > samples)
       ((Object)null).hashCode();
@@ -153,7 +155,7 @@ public class OrderBasedRecommenderEvaluator {
     variance = meanRank;
     variance = Math.sqrt(variance);
     if (null != csvOut)
-      csvOut.println(tag + "," + userID + "," + samples + "," + subset + "," + hamming + "," + meanRank + "," + normalW + "," + variance);
+      csvOut.println(tag + "," + userID + "," + samples + "," + subset + "," + hamming + ","  + bubble + "," + meanRank + "," + normalW + "," + variance);
     return variance;
   } 
 
@@ -342,5 +344,64 @@ public class OrderBasedRecommenderEvaluator {
     double mean = sum / nitems;
     return mean;
   }
+
+  /*
+   * Do bubble sort and return number of swaps needed to match preference lists
+   */
+  long sort(Long[] itemsL, Long[] itemsR) {
+    int length = itemsL.length;
+//    System.err.println("sort: " + length);
+    if (length < 2)
+      return 0;
+    if (length == 2)
+      return itemsL[0].longValue() == itemsR[0].longValue() ? 0 : 1;
+    long swaps = 0;
+    int sorted = 0; 
+    boolean[] matches = new boolean[length];
+    long[] reference = new long[length];
+    long[] sortable = new long[length];
+    for(int i = 0; i < length; i++) {
+      reference[i] = itemsL[i];
+      sortable[i] = itemsR[i];
+    }
+    for(int i = 0; i < length ; i++) {
+      matches[i] = reference[i] == sortable[i];
+    }
+
+    while (sorted < length - 1) {
+      if (matches[sorted]) {
+        sorted++;
+        continue;
+      } else {
+        for(int j = sorted; j < length - 1; j++) {
+          // do not swap anything already in place
+          int jump = 1;
+          if (matches[j]) {
+            while ((j + jump < length) && matches[j + jump] && (j + jump) < length) {
+              jump++;
+            }
+          }
+          if ((j + jump < length) && !(matches[j] && matches[j + jump])) {
+            long tmp = sortable[j];
+            sortable[j] = sortable[j + 1];
+            sortable[j + 1] = tmp;
+            matches[j] = reference[j] == sortable[j];
+            matches[j+1] = reference[j+1] == sortable[j+1];
+            swaps++;
+//            if (swaps % 100000 == 0)
+//              System.out.print(".");
+          }
+        }
+      }
+    }
+    for(int i = 0; i < length; i++) {
+      if (reference[i] != sortable[i])
+        throw new Error("Sorting error?");      
+    }
+
+    return swaps;
+  }
+
+
 
 }

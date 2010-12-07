@@ -33,7 +33,7 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
  */
 
 public class CompareRecommenders {
-  static final int SAMPLES = 500;
+  static final int SAMPLES = 50;
 
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     if (args.length == 1)
@@ -61,24 +61,24 @@ public class CompareRecommenders {
     Recommender estimatingRecco = doEstimatingUser(glModel);
     Recommender slope1Recco = doSlope1Recco(glModel);
     Recommender pearsonRecco = doPearsonItemRecco(glModel);
-    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
+//    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
     OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
     RunningAverage tracker = null;
 
-//    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
-//    System.err.println("Estimating v.s pearson score: " + tracker.getAverage());
-//    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, "slope1_pearson");
-//    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
-//    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(slope1Recco, estimatingRecco, SAMPLES, tracker, "slope1_estimating");
-//    System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
+    tracker = new CompactRunningAverage();
+    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
+    tracker = new CompactRunningAverage();
+    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
+    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, "slope1_pearson");
+    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
+    tracker = new CompactRunningAverage();
+    bsrv.evaluate(slope1Recco, estimatingRecco, SAMPLES, tracker, "slope1_estimating");
+    System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
 
     // this is really slow.
-//    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(slope1Recco, knnLLRecco, SAMPLES, tracker, "slope1_knn_ll");
-//    System.err.println("Slope1 v.s. KNN Log Likelihood score: " + tracker.getAverage());
+    //    tracker = new CompactRunningAverage();
+    //    bsrv.evaluate(slope1Recco, knnLLRecco, SAMPLES, tracker, "slope1_knn_ll");
+    //    System.err.println("Slope1 v.s. KNN Log Likelihood score: " + tracker.getAverage());
   }
 
   private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
