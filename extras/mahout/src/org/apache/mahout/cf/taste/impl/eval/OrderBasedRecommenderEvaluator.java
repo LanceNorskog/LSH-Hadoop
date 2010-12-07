@@ -119,44 +119,6 @@ public class OrderBasedRecommenderEvaluator {
     return count;
   }
 
-  /*
-   * Common Subset Scoring
-   * 
-   * These measurements are given the set of results that are common to both
-   * recommendation lists. They only get ordered lists.
-   * 
-   * These measures all return raw numbers do not correlate among the tests.
-   * The numbers are not corrected against the total number of samples or the
-   * number of common items.
-   * The one contract is that all measures are 0 for an exact match and an 
-   * increasing positive number as differences increase.
-   */
-  private void printHeader() {
-    if (null != csvOut)
-      csvOut.println("tag,user,samples,common,hamming,bubble,rank,normal,score");
-  } 
-
-  private double scoreCommonSubset(String tag, long userID, int samples, int subset,
-      Long[] itemsL, Long[] itemsR) {
-    int[] vectorZ = new int[subset];
-    int[] vectorZabs = new int[subset];
-
-    long bubble = sort(itemsL, itemsR);
-    int hamming = slidingWindowHamming(itemsR, itemsL);
-    if (hamming > samples)
-      ((Object)null).hashCode();
-    getVectorZ(itemsR, itemsL, vectorZ, vectorZabs);
-    double normalW = normalWilcoxon(vectorZ, vectorZabs);
-    double meanRank = getMeanRank(vectorZabs);
-    double variance = 0;
-    // case statement for requested value
-    variance = meanRank;
-    variance = Math.sqrt(variance);
-    if (null != csvOut)
-      csvOut.println(tag + "," + userID + "," + samples + "," + subset + "," + hamming + ","  + bubble + "," + meanRank + "," + normalW + "," + variance);
-    return variance;
-  } 
-
   private Long[] getCommonItems(FastIDSet commonSet,
       List<RecommendedItem> recs, int max) {
     Long[] commonItems = new Long[max];
@@ -205,6 +167,44 @@ public class OrderBasedRecommenderEvaluator {
     }
     return maxItem;
   }
+
+  /*
+   * Common Subset Scoring
+   * 
+   * These measurements are given the set of results that are common to both
+   * recommendation lists. They only get ordered lists.
+   * 
+   * These measures all return raw numbers do not correlate among the tests.
+   * The numbers are not corrected against the total number of samples or the
+   * number of common items.
+   * The one contract is that all measures are 0 for an exact match and an 
+   * increasing positive number as differences increase.
+   */
+  private void printHeader() {
+    if (null != csvOut)
+      csvOut.println("tag,user,samples,common,hamming,bubble,rank,normal,score");
+  } 
+
+  private double scoreCommonSubset(String tag, long userID, int samples, int subset,
+      Long[] itemsL, Long[] itemsR) {
+    int[] vectorZ = new int[subset];
+    int[] vectorZabs = new int[subset];
+
+    long bubble = sort(itemsL, itemsR);
+    int hamming = slidingWindowHamming(itemsR, itemsL);
+    if (hamming > samples)
+      ((Object)null).hashCode();
+    getVectorZ(itemsR, itemsL, vectorZ, vectorZabs);
+    double normalW = normalWilcoxon(vectorZ, vectorZabs);
+    double meanRank = getMeanRank(vectorZabs);
+    double variance = 0;
+    // case statement for requested value
+    variance = meanRank;
+    variance = Math.sqrt(variance);
+    if (null != csvOut)
+      csvOut.println(tag + "," + userID + "," + samples + "," + subset + "," + hamming + ","  + bubble + "," + meanRank + "," + normalW + "," + variance);
+    return variance;
+  } 
 
   // simple sliding-window hamming distance: a[i or plus/minus 1] == b[i]
   private int slidingWindowHamming(Long[] itemsR, Long[] itemsL) {
