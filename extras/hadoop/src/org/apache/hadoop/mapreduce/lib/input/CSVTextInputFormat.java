@@ -39,6 +39,25 @@ import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
  *  See main() for examples
  *  
  *  TODO: add date format interpretation: extract Day Of Week from date strings in GroupLens
+ *  
+ *  How did you envision this modification? Support combined file whatever that is?:
+
+ * org.apache.hadoop.mapred.lib.CombineFileRecordReader<K, V>:144
+ * curReader = rrConstructor.newInstance(new Object []
+ *    {split, jc, reporter, Integer.valueOf(idx)});
+ *    
+ *    Another use case: one Wikipedia format is:
+
+1: 1664968
+2: 3 747213 1664968 1691047 4095634 5535664
+
+which would read in as:
+
+1: 1664968
+2: 3 
+2: 747213 
+2: 1664968
+etc. 
  */
 
 public class CSVTextInputFormat extends FileInputFormat<LongWritable, Text> {
