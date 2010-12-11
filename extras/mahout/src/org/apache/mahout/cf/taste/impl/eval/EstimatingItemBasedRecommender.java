@@ -335,5 +335,20 @@ public class EstimatingItemBasedRecommender extends AbstractRecommender implemen
       return (1.0 + similarityValue) * pref;
     }
   }
+
+  @Override
+  public List<RecommendedItem> mostSimilarItems(long[] itemIDs, int howMany,
+      boolean excludeItemIfNotSimilarToAll) throws TasteException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<RecommendedItem> mostSimilarItems(long[] itemIDs, int howMany,
+      Rescorer<LongPair> rescorer, boolean excludeItemIfNotSimilarToAll)
+      throws TasteException {
+    // TODO Auto-generated method stub
+    return null;
+  }
   
 }
