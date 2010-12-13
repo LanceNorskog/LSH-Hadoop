@@ -5,16 +5,10 @@ package lsh.core;
  * 
  * Hash point to nearest grid corner.
  * stretch of 0.5 means grid to 0.5 instead of 1.0
- * 
- * Include spherical option for quantizing lat/lon.
- * Only on Orthonormal
  */
 
 public class OrthonormalHasher implements Hasher {
 	double[] stretch;
-	// support spherical modulo for geospatial
-	double[] sphere = null;
-	int[] wrap = null;
 	
 	public OrthonormalHasher(int dim, double stretch) {
 		this.stretch = new double[dim];
@@ -35,24 +29,11 @@ public class OrthonormalHasher implements Hasher {
 		this.stretch = stretch;
 	}
 
-	public void setWrap(double[] wrap) {
-		this.sphere = wrap;
-		this.wrap = hash(wrap);
-	}
-
 	@Override
 	public int[] hash(double[] values) {
 		int[] hashed = new int[values.length];
 		for(int i = 0; i < hashed.length; i++) {
 			hashed[i] = (int) Math.floor(values[i] / stretch[i]);
-			if (null != wrap) {
-				// wraparound
-				if (hashed[i] < 0) {
-					hashed[i] = wrap[i] + hashed[i];
-				} else if (hashed[i] >= wrap[i]) {
-					hashed[i] = hashed[i] % wrap[i];
-				}
-			}
 		}
 		return hashed;
 	}
