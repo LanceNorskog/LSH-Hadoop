@@ -49,7 +49,14 @@ public class Point {
 		return new Point(parts[0], values, full.length == 1 ? null : full[1]);
 	}
 
-	public String toString() {
+    public static String getPayload(String line) {
+      if (null == line)
+        return null;
+      String[] full = line.split(MARKER_ESC);
+      return full.length == 1 ? null : full[1];
+    }
+
+    public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(id);
 		if (null != values) {

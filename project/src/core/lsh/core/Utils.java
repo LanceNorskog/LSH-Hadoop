@@ -151,7 +151,7 @@ public class Utils {
 		String line;
 		while (null != (line = lnr.readLine())) {
 			String[] parts = line.split("[ \t]");
-			Corner corner = Corner.newCorner(parts[0]);
+			Corner corner = Corner.newCorner(parts[0], parts.length > 1 ? parts[1] : null);
 			if (null != payload ) { 
 				if (null == corner.payload || !payload.equals(corner.payload)) {
 					continue;
