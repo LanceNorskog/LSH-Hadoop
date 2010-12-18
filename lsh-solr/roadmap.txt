@@ -1,0 +1,52 @@
+Open projects:
+	Solr:
+		SolrReprocessor:
+			Read all records from a Solr and add all of the neighbors
+			to each document.
+				
+	LSH base:
+		Unit hasher- 
+		Geohash data format
+			Use Geohash as the earth hasher?
+			Do rotated Geohash to make things easier?
+			Need to do spherical mapping even if rotated.
+		LOD 
+			datastructure?
+			add to formats
+	
+		
+Needed for Solr upload:
+	clean LSH
+	explanation!
+	store grid space in documents?
+	SolrReprocessor
+	Sample data
+
+Needed for Mahout upload:
+	Mahout data management
+	Examples with large datasets.
+	Need reshuffle of recommendation engine data
+	into very large set of dimensions,
+	then hash all dimensions and give very very fast 
+	recommendations.
+	One way is to implement Semantic Vectors 
+	(one-way influence of two randomly-projected vectors).
+	Would be a good intro to Mahout!
+	
+	LOD management:
+	Have M/R algorithms laid out for limitation rules:
+		"No neighbors beyond X"
+		"At least N neighbors"
+		"No more than N neighbors"
+	They are iterative passes to expand or collapse
+	1 LOD. Top-down "expands" a simplex into next LOD down.
+	Bottom-up "collapses" 4 simplexes into one larger simplex.
+	Each rule requires up to #LOD steps.
+	These rules can be done in sequence.
+	
+	
+Demo:
+	Have done four real-world sets:
+		US zip code -> SVG output. Looked rather weird.
+		
+	
