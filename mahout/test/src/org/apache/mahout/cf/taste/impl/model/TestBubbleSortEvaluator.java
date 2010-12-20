@@ -29,7 +29,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
-import org.apache.mahout.cf.taste.impl.model.PointTextRecommender;
+import org.apache.mahout.cf.taste.impl.model.PointTextUserItemRecommender;
 import org.apache.mahout.cf.taste.impl.model.SimplexRecommender;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
@@ -94,7 +94,7 @@ public class TestBubbleSortEvaluator {
 	private static Recommender doPointText(String pointsFile) throws IOException {
 		Recommender prec;
 		DataModel model = new PointTextDataModel(pointsFile);
-		prec = new PointTextRecommender(model);
+		prec = new PointTextUserItemRecommender(model);
 		return prec;
 	}
 	

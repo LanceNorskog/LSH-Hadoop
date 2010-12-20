@@ -17,19 +17,26 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
-
-import sun.org.mozilla.javascript.internal.EvaluatorException;
+import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
 /* 
  * DataModel has all answers. Just ask it.
  */
 
-public class PointTextRecommender implements Recommender {
+public class PointTextItemItemRecommender implements Recommender {
 
   final DataModel model;
+  final UserSimilarity userSimilarity;
 
-  public PointTextRecommender(DataModel model) {
+  public PointTextItemItemRecommender(DataModel model) {
     this.model = model;
+    this.userSimilarity = null;
+  }
+
+  public PointTextItemItemRecommender(DataModel model, UserSimilarity userSimilarity) {
+    this.model = model;
+    this.userSimilarity = userSimilarity;
   }
 
   @Override
@@ -92,11 +99,11 @@ public class PointTextRecommender implements Recommender {
    */
   public static void main(String[] args) throws IOException, TasteException {
     DataModel model = new PointTextDataModel(args[0]);
-    Recommender rec = new PointTextRecommender(model);
+    Recommender rec = new PointTextItemItemRecommender(model);
     //		List<RecommendedItem> x = rec.recommend(5, 3);
     //		x.hashCode();
     RecommenderEvaluator evaluator = new AverageAbsoluteDifferenceRecommenderEvaluator();
-    double evaluation = evaluator.evaluate(new PointTextRecommenderBuilder(),
+    double evaluation = evaluator.evaluate(new PointTextItemItemRecommenderBuilder(),
         null,
         model,
         0.9,
@@ -106,13 +113,39 @@ public class PointTextRecommender implements Recommender {
 
 }
 
-class PointTextRecommenderBuilder implements RecommenderBuilder {
+class PointTextItemItemRecommenderBuilder implements RecommenderBuilder {
 
   @Override
   public Recommender buildRecommender(DataModel dataModel)
   throws TasteException {
-    return new PointTextRecommender(dataModel);
+    return new PointTextItemItemRecommender(dataModel);
   }
 
+}
+
+class PointItemSimilarity implements ItemSimilarity {
+  public PointItemSimilarity() {
+    
+  }
+
+  @Override
+  public double itemSimilarity(long itemID1, long itemID2)
+      throws TasteException {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public void refresh(Collection<Refreshable> alreadyRefreshed) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public double[] itemSimilarities(long itemID1, long[] itemID2s)
+      throws TasteException {
+    // TODO Auto-generated method stub
+    return null;
+  }
 }
 

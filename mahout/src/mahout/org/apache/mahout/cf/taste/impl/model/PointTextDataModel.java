@@ -28,26 +28,22 @@ import org.apache.mahout.cf.taste.recommender.RecommendedItem;
  */
 
 public class PointTextDataModel extends AbstractDataModel {
+  // Use L(0.4) instead of L1 (Manhattan) or L2 (Euclidean)
+  // L(0.4) seems to give a saddle for 200-300 dimension saddle
+  private final double FRACTION_L = 0.5;
   // raw text corner-first LSH of users
   final Lookup userDB;
   // raw text corner-first LSH of items
   final Lookup itemDB;
-  final int dimensions;
-  // scaling for Manhattan and Euclidean distances
-  final double varianceManhattan;
-  final double varianceEuclid;
-  // project ratings from 0->1 into 1...5
+  int dimensions;
   final double scale = 1;
   final double offset = 0;
-  // mean of point distances
-  final double manhattanMean = 0.33;
-  final double euclidMean = 0.4;
-
   public double total = 0;
   public int count = 0;
   public int clamped = 0;
 
   public long[] buckets = new long[10];
+  private double rescale = Double.NaN;
 
   public PointTextDataModel(String pointsPath) throws IOException {
     this(new File(pointsPath));
@@ -70,18 +66,8 @@ public class PointTextDataModel extends AbstractDataModel {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    // yow!
-    Iterator<Point> it = userDB.points.iterator();
-    dimensions = it.next().values.length / 2;
-    //		dimensions = 1;
-    //		double[] zero = new double[dimensions];
-    //		for(int i = 0; i < zero.length; i++)
-    //			zero[i] = 0.0;
-    //		double[] unit = new double[dimensions];
-    //		for(int i = 0; i < unit.length; i++)
-    //			unit[i] = 1.0;
-    varianceManhattan = (1.0/(dimensions));
-    varianceEuclid = 1.0/Math.sqrt(dimensions);
+    dimensions = userDB.getDimensions();
+    rescale  = Math.pow(dimensions, 1/FRACTION_L);
   }
 
   @Override
@@ -132,7 +118,7 @@ public class PointTextDataModel extends AbstractDataModel {
     Point itemP = itemDB.id2point.get((itemID) + "");
     if (null == userP || null == itemP)
       return 0.5f;
-    double distance = manhattanD(itemP.values, userP.values);
+    double distance = fractionalD(itemP.values, userP.values);
     total += distance;
     count++;
     //		System.err.println(userID +"," + itemID + "," + distance);
@@ -163,19 +149,44 @@ public class PointTextDataModel extends AbstractDataModel {
     PreferenceArray prefs = new GenericUserPreferenceArray(itemDB.ids.size());
     for(String item: itemDB.ids) {
       Point ip = itemDB.id2point.get(item);
-      float dist = (float) distance2rating(manhattanD(up.values, ip.values));
+      double distance = fractionalD(up.values, ip.values);
+      total += distance;
+      float rating = (float) distance2rating(distance);
       prefs.setUserID(prefIndex, userID);
       prefs.setItemID(prefIndex, Long.parseLong(item));
-      prefs.setValue(prefIndex, dist);
+      prefs.setValue(prefIndex, rating);
       prefIndex++;
     }
     return prefs;
   }
 
-  // rectangular distance
-  public static double manhattanD(double[] a, double[] b) {
+  // L<1 distance
+  public double minkowskiD(double[] a, double[] b) {
     double sum = 0;
-    int dimensions = a.length;
+    for(int i = 0; i < dimensions; i++) {
+      sum += Math.pow(Math.abs(a[i] - b[i]), FRACTION_L);
+    }
+    double dist = Math.pow(sum, 1/FRACTION_L);
+    return dist / rescale;
+//    double r = sum / dimensions;
+//    return r;
+  }
+
+  // L<1 distance w/o powers - bogus Minkowski
+  public double fractionalD(double[] a, double[] b) {
+    double sum = 0;
+    for(int i = 0; i < dimensions; i++) {
+      sum += Math.abs(a[i] - b[i]);
+    }
+    double dist = Math.pow(sum, 1/FRACTION_L);
+    return dist / rescale;
+//    double r = sum / dimensions;
+//    return r;
+  }
+
+  // L1 rectangular distance
+  public double manhattanD(double[] a, double[] b) {
+    double sum = 0;
     for(int i = 0; i < dimensions; i++) {
       sum += Math.abs(a[i] - b[i]);
     }
@@ -183,10 +194,9 @@ public class PointTextDataModel extends AbstractDataModel {
     return r;
   }
 
-  // euclidean distance
-  public static double euclidD(double[] a, double[] b) {
+  // L2 euclidean distance
+  public double euclidD(double[] a, double[] b) {
     double sum = 0;
-    int dimensions = a.length;
     for(int i = 0; i < dimensions; i++) {
       sum += (a[i] - b[i]) * (a[i] - b[i]);
     }			
@@ -202,7 +212,7 @@ public class PointTextDataModel extends AbstractDataModel {
       clamped ++;
       this.hashCode();
     }
-    buckets[(int) (d * buckets.length)]++;
+    buckets[(int) (d * (buckets.length-1))]++;
     double e;
     e = (1-d);
     return e;
@@ -237,6 +247,16 @@ public class PointTextDataModel extends AbstractDataModel {
     throw new UnsupportedOperationException();
 
   }
+  
+  public int getDimensions() {
+    return dimensions;
+  }
+
+  public void setDimensions(int dim) throws TasteException {
+    if (dim > userDB.getDimensions())
+      throw new TasteException();
+    this.dimensions = dim;
+  }
 
   /**
    * @param args
@@ -246,7 +266,8 @@ public class PointTextDataModel extends AbstractDataModel {
   public static void main(String[] args) throws IOException, TasteException {
     PointTextDataModel model = new PointTextDataModel(args[0]);
     model.hashCode();
-    System.out.println("pow: " + Math.pow(1.01, 1/100.0));
+    double pow =  Math.pow(100, 0.5);
+    System.out.println("pow: " + Math.pow(200, 0.5));
     System.out.println("Items");
     doscan(model.itemDB, model.dimensions);
     System.out.println("Users");
@@ -255,18 +276,27 @@ public class PointTextDataModel extends AbstractDataModel {
   }
 
   static void dodistances(PointTextDataModel model) throws TasteException {
+    Float min= 10000f, max = 0f;
     for(String userID: model.userDB.ids) {
       for(String itemID: model.itemDB.ids) {
         long u = Long.parseLong(userID);
         long id = Long.parseLong(itemID);
-        model.getPreferenceValue(u, id);
+        Float f = model.getPreferenceValue(u, id);
+        if (min > f)
+          min = f;
+        if (max < f)
+          max = f;
       }
     }
+    System.out.println("User->Item prefs");
+    System.out.println("min:     " + min);
+    System.out.println("max:     " + max);
     System.out.println("clamped: " + model.clamped);
     System.out.println("total:   " + model.total);
     System.out.println("count:   " + model.count);
     System.out.println("mean:    " + (model.total / model.count));
     System.out.println("buckets: " + (Arrays.toString(model.buckets)));
+    System.out.println("range:   " + (max - min));
   }
 
   static void doscan(Lookup points, int dimensions) {
