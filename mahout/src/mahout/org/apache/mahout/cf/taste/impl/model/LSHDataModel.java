@@ -105,8 +105,8 @@ public class LSHDataModel extends AbstractDataModel {
   public FastIDSet getItemIDsFromUser(long userID) throws TasteException {
     int nitems = getNumItems();
     FastIDSet fids = new FastIDSet(nitems);
-    for(int i = 0; i < nitems; i++) {
-      fids.add(i);
+    for(Long itemID: items.keySet()) {
+      fids.add(itemID);
     }
     return fids;
   }
