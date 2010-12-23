@@ -27,16 +27,16 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 public class PointTextItemItemRecommender implements Recommender {
 
   final DataModel model;
-  final UserSimilarity userSimilarity;
+  final ItemSimilarity itemSimilarity;
 
   public PointTextItemItemRecommender(DataModel model) {
     this.model = model;
-    this.userSimilarity = null;
+    this.itemSimilarity = null;
   }
 
-  public PointTextItemItemRecommender(DataModel model, UserSimilarity userSimilarity) {
+  public PointTextItemItemRecommender(DataModel model, ItemSimilarity itemSimilarity) {
     this.model = model;
-    this.userSimilarity = userSimilarity;
+    this.itemSimilarity = itemSimilarity;
   }
 
   @Override
