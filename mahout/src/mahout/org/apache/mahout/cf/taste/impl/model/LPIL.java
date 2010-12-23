@@ -6,20 +6,19 @@ import lsh.core.Lookup;
 
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 
-public class LPI implements LongPrimitiveIterator {
+public class LPIL implements LongPrimitiveIterator {
   //	final public Lookup lookup;
-  final Iterator<String> it;
+  final Iterator<Long> itl;
   int i = 0;
 
-  public LPI(Iterator<String> it) {
-    //		this.lookup = lookup;
-    this.it = it;
+  public LPIL(Iterator it) {
+    this.itl = null;
   }
 
   @Override
   public long nextLong() {
-    String id = it.next();
-    return (Long.parseLong(id));
+    Long id = itl.next();
+    return id;
   }
 
   @Override
@@ -34,7 +33,7 @@ public class LPI implements LongPrimitiveIterator {
 
   @Override
   public boolean hasNext() {
-    return it.hasNext();
+    return itl.hasNext();
   }
 
   @Override
