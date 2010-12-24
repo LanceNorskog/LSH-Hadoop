@@ -141,7 +141,7 @@ public class LSHDataModel extends AbstractDataModel {
 
   private Float getPreferenceValuePoint(long userID, long itemID) {
     Vector userV = users.get(userID);
-    Vector itemV = items.get(userID);
+    Vector itemV = items.get(itemID);
     if (null == userV || null == itemV) {
       return DEFAULT_PREF;
     }

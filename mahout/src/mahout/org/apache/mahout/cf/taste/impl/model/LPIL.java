@@ -12,7 +12,7 @@ public class LPIL implements LongPrimitiveIterator {
   int i = 0;
 
   public LPIL(Iterator it) {
-    this.itl = null;
+    this.itl = it;
   }
 
   @Override

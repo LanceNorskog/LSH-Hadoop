@@ -191,11 +191,9 @@ abstract class AbstractDifferenceRecommenderEvaluatorDual implements Recommender
 		}
 	}
 
-	// load one user from a datamodel
-	// does this need to be cloned?
-	public void loadOneUser(long userID, FastByIDMap<PreferenceArray> trainingUsers, DataModel model) throws TasteException {
+	public void loadOneUser(long userID, FastByIDMap<PreferenceArray> userIDMap, DataModel model) throws TasteException {
 		PreferenceArray prefs = model.getPreferencesFromUser(userID);
-		trainingUsers.put(userID, prefs);
+		userIDMap.put(userID, prefs);
 	}
 
 	private float capEstimatedPreference(float estimate) {
