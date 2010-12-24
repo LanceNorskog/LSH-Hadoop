@@ -7,26 +7,16 @@ import java.util.Properties;
 
 import lsh.hadoop.LSHDriver;
 
-import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.eval.DataModelBuilder;
-import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
-import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
-import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.eval.NormalRankingRecommenderEvaulator;
 import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
-import org.apache.mahout.cf.taste.impl.model.GenericPreference;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
-import org.apache.mahout.cf.taste.impl.model.PointTextUserItemRecommender;
 import org.apache.mahout.cf.taste.impl.model.SimplexRecommender;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
@@ -38,7 +28,6 @@ import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
-import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
@@ -62,14 +51,14 @@ public class TestNormalRankingRecommenderEvaluator {
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
     Recommender estimatingRecco = doEstimatingUser(glModel);
-    Recommender slope1Recco = doReccoSlope1(glModel);
-    Recommender pearsonRecco = doReccoPearsonItem(glModel);
-    Recommender reccoKNN = doReccoKNN_LL_NegQO(glModel);
-    Recommender pointRecco = doPointText(args[1]);
+//    Recommender slope1Recco = doReccoSlope1(glModel);
+//    Recommender pearsonRecco = doReccoPearsonItem(glModel);
+//    Recommender reccoKNN = doReccoKNN_LL_NegQO(glModel);
+//    Recommender pointRecco = doPointText(args[1]);
 //    DataModel pointModel = pointRecco.getDataModel();
-    PointTextDataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
-    PointTextDataModel pointModelTest = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_3k/part-r-00000");
-    PointTextDataModel pointModel = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
+//    PointTextDataModel pointModelTraining = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_7k/part-r-00000");
+//    PointTextDataModel pointModelTest = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_3k/part-r-00000");
+//    PointTextDataModel pointModel = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k/part-r-00000");
     PointTextDataModel pointModelBig = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k_500d/part-r-00000");
 
     int samples = 500;
@@ -189,13 +178,13 @@ public class TestNormalRankingRecommenderEvaluator {
     PointTextDataModel model = new PointTextDataModel(pointsFile);
     return model;
   }
-
-  private static Recommender doPointText(String pointsFile) throws IOException {
-    Recommender prec;
-    DataModel model = new PointTextDataModel(pointsFile);
-    prec = new PointTextUserItemRecommender(model);
-    return prec;
-  }
+//
+//  private static Recommender doPointText(String pointsFile) throws IOException {
+//    Recommender prec;
+//    DataModel model = new PointTextDataModel(pointsFile);
+//    prec = new (model);
+//    return prec;
+//  }
 
   private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
     UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
@@ -232,40 +221,6 @@ public class TestNormalRankingRecommenderEvaluator {
     props.setProperty(LSHDriver.GRIDSIZE, "0.0001");
     SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
     return rec;
-  }
-
-
-}
-
-/*
- * Sort preference by preference, and then by item ID
- * Simplex ranking spits out a lot of identical ratings, 
- * so this gets better order comparison
- */
-class PrefCheck implements Comparator<Preference> {
-  final int sign;
-  double epsilon = 0.0001;
-
-  PrefCheck(int sign) {
-    this.sign = sign;
-  }
-
-  @Override
-  public int compare(Preference p1, Preference p2) {
-    double v1 = p1.getValue() * sign;
-    if (p1.getValue()*sign > ((p2.getValue() - epsilon)*sign))
-      return 1;
-    else if (p1.getValue()*sign < (p2.getValue() + epsilon)*sign)
-      return -1;
-    else {
-      // break ties by item id
-      if (p1.getItemID() > p2.getItemID())
-        return 1;
-      else if (p1.getItemID() < p2.getItemID())
-        return -1;
-      else
-        return 0;
-    }
   }
 
 }
