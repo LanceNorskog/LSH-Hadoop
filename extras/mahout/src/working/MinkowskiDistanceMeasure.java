@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.parameters.ClassParameter;
+import org.apache.mahout.common.parameters.DoubleParameter;
 import org.apache.mahout.common.parameters.Parameter;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
@@ -50,8 +51,7 @@ public class MinkowskiDistanceMeasure implements DistanceMeasure {
   @Override
   public void createParameters(String prefix, Configuration conf) {
     parameters = new ArrayList<Parameter<?>>();
-        Parameter<?> param = new DoubleParameter(prefix, "exponent", conf, EXPONENT, "Exponent for Fractional Lagrange distance");
-//    Parameter<?> param = new ClassParameter(prefix, "exponent", conf, Double.class, "Exponent for Minkowski (fractional L) distance");
+    Parameter<?> param = new DoubleParameter(prefix, "exponent", conf, EXPONENT, "Exponent for Fractional Lagrange distance");
     parameters.add(param);
   }
 
