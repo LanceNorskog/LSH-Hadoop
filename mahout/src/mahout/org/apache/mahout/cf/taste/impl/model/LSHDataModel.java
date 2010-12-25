@@ -7,15 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
@@ -23,10 +18,8 @@ import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.recommender.GenericRecommendedItem;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.cf.taste.recommender.RecommendedItem;
+import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
@@ -40,7 +33,7 @@ import org.apache.mahout.math.Vector;
  * Values: 0.0 <= pref <= 1.0, normal distribution. 0.5 default.
  */
 
-public class LSHDataModel extends AbstractDataModel {
+public class LSHDataModel extends AbstractDataModel implements ItemSimilarity {
   // Use L(0.5) instead of L1 (Manhattan) or L2 (Euclidean)
   // L(0.5) seems to give a saddle for 200-300 dimension saddle
   public static final double FRACTION_L = 0.5;
@@ -62,11 +55,11 @@ public class LSHDataModel extends AbstractDataModel {
   }
 
   public LSHDataModel(File pointsFile, DistanceMeasure measure) {
-  // raw text corner-first LSH of users
-  final Lookup userDB;
-//  // raw text corner-first LSH of items
-  final Lookup itemDB;
-   userDB = new Lookup(null, true, false, true, false, false, false, false, false);
+    // raw text corner-first LSH of users
+    final Lookup userDB;
+    //  // raw text corner-first LSH of items
+    final Lookup itemDB;
+    userDB = new Lookup(null, true, false, true, false, false, false, false, false);
     itemDB = new Lookup(null, true, false, true, false, false, false, false, false);
     try {
       FileReader itemReader = new FileReader(pointsFile);
@@ -86,7 +79,7 @@ public class LSHDataModel extends AbstractDataModel {
     fullDimensions = userDB.getDimensions();
     dimensions = fullDimensions;
     rescale  = Math.pow(dimensions, 1/FRACTION_L);
-    
+
     // TODO: clear points arrays on the way
     for(Point p: userDB.points) {
       users.put(Long.parseLong(p.id), new DenseVector(p.values));
@@ -136,19 +129,17 @@ public class LSHDataModel extends AbstractDataModel {
   @Override
   public Float getPreferenceValue(long userID, long itemID)
   throws TasteException {
-    return getPreferenceValuePoint(userID, itemID);
+    return getPreferenceValuePoint(users.get(userID), items.get(itemID));
   }
 
-  private Float getPreferenceValuePoint(long userID, long itemID) {
-    Vector userV = users.get(userID);
-    Vector itemV = items.get(itemID);
-    if (null == userV || null == itemV) {
+  private Float getPreferenceValuePoint(Vector v1, Vector v2) {
+    if (null == v1 || null == v2) {
       return DEFAULT_PREF;
     }
-    double distance = measure.distance(userV, itemV);
+    double distance = measure.distance(v1, v2) / rescale;
     total += distance;
     count++;
-    		System.err.println(userID +"," + itemID + "," + distance);
+    System.err.println(v1 +"," + v2 + "," + distance);
     double rating = distance2rating(distance);
     return (float) rating;
   }
@@ -176,7 +167,7 @@ public class LSHDataModel extends AbstractDataModel {
     PreferenceArray prefs = new GenericUserPreferenceArray(items.size());
     for(Entry<Long, Vector> itemEntry: items.entrySet()) {
       Long itemID = itemEntry.getKey();
-      float rating = (float) getPreferenceValuePoint(userID, itemID);
+      float rating = (float) getPreferenceValuePoint(users.get(userID), items.get(itemID));
       prefs.setUserID(prefIndex, userID);
       prefs.setItemID(prefIndex, itemID);
       prefs.setValue(prefIndex, rating);
@@ -227,7 +218,26 @@ public class LSHDataModel extends AbstractDataModel {
     throw new UnsupportedOperationException();
 
   }
-  
+
+  /* ItemSimilarity methods */
+  @Override
+  public double[] itemSimilarities(long itemID1, long[] itemID2s)
+      throws TasteException {
+    double[] prefs = new double[itemID2s.length];
+    for(int i = 0; i < itemID2s.length; i++) {
+      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
+      prefs[i] = (double) distance;
+    }
+    return prefs;
+  }
+
+  @Override
+  public double itemSimilarity(long itemID1, long itemID2)
+      throws TasteException {
+    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
+    return (double) distance;
+  }
+
   public int getDimensions() {
     return dimensions;
   }
@@ -292,4 +302,4 @@ public class LSHDataModel extends AbstractDataModel {
 
   }
 
-}
+ }
