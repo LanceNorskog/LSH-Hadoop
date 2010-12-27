@@ -47,16 +47,46 @@ public class SemanticVectorFactory {
     int nItems = prefs.size();
     if (nItems < minimum)
       return null;
+    long[] items = new long[nItems];
     LongPrimitiveIterator itemList = prefs.iterator();
+    int index = 0;
+    while (itemList.hasNext()) {
+      items[index++] = itemList.nextLong();
+    }
+    prefs = null;
     double[] values = new double[dimensions];
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     float prefSum = 0f;
-    while(itemList.hasNext()) {
-      long itemID = itemList.next();
-      float pref = model.getPreferenceValue(userID, itemID);
-      pref = (pref - minPreference)/(maxPreference - minPreference);
-      prefSum += pref;
+    if (samples == 0 || samples >= nItems) {
+      for(int i = 0; i < nItems; i++) {
+        long itemID = items[i];
+        float pref = model.getPreferenceValue(userID, itemID);
+        pref = (pref - minPreference)/(maxPreference - minPreference);
+        prefSum += pref;
+      }
+      count = nItems;
+    } else {
+      samples = Math.min(samples, nItems);
+      while(count < samples) {
+        long itemID;
+        while(true) {
+          long sample;
+          sample = rnd.nextInt(nItems);
+          if (items[(int) sample] >= 0) {
+            itemID = items[(int) sample];
+            items[(int) sample] = -1;
+            break;
+          }
+        }
+        Float pref = model.getPreferenceValue(userID, itemID);
+        if (null == pref) {
+          System.out.println("userID not there: " + userID);
+        }
+        pref = (pref - minPreference)/(maxPreference - minPreference);
+        prefSum += pref;
+        count++;
+      }
     }
     for(int i = 0; i < dimensions; i++) {
       float rndSum = 0f;
@@ -65,10 +95,10 @@ public class SemanticVectorFactory {
       }
       float position = ((rndSum + prefSum)/2)/nItems;
       values[i] = position;
-      System.out.println(i + ": " + position);
+      //      System.out.println(i + ": " + position);
     }
     Vector v = new DenseVector(values);
-   return v;
+    return v;
   }
 
   /*
@@ -79,7 +109,7 @@ public class SemanticVectorFactory {
     int nUsers = prefs.length();
     if (nUsers < minimum)
       return null;
-    System.out.println("item: " + itemID + " nUsers: " + nUsers);
+    //    System.out.println("item: " + itemID + " nUsers: " + nUsers);
     double[] values = new double[dimensions];
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
@@ -91,7 +121,7 @@ public class SemanticVectorFactory {
         Preference preference = userList.next();
         float value = preference.getValue();
         value = (value - minPreference)/(maxPreference - minPreference);
-        System.out.println("pref: " + value);
+        //        System.out.println("pref: " + value);
         prefSum += value;
       }
       count = nUsers;
@@ -109,7 +139,7 @@ public class SemanticVectorFactory {
         float value = prefs.getValue((int) index);
         prefs.setUserID(index, -1);
         value = (value - minPreference)/(maxPreference - minPreference);
-        System.out.println("index: " + index);
+        //        System.out.println("index: " + index);
         prefSum += value;
         count++;
       }
@@ -121,7 +151,7 @@ public class SemanticVectorFactory {
       }
       float position = ((rndSum + prefSum)/2)/count;
       values[i] = position;
-      System.out.println(i + ": " + position);
+      //      System.out.println(i + ": " + position);
     }
     Vector v = new DenseVector(values);
 
@@ -148,9 +178,10 @@ public class SemanticVectorFactory {
     SemanticVectorFactory svf = new SemanticVectorFactory(model, 100, new Random(0));
     //    Vector v = svf.getUserVector(100, 20, 50);
     //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
-//    Vector v2 = svf.getItemVector(1282, 10, 20);
-//    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
+    //    Vector v2 = svf.getItemVector(1282, 10, 20);
+    //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
     checkUserDistances(svf, model);
+    checkItemDistances(svf, model);
   }
 
   private static void checkUserDistances(SemanticVectorFactory svf, DataModel model) throws TasteException {
@@ -158,14 +189,42 @@ public class SemanticVectorFactory {
     LongPrimitiveIterator users = model.getUserIDs();
     for(int i = 0; i < model.getNumUsers(); i++) {
       int userID = (int) users.nextLong();
-      va[i] = svf.getUserVector(userID, 0, 100000);
+      va[i] = svf.getUserVector(userID, 0, 20);
     }
+    int[] buckets = new int[20];
+    int dimensions = va[0].size();
     for(int i = 0; i < va.length;i++) {
       for(int j = i + 1; j < va.length; j++) {
-        if (null == va[i] || null == va[j])
-          continue;
-        System.out.println(Math.sqrt(va[i].getDistanceSquared(va[j])));
+        double distance = Math.sqrt(va[i].getDistanceSquared(va[j]))/Math.sqrt(dimensions);
+        buckets[(int) (distance*20)]++;
+
+//        System.out.println(distance);
       }
+    }
+    for(int i = 0; i < 20; i++) {
+      System.out.println(buckets[i]);
+    }
+  }
+
+  private static void checkItemDistances(SemanticVectorFactory svf, DataModel model) throws TasteException {
+    Vector[] va = new Vector[model.getNumItems()];
+    LongPrimitiveIterator items = model.getItemIDs();
+    for(int i = 0; i < model.getNumItems(); i++) {
+      int itemID = (int) items.nextLong();
+      va[i] = svf.getItemVector(itemID, 0, 20);
+    }
+    int[] buckets = new int[20];
+    int dimensions = va[0].size();
+    for(int i = 0; i < va.length;i++) {
+      for(int j = i + 1; j < va.length; j++) {
+        double distance = Math.sqrt(va[i].getDistanceSquared(va[j]))/Math.sqrt(dimensions);
+        buckets[(int) (distance*20)]++;
+
+        //        System.out.println(distance);
+      }
+    }
+    for(int i = 0; i < 20; i++) {
+      System.out.println(buckets[i]);
     }
   }
 
