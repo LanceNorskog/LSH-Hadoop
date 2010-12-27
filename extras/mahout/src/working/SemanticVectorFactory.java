@@ -49,7 +49,6 @@ public class SemanticVectorFactory {
       return null;
     LongPrimitiveIterator itemList = prefs.iterator();
     double[] values = new double[dimensions];
-    Vector v = new DenseVector(values);
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     float prefSum = 0f;
@@ -68,7 +67,8 @@ public class SemanticVectorFactory {
       values[i] = position;
       System.out.println(i + ": " + position);
     }
-    return v;
+    Vector v = new DenseVector(values);
+   return v;
   }
 
   /*
@@ -81,7 +81,6 @@ public class SemanticVectorFactory {
       return null;
     System.out.println("item: " + itemID + " nUsers: " + nUsers);
     double[] values = new double[dimensions];
-    Vector v = new DenseVector(values);
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     float prefSum = 0f;
@@ -124,6 +123,8 @@ public class SemanticVectorFactory {
       values[i] = position;
       System.out.println(i + ": " + position);
     }
+    Vector v = new DenseVector(values);
+
     return v;
   }
 
@@ -147,8 +148,25 @@ public class SemanticVectorFactory {
     SemanticVectorFactory svf = new SemanticVectorFactory(model, 100, new Random(0));
     //    Vector v = svf.getUserVector(100, 20, 50);
     //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
-    Vector v2 = svf.getItemVector(1282, 10, 20);
-    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
+//    Vector v2 = svf.getItemVector(1282, 10, 20);
+//    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
+    checkUserDistances(svf, model);
+  }
+
+  private static void checkUserDistances(SemanticVectorFactory svf, DataModel model) throws TasteException {
+    Vector[] va = new Vector[model.getNumUsers()];
+    LongPrimitiveIterator users = model.getUserIDs();
+    for(int i = 0; i < model.getNumUsers(); i++) {
+      int userID = (int) users.nextLong();
+      va[i] = svf.getUserVector(userID, 0, 100000);
+    }
+    for(int i = 0; i < va.length;i++) {
+      for(int j = i + 1; j < va.length; j++) {
+        if (null == va[i] || null == va[j])
+          continue;
+        System.out.println(Math.sqrt(va[i].getDistanceSquared(va[j])));
+      }
+    }
   }
 
 }
