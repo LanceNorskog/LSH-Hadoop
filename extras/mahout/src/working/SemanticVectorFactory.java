@@ -2,7 +2,9 @@ package working;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -12,8 +14,10 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
+import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+import org.apache.tools.ant.taskdefs.GenerateKey.DistinguishedName;
 
 /*
  * Given a DataModel, create a semantic vector for a User or Item.
@@ -28,6 +32,8 @@ public class SemanticVectorFactory {
   private final Random rnd;
   int count = 0;
   int skip = 0;
+  FastIDSet modUsers = new FastIDSet();
+  FastIDSet modItems = new FastIDSet();
 
   public SemanticVectorFactory(DataModel model, int dimensions) {
     this(model, dimensions, new Random());
@@ -157,15 +163,12 @@ public class SemanticVectorFactory {
 
     return v;
   }
-
-
-
-
-
-
-
-
-
+  
+  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure) {
+    double dist = measure.distance(v1, v2);
+    return Distributions.normal2linear(dist);
+  }
+  
 
   /**
    * @param args
@@ -181,7 +184,7 @@ public class SemanticVectorFactory {
     //    Vector v2 = svf.getItemVector(1282, 10, 20);
     //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
     checkUserDistances(svf, model);
-    checkItemDistances(svf, model);
+//    checkItemDistances(svf, model);
   }
 
   private static void checkUserDistances(SemanticVectorFactory svf, DataModel model) throws TasteException {
@@ -190,20 +193,30 @@ public class SemanticVectorFactory {
     for(int i = 0; i < model.getNumUsers(); i++) {
       int userID = (int) users.nextLong();
       va[i] = svf.getUserVector(userID, 0, 20);
+//      va[i] = invert(va[i]);
     }
     int[] buckets = new int[20];
     int dimensions = va[0].size();
     for(int i = 0; i < va.length;i++) {
       for(int j = i + 1; j < va.length; j++) {
-        double distance = Math.sqrt(va[i].getDistanceSquared(va[j]))/Math.sqrt(dimensions);
+        double dist = Math.sqrt(va[i].getDistanceSquared(va[j])/dimensions);
+        double distance = Distributions.normal2linear(dist);
         buckets[(int) (distance*20)]++;
 
-//        System.out.println(distance);
+        System.out.println(distance);
       }
     }
     for(int i = 0; i < 20; i++) {
       System.out.println(buckets[i]);
     }
+  }
+
+  private static Vector invert(Vector vector) {
+    for(int i = 0; i < vector.size(); i++) {
+      double d = Distributions.normal2linear(vector.get(i));
+      vector.set(i, d);
+    }
+    return vector;
   }
 
   private static void checkItemDistances(SemanticVectorFactory svf, DataModel model) throws TasteException {
@@ -212,6 +225,7 @@ public class SemanticVectorFactory {
     for(int i = 0; i < model.getNumItems(); i++) {
       int itemID = (int) items.nextLong();
       va[i] = svf.getItemVector(itemID, 0, 20);
+      va[i] = invert(va[i]);
     }
     int[] buckets = new int[20];
     int dimensions = va[0].size();
@@ -220,7 +234,7 @@ public class SemanticVectorFactory {
         double distance = Math.sqrt(va[i].getDistanceSquared(va[j]))/Math.sqrt(dimensions);
         buckets[(int) (distance*20)]++;
 
-        //        System.out.println(distance);
+                System.out.println(distance);
       }
     }
     for(int i = 0; i < 20; i++) {

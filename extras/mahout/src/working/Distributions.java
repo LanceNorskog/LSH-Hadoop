@@ -1,7 +1,6 @@
 package working;
 
 public class Distributions {
-  static private int ENTRIES = 400;
   static private double EPSILON = 0.0000001;
 
   static private void init() {
@@ -14,17 +13,28 @@ public class Distributions {
    * to linear distribution 0 -> 1
    */
   static public double normal2linear(double d) {
-    double sample = d;
-    int index = (int) (sample * ENTRIES);
-    index = Math.max(0, index);
-    index = Math.min(ENTRIES, index);
-    double map = CDF[index];
-    double mapped = map*2;
-    return mapped;
+    int entries = CDF.length;
+    double sample = d <= 0.5 ? d*2 : (1.0 - d);
+    int index = (int) (sample * entries);
+    
+    if (d < 0.5) 
+    {
+      double map = CDF[index];
+      return map;
+    } else if (d == 0.5) {
+      return 0.5;
+    }  else {
+      double map = CDF[index];
+      return 1.0 - map;
+    }
+//    index = Math.max(0, index);
+//    index = Math.min(entries, index);
+//    double map = CDF[index];
+//    double mapped = map; // < 0.5 ? map : 0.5 + (map - 0.5);
+//    return mapped;
   }
 
   static public void main(String[] args) {
-    double[] cdf = CDF;
 
     System.out.println("0.0 -> " + shortPrint(normal2linear(0.0)));
     System.out.println("0.1 -> " + shortPrint(normal2linear(0.1)));
@@ -94,5 +104,4 @@ public class Distributions {
     ,0.49997,0.49997,0.49997,0.49997,0.49997,0.49997,0.49998,0.49998,0.49998,0.49998
   };
 
-  static private double[] InverseCDF = new double[ENTRIES];
 }
