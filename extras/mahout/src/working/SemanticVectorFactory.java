@@ -14,9 +14,11 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
+import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
+import org.apache.mahout.common.distance.TanimotoDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.tools.ant.taskdefs.GenerateKey.DistinguishedName;
@@ -32,9 +34,7 @@ public class SemanticVectorFactory {
   private final DataModel model;
   private final int dimensions;
   private final Random rnd;
-  int count = 0;
-  int skip = 0;
-  float FACTOR = 0f;
+  float FACTOR = 0.7f;
 
   public SemanticVectorFactory(DataModel model, int dimensions) {
     this(model, dimensions, new Random());
@@ -65,6 +65,7 @@ public class SemanticVectorFactory {
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     float prefSum = 0f;
+    int count = 0;
     if (samples == 0 || samples >= nItems) {
       for(int i = 0; i < nItems; i++) {
         long itemID = items[i];
@@ -102,10 +103,8 @@ public class SemanticVectorFactory {
         rndSum += rnd.nextDouble();
       }
       rndSum /= count;
-//      rndSum = (float) Distributions.normal2linear(rndSum);
-      float position = (rndSum*FACTOR + prefSum*(1.0f-FACTOR))/2;
+      float position = (rndSum*(1-FACTOR) + prefSum*FACTOR)/2;
       values[i] = position;
-      //      System.out.println(i + ": " + position);
     }
     Vector v = new DenseVector(values);
     return v;
@@ -160,7 +159,7 @@ public class SemanticVectorFactory {
       for(int j = 0; j < count; j++) {
         rndSum += rnd.nextDouble()/count;
       }
-      float position = (rndSum + prefSum)/2;
+      float position = (rndSum*(1-FACTOR) + prefSum*FACTOR)/2;
       values[i] = position;
       //      System.out.println(i + ": " + position);
     }
@@ -169,8 +168,9 @@ public class SemanticVectorFactory {
     return v;
   }
   
-  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double normalize) {
-    double dist = measure.distance(v1, v2)/normalize;
+  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double rescale) {
+    double dist = measure.distance(v1, v2)/rescale;
+    dist = Distributions.normal2linear(dist);
     return dist;
   }
   
@@ -181,10 +181,10 @@ public class SemanticVectorFactory {
    * @throws TasteException 
    */
   public static void main(String[] args) throws IOException, TasteException {
-    DataModel model = new GroupLensDataModel(new File("/tmp/lsh_hadoop/GL_10k/ratings.dat"));
-    int dimensions = 500;
-    DistanceMeasure measure = new MinkowskiDistanceMeasure(4.0);
-    double normalize;
+    DataModel model = new GroupLensDataModel(new File("/tmp/lsh_hadoop/GL_100k/ratings.dat"));
+    int dimensions = 200;
+    DistanceMeasure measure = new MinkowskiDistanceMeasure(1.5);
+    double rescale;
 
     SemanticVectorFactory svf = new SemanticVectorFactory(model, dimensions, new Random(0));
     //    Vector v = svf.getUserVector(100, 20, 50);
@@ -196,59 +196,60 @@ public class SemanticVectorFactory {
     Vector zeroVector = new DenseVector(dimensions);
     for(int i = 0; i < dimensions; i++) 
       unitVector.set(i, 1.0);
-    normalize = measure.distance(zeroVector, unitVector);
-    checkUserDistances(svf, model, measure, normalize);
-    checkItemDistances(svf, model, measure, normalize);
+    rescale = measure.distance(zeroVector, unitVector);
+    checkUserDistances(svf, model, measure, rescale);
+    System.out.println();
+    checkItemDistances(svf, model, measure, rescale);
   }
 
-  private static void checkUserDistances(SemanticVectorFactory svf, DataModel model, DistanceMeasure measure, double normalize) throws TasteException {
+  private static void checkUserDistances(SemanticVectorFactory svf, DataModel model, DistanceMeasure measure, double rescale) throws TasteException {
     Vector[] va = new Vector[model.getNumUsers()];
     LongPrimitiveIterator users = model.getUserIDs();
     for(int i = 0; i < model.getNumUsers(); i++) {
       int userID = (int) users.nextLong();
-      va[i] = svf.getUserVector(userID, 10, 50);
-//      if (null != va[i])
-//        va[i] = invert(va[i]);
+      va[i] = svf.getUserVector(userID, 10, 40);
     }
-    showDistributions(va, measure, normalize);
+    showDistributions(va, measure, rescale);
   }
 
-  private static Vector invert(Vector vector) {
-    for(int i = 0; i < vector.size(); i++) {
-      double d = Distributions.normal2linear(vector.get(i));
-      vector.set(i, d);
-    }
-    return vector;
-  }
-
-  private static void checkItemDistances(SemanticVectorFactory svf, DataModel model, DistanceMeasure measure, double normalize) throws TasteException {
+  private static void checkItemDistances(SemanticVectorFactory svf, DataModel model, DistanceMeasure measure, double rescale) throws TasteException {
     Vector[] va = new Vector[model.getNumItems()];
     LongPrimitiveIterator items = model.getItemIDs();
     for(int i = 0; i < model.getNumItems(); i++) {
       int itemID = (int) items.nextLong();
       va[i] = svf.getItemVector(itemID, 10, 40);
-//      if (null != va[i])
-//        va[i] = invert(va[i]);
     }
-    showDistributions(va, measure, normalize);
+    showDistributions(va, measure, rescale);
   }
 
   private static void showDistributions(Vector[] va,
-      DistanceMeasure measure, double normalize) {
-    int[] buckets = new int[20];
+      DistanceMeasure measure, double rescale) {
+    int[] buckets = new int[21];
+    double delta = 0;
+    int count = 0;
+    double max = 0;
     for(int i = 0; i < va.length;i++) {
       for(int j = i + 1; j < va.length; j++) {
         if ((null == va[i]) || (va[j] == null))
           continue;
         double distance = measure.distance(va[i], va[j]);
-        distance /= normalize;
+        if (max < distance)
+          max = distance;
+
+        distance /= rescale;
         distance = Distributions.normal2linear(distance);
         buckets[(int) (distance*20)]++;
+        for(int k = 0; k < va[i].size(); k++) {
+          double d = (Math.abs(va[i].get(k) - va[j].get(k)));
+          delta += d;
+          count++;
+        }
       }
     }
     for(int i = 0; i < 20; i++) {
       System.out.println(buckets[i]);
     }
+    System.out.println("average point dist: " + (delta/count) + ", max: " + max);
   }
 
 }

@@ -1,5 +1,10 @@
 package working;
 
+import java.util.Iterator;
+
+import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.Vector.Element;
+
 public class Distributions {
   static private double EPSILON = 0.0000001;
 
@@ -14,7 +19,7 @@ public class Distributions {
    */
   static public double normal2linear(double d) {
     int entries = CDF.length;
-    double sample = d <= 0.5 ? d*2 : (1.0 - d);
+    double sample = d <= 0.5 ? d*2 : (1.0 - d)*2;
     int index = (int) (sample * entries);
     
     if (d < 0.5) 
@@ -32,6 +37,18 @@ public class Distributions {
 //    double map = CDF[index];
 //    double mapped = map; // < 0.5 ? map : 0.5 + (map - 0.5);
 //    return mapped;
+  }
+
+  static public Vector normal2linear(Vector v) {
+    Vector v2 = v.like();
+    Iterator<Element> iter = v.iterateNonZero();
+    while(iter.hasNext()) {
+      Element e = iter.next();
+      double d = e.get();
+      d = normal2linear(d);
+      v2.set(e.index(), d);
+    }
+    return v2;
   }
 
   static public void main(String[] args) {
