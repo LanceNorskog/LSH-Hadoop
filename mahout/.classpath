@@ -18,7 +18,7 @@
 	<classpathentry kind="lib" path="lib/guava-r03.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/google-collections-1.0-rc2.jar"/>
-	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar" sourcepath="C:/Users/lance/.m2/repository/commons-lang/commons-lang/2.4/commons-lang-2.4-sources.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/extras"/>
 	<classpathentry kind="var" path="M2_REPO"/>
 	<classpathentry kind="output" path="bin"/>
