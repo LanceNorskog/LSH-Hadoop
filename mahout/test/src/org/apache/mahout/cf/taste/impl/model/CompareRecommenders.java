@@ -101,10 +101,11 @@ public class CompareRecommenders {
    */
 
   private static Recommender doEstimatingSimplexUser(DataModel bcModel) throws TasteException {
-    int DIMS = 2;
+    int DIMS = 200;
     UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
-    SimplexSpace space = new SimplexSpace(new OrthonormalHasher(DIMS, 0.7), DIMS);
+    SimplexSpace space = new SimplexSpace(new OrthonormalHasher(DIMS, 2.0), DIMS);
     addSimplices(space, bcModel);
+    System.out.println(space.toString());
     UserNeighborhood neighborhood = new SimplexUserNeighborhood(space);
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
   }

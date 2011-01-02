@@ -2,9 +2,7 @@ package working;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -14,14 +12,9 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
-import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
-import org.apache.mahout.common.distance.TanimotoDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-import org.apache.tools.ant.taskdefs.GenerateKey.DistinguishedName;
 
 /*
  * Given a DataModel, create a semantic vector for a User or Item.
@@ -47,7 +40,7 @@ public class SemanticVectorFactory {
   }
 
   /*
-   * Create a Semantic Vector for this user with Item as independent variable
+   * Create a Semantic Vector for this User with Item as independent variable
    */
   public Vector getUserVector(long userID, int minimum, int samples) throws TasteException {
     FastIDSet prefs = model.getItemIDsFromUser(userID);
@@ -111,7 +104,7 @@ public class SemanticVectorFactory {
   }
 
   /*
-   * Create a Semantic Vector for this item with User as independent variable
+   * Create a Semantic Vector for this Item with User as independent variable
    */
   public Vector getItemVector(final long itemID, int minimum, int samples) throws TasteException {
     PreferenceArray prefs = model.getPreferencesForItem(itemID);

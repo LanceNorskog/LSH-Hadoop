@@ -4,15 +4,9 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
-import lsh.core.Hasher;
 
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.math.Vector;
 
@@ -23,6 +17,7 @@ import org.apache.mahout.math.Vector;
  */
 public class SimplexUserNeighborhood implements UserNeighborhood {
   final SimplexSpace space;
+  final long[] EMPTY = new long[0];
   
   public SimplexUserNeighborhood(SimplexSpace space) {
     this.space = space;
@@ -40,6 +35,8 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
   @Override
   public long[] getUserNeighborhood(long userID) throws TasteException {
     long[] values = space.findUsers(userID);
+    if (null == values)
+      return EMPTY;
     return values;
   }
 

@@ -256,7 +256,6 @@ public class LSHDataModel extends AbstractDataModel implements ItemSimilarity {
   public static void main(String[] args) throws IOException, TasteException {
     LSHDataModel model = new LSHDataModel(args[0], new ManhattanDistanceMeasure());
     model.hashCode();
-    double pow =  Math.pow(100, 0.5);
     System.out.println("pow: " + Math.pow(200, 0.5));
     System.out.println("Items");
     doscan(model.items, model.dimensions);
