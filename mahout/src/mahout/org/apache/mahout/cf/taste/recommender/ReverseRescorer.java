@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.cf.taste.web;
+package org.apache.mahout.cf.taste.recommender;
 
 import org.apache.mahout.cf.taste.recommender.IDRescorer;
 import org.apache.mahout.cf.taste.recommender.Rescorer;
@@ -63,15 +63,38 @@ public final class ReverseRescorer<T> implements Rescorer<T>, IDRescorer {
     return -originalScore;
   }
 
+  /**
+   * Returns <code>true</code> to exclude the given thing.
+   * 
+   * @param thing
+   *          the thing to filter
+   * @return <code>true</code> to exclude, <code>false</code> otherwise
+   */
+
   @Override
   public boolean isFiltered(T thing) {
     return false;
   }
 
+  /**
+   * @param id
+   *          ID of thing (user, item, etc.) to rescore
+   * @param originalScore
+   *          original score
+   * @return modified score, or {@link Double#NaN} to indicate that this should be excluded entirely
+   */
   @Override
   public double rescore(long id, double originalScore) {
     return -originalScore;
   }
+
+  /**
+   * Returns <code>true</code> to exclude the given thing.
+   * 
+   * @param id
+   *          ID of thing (user, item, etc.) to rescore
+   * @return <code>true</code> to exclude, <code>false</code> otherwise
+   */
 
   @Override
   public boolean isFiltered(long id) {
