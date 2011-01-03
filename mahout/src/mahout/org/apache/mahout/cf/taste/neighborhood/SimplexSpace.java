@@ -15,6 +15,8 @@ import lsh.core.Hasher;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.common.distance.DistanceMeasure;
+import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -40,10 +42,18 @@ public class SimplexSpace {
   final int dimensions;
   public double distance = 0.0001;
   public int nUsers = 1;
+  private final DistanceMeasure measure;
 
   public SimplexSpace(Hasher hasher, int dimensions) {
     this.hasher = hasher;
     this.dimensions = dimensions;
+    this.measure = null;
+  }
+
+  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure) {
+    this.hasher = hasher;
+    this.dimensions = dimensions;
+    this.measure = measure;
   }
 
   // populate hashes
@@ -67,9 +77,14 @@ public class SimplexSpace {
       values[e.index()] = e.get();
     }
   }    
+  
+  /*
+   * Search for neighbors of given ID.
+   *    expand - expand search N counts outward
+   */
 
-  public long[] findUsers(long userID) {
-    Hash hash = idSetMap.get(userID);
+  public long[] findNeighbors(long id, int expand) {
+    Hash hash = idSetMap.get(id);
     if (null == hash)
       return null;
     FastIDSet others = new FastIDSet();
@@ -84,8 +99,43 @@ public class SimplexSpace {
     }
     return values;
   }
+  
+  public double getDistance(long id1, long id2, DistanceMeasure measure) {
+    if (null == measure)
+      measure = this.measure;
+    Hash h1 = idSetMap.get(id1);
+    Hash h2 = idSetMap.get(id2);
+    if (null == h1 || null == h2)
+      return -1;
+    
+    double d = hashDistance(h1, h2, measure);
+    return d;
+  }
 
-  public int getDimensions() {
+   public double getDistance(long id1, long id2, SimplexSpace otherSpace, DistanceMeasure measure) {
+    if (null == measure)
+      measure = this.measure;
+    Hash h1 = idSetMap.get(id1);
+    Hash h2 = otherSpace.idSetMap.get(id2);
+    if (null == h1 || null == h2)
+      return -1;
+    
+    double d = hashDistance(h1, h2, measure);
+    return d;
+  }
+
+   private double hashDistance(Hash h1, Hash h2, DistanceMeasure measure) {
+     double[] d1 = new double[dimensions];
+     double[] d2 = new double[dimensions];
+     hasher.unhash(h1.hashes, d1);
+     hasher.unhash(h1.hashes, d2);
+     Vector v1 = new DenseVector(d1);
+     Vector v2 = new DenseVector(d2);
+     double distance = measure.distance(v1, v2);
+     return distance;
+   }
+
+   public int getDimensions() {
     return dimensions;
   }
 

@@ -24,12 +24,14 @@ import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.neighborhood.SimplexSimilarity;
 import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
 import org.apache.mahout.cf.taste.neighborhood.SimplexUserNeighborhood;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
 import working.SemanticVectorFactory;
@@ -102,15 +104,17 @@ public class CompareRecommenders {
 
   private static Recommender doEstimatingSimplexUser(DataModel bcModel) throws TasteException {
     int DIMS = 200;
-    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
-    SimplexSpace space = new SimplexSpace(new OrthonormalHasher(DIMS, 2.0), DIMS);
-    addSimplices(space, bcModel);
-    System.out.println(space.toString());
-    UserNeighborhood neighborhood = new SimplexUserNeighborhood(space);
+//    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
+    SimplexSpace userSpace = new SimplexSpace(new OrthonormalHasher(DIMS, 0.01), DIMS, new EuclideanDistanceMeasure());
+    addUserSimplices(userSpace, bcModel);
+    SimplexSpace itemSpace = new SimplexSpace(new OrthonormalHasher(DIMS, 0.01), DIMS);
+    addItemSimplices(itemSpace, bcModel);
+    UserSimilarity similarity = new CachingUserSimilarity(new SimplexSimilarity(userSpace, itemSpace, null), bcModel);
+    UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace);
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
   }
 
-  private static void addSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+  private static void addUserSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getUserIDs();
     while (lpi.hasNext()) {
@@ -118,6 +122,17 @@ public class CompareRecommenders {
       Vector sv = svf.getUserVector(userID, 10, 40);
       if (null != sv)
         space.addVector(userID, sv);
+    }
+  }
+
+  private static void addItemSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+    SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
+    LongPrimitiveIterator lpi = bcModel.getItemIDs();
+    while (lpi.hasNext()) {
+      Long itemID = lpi.nextLong();
+      Vector sv = svf.getItemVector(itemID, 5, 40);
+      if (null != sv)
+        space.addVector(itemID, sv);
     }
   }
 

@@ -27,14 +27,14 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
     space.addVector(userID, v);
   }
   
-  // All of those crazy recommender collections
+  // All of those crazy recommender collections?
   
   /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.neighborhood.UserNeighborhood#getUserNeighborhood(long)
    */
   @Override
   public long[] getUserNeighborhood(long userID) throws TasteException {
-    long[] values = space.findUsers(userID);
+    long[] values = space.findNeighbors(userID, 0);
     if (null == values)
       return EMPTY;
     return values;
