@@ -111,30 +111,48 @@ public class CompareRecommenders {
     int DIMS = 100;
 //    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
     SimplexSpace userSpace = getSpace(DIMS);
-    addUserSimplices(userSpace, bcModel);
+    SimplexSpace userSpace5 = getSpace(DIMS);
+    userSpace5.setLOD(8);
+    addUserSimplices(userSpace, userSpace5, bcModel);
     SimplexSpace itemSpace = getSpace(DIMS);
     addItemSimplices(itemSpace, bcModel);
     UserSimilarity similarity = new SimplexSimilarity(userSpace, itemSpace, null);
-    UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace);
+    UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace, userSpace5);
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
   }
 
   private static SimplexSpace getSpace(int DIMS) {
-//    DistanceMeasure measure = new MinkowskiDistanceMeasure(2);  //  new EuclideanDistanceMeasure();
-    DistanceMeasure measure = new EuclideanDistanceMeasure();
+    DistanceMeasure measure = new MinkowskiDistanceMeasure(1.5);  //  new EuclideanDistanceMeasure();
+//    DistanceMeasure measure = new EuclideanDistanceMeasure();
 //    DistanceMeasure measure = new ManhattanDistanceMeasure();
-  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.3), DIMS, measure);
-//    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.05), DIMS, measure);
+//  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.1), DIMS, measure);
+    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
+    /*
+     * LOD 8
+     * mink 1.5
+     * ortho 0.1
+     * matches 90
+     * 0.89
+     */
+    /*
+     * LOD 8
+     * mink 1.5
+     * vertex 0.2
+     * matches 59
+     * score 0.69
+     */
   }
 
-  private static void addUserSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+  private static void addUserSimplices(SimplexSpace space, SimplexSpace spaceLOD, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getUserIDs();
     while (lpi.hasNext()) {
       Long userID = lpi.nextLong();
       Vector sv = svf.getUserVector(userID, 3, 50);
-      if (null != sv)
+      if (null != sv) {
         space.addVector(userID, sv);
+        spaceLOD.addVector(userID, sv);
+      }
     }
   }
 

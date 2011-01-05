@@ -41,7 +41,6 @@ public class SimplexSpaceLOD {
   Map<Hash, Set<Long>> hashSetMap = new HashMap<Hash, Set<Long>>();
   final int dimensions;
   public double distance = 0.0001;
-  public int nUsers = 1;
   private final DistanceMeasure measure;
 
   public SimplexSpaceLOD(Hasher hasher, int dimensions) {
