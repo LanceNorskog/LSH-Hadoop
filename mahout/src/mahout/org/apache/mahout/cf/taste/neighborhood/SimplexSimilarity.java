@@ -41,7 +41,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
   @Override
   public double userSimilarity(long userID1, long userID2)
       throws TasteException {
-    double d =1/ userSpace.getDistance(userID1, userID2, measure);
+    double d =(1 + 1/ userSpace.getDistance(userID1, userID2, measure));
     return d;
   }
 
@@ -62,7 +62,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
       throws TasteException {
     double[] values = new double[itemID2s.length];
     for(int i = 0; i < itemID2s.length; i++) {
-      values[i] = 1/itemSpace.getDistance(itemID1, itemID2s[i], measure);
+      values[i] = (1 + 1/itemSpace.getDistance(itemID1, itemID2s[i], measure));
     }
     return values;
   }
@@ -74,7 +74,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
   public double itemSimilarity(long itemID1, long itemID2)
       throws TasteException {
     double d = itemSpace.getDistance(itemID1, itemID2, measure);
-    return 1/d;
+    return (1 + 1/d);
   }
 
   /**

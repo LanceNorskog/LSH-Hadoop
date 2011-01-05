@@ -35,7 +35,7 @@ import org.apache.mahout.math.Vector.Element;
  *     Gridsize = original gridsize/LOD
  * TODO: could be made tighter.
  */
-public class SimplexSpace {
+public class SimplexSpaceLOD {
   final Hasher hasher;
   FastByIDMap<Hash> idSetMap = new FastByIDMap<Hash>();
   Map<Hash, Set<Long>> hashSetMap = new HashMap<Hash, Set<Long>>();
@@ -44,13 +44,13 @@ public class SimplexSpace {
   public int nUsers = 1;
   private final DistanceMeasure measure;
 
-  public SimplexSpace(Hasher hasher, int dimensions) {
+  public SimplexSpaceLOD(Hasher hasher, int dimensions) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = null;
   }
 
-  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure) {
+  public SimplexSpaceLOD(Hasher hasher, int dimensions, DistanceMeasure measure) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = measure;
@@ -149,7 +149,7 @@ public class SimplexSpace {
     return d;
   }
 
-  public double getDistance(long id1, long id2, SimplexSpace otherSpace, DistanceMeasure measure) {
+  public double getDistance(long id1, long id2, SimplexSpaceLOD otherSpace, DistanceMeasure measure) {
     if (null == measure)
       measure = this.measure;
     Hash h1 = idSetMap.get(id1);
@@ -217,3 +217,4 @@ public class SimplexSpace {
     return x;
   }
 }
+
