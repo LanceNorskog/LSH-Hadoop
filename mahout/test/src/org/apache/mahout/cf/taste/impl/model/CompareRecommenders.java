@@ -2,10 +2,15 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
+
+import lsh.core.OrthonormalHasher;
+import lsh.core.VertexTransitiveHasher;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
+import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
@@ -20,10 +25,21 @@ import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.neighborhood.SimplexSimilarity;
+import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
+import org.apache.mahout.cf.taste.neighborhood.SimplexUserNeighborhood;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.apache.mahout.common.distance.DistanceMeasure;
+import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
+import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
+import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
+import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
+import org.apache.mahout.math.Vector;
+
+import working.SemanticVectorFactory;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
@@ -59,20 +75,24 @@ public class CompareRecommenders {
   TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
     Recommender estimatingRecco = doEstimatingUser(glModel);
-    Recommender slope1Recco = doSlope1Recco(glModel);
-    Recommender pearsonRecco = doPearsonItemRecco(glModel);
+//    Recommender slope1Recco = doSlope1Recco(glModel);
+//    Recommender pearsonRecco = doPearsonItemRecco(glModel);
+    Recommender simplexRecco = doEstimatingSimplexUser(glModel);
     OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
-    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
-    tracker = new CompactRunningAverage();
-    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
-    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, "slope1_pearson");
-    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
-    tracker = new CompactRunningAverage();
-    bsrv.evaluate(slope1Recco, estimatingRecco, SAMPLES, tracker, "slope1_estimating");
-    System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
+    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, "estimating_simplex");
+    System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
+//    tracker = new CompactRunningAverage();
+//    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
+//    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
+//    tracker = new CompactRunningAverage();
+//    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, "slope1_pearson");
+//    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
+//    tracker = new CompactRunningAverage();
+//    bsrv.evaluate(slope1Recco, estimatingRecco, SAMPLES, tracker, "slope1_estimating");
+//    System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
 
     // this is really slow.
     //    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
@@ -86,6 +106,66 @@ public class CompareRecommenders {
    * These are all from examples in the web site and the book. Given that none of them 
    * generate similar recommendations, I'd say they are suspect.
    */
+
+  private static Recommender doEstimatingSimplexUser(DataModel bcModel) throws TasteException {
+    int DIMS = 100;
+//    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
+    SimplexSpace userSpace = getSpace(DIMS);
+    SimplexSpace userSpace5 = getSpace(DIMS);
+    userSpace5.setLOD(8);
+    addUserSimplices(userSpace, userSpace5, bcModel);
+    SimplexSpace itemSpace = getSpace(DIMS);
+    addItemSimplices(itemSpace, bcModel);
+    UserSimilarity similarity = new SimplexSimilarity(userSpace, itemSpace, null);
+    UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace, userSpace5);
+    return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
+  }
+
+  private static SimplexSpace getSpace(int DIMS) {
+    DistanceMeasure measure = new MinkowskiDistanceMeasure(1.5);  //  new EuclideanDistanceMeasure();
+//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+//    DistanceMeasure measure = new ManhattanDistanceMeasure();
+//  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.1), DIMS, measure);
+    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
+    /*
+     * LOD 8
+     * mink 1.5
+     * ortho 0.1
+     * matches 90
+     * 0.89
+     */
+    /*
+     * LOD 8
+     * mink 1.5
+     * vertex 0.2
+     * matches 59
+     * score 0.69
+     */
+  }
+
+  private static void addUserSimplices(SimplexSpace space, SimplexSpace spaceLOD, DataModel bcModel) throws TasteException {
+    SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
+    LongPrimitiveIterator lpi = bcModel.getUserIDs();
+    while (lpi.hasNext()) {
+      Long userID = lpi.nextLong();
+      Vector sv = svf.getUserVector(userID, 3, 50);
+      if (null != sv) {
+        space.addVector(userID, sv);
+        spaceLOD.addVector(userID, sv);
+      }
+    }
+  }
+
+  private static void addItemSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+    SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
+    LongPrimitiveIterator lpi = bcModel.getItemIDs();
+    while (lpi.hasNext()) {
+      Long itemID = lpi.nextLong();
+      Vector sv = svf.getItemVector(itemID, 3, 50);
+      if (null != sv)
+        space.addVector(itemID, sv);
+    }
+  }
 
   private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
     UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);

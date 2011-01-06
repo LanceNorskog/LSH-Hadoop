@@ -18,6 +18,7 @@ import java.util.Set;
  */
 
 public class Lookup {
+    int dimensions = -1;
 	final public Hasher hasher;
 	final public Set<Point> points;
 	final public Set<Corner> corners;
@@ -47,20 +48,20 @@ public class Lookup {
 	}
 
 	public void loadCP(Reader r, String payload) throws IOException {
-		Utils.load_corner_points_format(r, payload, this, null, null);
+		dimensions = Utils.load_corner_points_format(r, payload, this, null, null);
 	}
 
 	public void loadPC(Reader r, String payload) throws IOException {
-		Utils.load_point_corners_format(r, payload, this, null, null);
+		dimensions = Utils.load_point_corners_format(r, payload, this, null, null);
 	}
 
 	public void loadPoints(Reader r, String payload) throws IOException {
-		Utils.load_point(r, points, ids, id2point, payload);
+		dimensions = Utils.load_point(r, points, ids, id2point, payload);
 	}
 
 	// untested - ids are corner.id, not point.id?
 	public void loadCorners(Reader r, String payload) throws IOException {
-		Utils.load_corner(r, corners, ids, id2corner, payload);
+		dimensions= Utils.load_corner(r, corners, ids, id2corner, payload);
 	}
 
 	private Collection<Corner> getMatchingCorners(String id) {
@@ -123,4 +124,7 @@ public class Lookup {
 		}
 	}
 
+	public int getDimensions() {
+	    return dimensions;
+	}
 }

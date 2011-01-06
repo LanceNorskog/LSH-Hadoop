@@ -7,51 +7,60 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.recommender.GenericRecommendedItem;
-import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.cf.taste.recommender.RecommendedItem;
+import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.apache.mahout.common.distance.DistanceMeasure;
+import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
+import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.Vector;
 
 /*
- * Load semantic vectors tables.
+ * Load semantic vectors point vectors, LSH format.
+ * 
+ * Mahout-ified version.
+ * 
+ * Values: 0.0 <= pref <= 1.0, normal distribution. 0.5 default.
  */
 
-public class PointTextDataModel extends AbstractDataModel {
+public class LSHDataModel extends AbstractDataModel implements ItemSimilarity {
   // Use L(0.5) instead of L1 (Manhattan) or L2 (Euclidean)
   // L(0.5) seems to give a saddle for 200-300 dimension saddle
-  private final double FRACTION_L = 0.5;
-  // raw text corner-first LSH of users
-  final Lookup userDB;
-  // raw text corner-first LSH of items
-  final Lookup itemDB;
+  public static final double FRACTION_L = 0.5;
+  public static final float DEFAULT_PREF = 0.5f;
+  int fullDimensions;
   int dimensions;
-  final double scale = 1;
-  final double offset = 0;
+  final DistanceMeasure measure;
+  Map<Long,Vector> users = new HashMap<Long, Vector>();
+  Map<Long,Vector> items = new HashMap<Long, Vector>();
+  // debug
   public double total = 0;
   public int count = 0;
   public int clamped = 0;
-
   public long[] buckets = new long[10];
   private double rescale = Double.NaN;
 
-  public PointTextDataModel(String pointsPath) throws IOException {
-    this(new File(pointsPath));
+  public LSHDataModel(String pointsPath, DistanceMeasure measure) throws IOException {
+    this(new File(pointsPath), measure);
   }
 
-  public PointTextDataModel(File pointsFile) {
-    userDB = new Lookup(null, true, false, true, true, false, false, false, false);
-    itemDB = new Lookup(null, true, false, true, true, false, false, false, false);
+  public LSHDataModel(File pointsFile, DistanceMeasure measure) {
+    // raw text corner-first LSH of users
+    final Lookup userDB;
+    //  // raw text corner-first LSH of items
+    final Lookup itemDB;
+    userDB = new Lookup(null, true, false, true, false, false, false, false, false);
+    itemDB = new Lookup(null, true, false, true, false, false, false, false, false);
     try {
       FileReader itemReader = new FileReader(pointsFile);
       FileReader userReader = new FileReader(pointsFile);
@@ -66,33 +75,43 @@ public class PointTextDataModel extends AbstractDataModel {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    dimensions = userDB.getDimensions();
+    this.measure = measure;
+    fullDimensions = userDB.getDimensions();
+    dimensions = fullDimensions;
     rescale  = Math.pow(dimensions, 1/FRACTION_L);
+
+    // TODO: clear points arrays on the way
+    for(Point p: userDB.points) {
+      users.put(Long.parseLong(p.id), new DenseVector(p.values));
+    }
+    for(Point p: itemDB.points) {
+      items.put(Long.parseLong(p.id), new DenseVector(p.values));
+    }
   }
 
   @Override
   public LongPrimitiveIterator getItemIDs() throws TasteException {
-    return new LPIS(itemDB.ids.iterator());
+    return new LPIL(items.keySet().iterator());
   }
 
   @Override
   public FastIDSet getItemIDsFromUser(long userID) throws TasteException {
     int nitems = getNumItems();
     FastIDSet fids = new FastIDSet(nitems);
-    for(int i = 0; i < nitems; i++) {
-      fids.add(i);
+    for(Long itemID: items.keySet()) {
+      fids.add(itemID);
     }
     return fids;
   }
 
   @Override
   public int getNumItems() throws TasteException {
-    return itemDB.ids.size();
+    return items.size();
   }
 
   @Override
   public int getNumUsers() throws TasteException {
-    return userDB.ids.size();
+    return users.size();
   }
 
   @Override
@@ -110,18 +129,17 @@ public class PointTextDataModel extends AbstractDataModel {
   @Override
   public Float getPreferenceValue(long userID, long itemID)
   throws TasteException {
-    return getPreferenceValuePoint(userID, itemID);
+    return getPreferenceValuePoint(users.get(userID), items.get(itemID));
   }
 
-  private Float getPreferenceValuePoint(long userID, long itemID) {
-    Point userP = userDB.id2point.get((userID) + "");
-    Point itemP = itemDB.id2point.get((itemID) + "");
-    if (null == userP || null == itemP)
-      return 0.5f;
-    double distance = fractionalD(itemP.values, userP.values);
+  private Float getPreferenceValuePoint(Vector v1, Vector v2) {
+    if (null == v1 || null == v2) {
+      return DEFAULT_PREF;
+    }
+    double distance = measure.distance(v1, v2) / rescale;
     total += distance;
     count++;
-    //		System.err.println(userID +"," + itemID + "," + distance);
+    System.err.println(v1 +"," + v2 + "," + distance);
     double rating = distance2rating(distance);
     return (float) rating;
   }
@@ -143,69 +161,22 @@ public class PointTextDataModel extends AbstractDataModel {
   private PreferenceArray getPreferencesFromUserPoint(long userID)
   throws NoSuchUserException {
     int prefIndex = 0;
-    Point up = userDB.id2point.get((userID) + "");
-    if (null == up)
+    Vector v = users.get(userID);
+    if (null == v)
       return new GenericUserPreferenceArray(0);
-    PreferenceArray prefs = new GenericUserPreferenceArray(itemDB.ids.size());
-    for(String item: itemDB.ids) {
-      Point ip = itemDB.id2point.get(item);
-      double distance = fractionalD(up.values, ip.values);
-      total += distance;
-      float rating = (float) distance2rating(distance);
+    PreferenceArray prefs = new GenericUserPreferenceArray(items.size());
+    for(Entry<Long, Vector> itemEntry: items.entrySet()) {
+      Long itemID = itemEntry.getKey();
+      float rating = (float) getPreferenceValuePoint(users.get(userID), items.get(itemID));
       prefs.setUserID(prefIndex, userID);
-      prefs.setItemID(prefIndex, Long.parseLong(item));
+      prefs.setItemID(prefIndex, itemID);
       prefs.setValue(prefIndex, rating);
       prefIndex++;
     }
     return prefs;
   }
 
-  // L<1 distance
-  public double minkowskiD(double[] a, double[] b) {
-    double sum = 0;
-    for(int i = 0; i < dimensions; i++) {
-      sum += Math.pow(Math.abs(a[i] - b[i]), FRACTION_L);
-    }
-    double dist = Math.pow(sum, 1/FRACTION_L);
-    return dist / rescale;
-//    double r = sum / dimensions;
-//    return r;
-  }
-
-  // L<1 distance w/o powers - bogus Minkowski
-  public double fractionalD(double[] a, double[] b) {
-    double sum = 0;
-    for(int i = 0; i < dimensions; i++) {
-      sum += Math.abs(a[i] - b[i]);
-    }
-    double dist = Math.pow(sum, 1/FRACTION_L);
-    return dist / rescale;
-//    double r = sum / dimensions;
-//    return r;
-  }
-
-  // L1 rectangular distance
-  public double manhattanD(double[] a, double[] b) {
-    double sum = 0;
-    for(int i = 0; i < dimensions; i++) {
-      sum += Math.abs(a[i] - b[i]);
-    }
-    double r = sum / dimensions;
-    return r;
-  }
-
-  // L2 euclidean distance
-  public double euclidD(double[] a, double[] b) {
-    double sum = 0;
-    for(int i = 0; i < dimensions; i++) {
-      sum += (a[i] - b[i]) * (a[i] - b[i]);
-    }			
-    double dist = Math.sqrt(sum);
-    return dist / Math.sqrt(dimensions);
-  }
-
   double distance2rating(double d) {
-
     if (d < 0.0 || d > 1.0d) {
       d = Math.max(0.01, d);
       d = Math.min(0.99, d);
@@ -220,7 +191,7 @@ public class PointTextDataModel extends AbstractDataModel {
 
   @Override
   public LongPrimitiveIterator getUserIDs() throws TasteException {
-    return new LPIS(userDB.ids.iterator());
+    return new LPIL(users.keySet().iterator());
   }
 
   @Override
@@ -247,13 +218,32 @@ public class PointTextDataModel extends AbstractDataModel {
     throw new UnsupportedOperationException();
 
   }
-  
+
+  /* ItemSimilarity methods */
+  @Override
+  public double[] itemSimilarities(long itemID1, long[] itemID2s)
+      throws TasteException {
+    double[] prefs = new double[itemID2s.length];
+    for(int i = 0; i < itemID2s.length; i++) {
+      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
+      prefs[i] = (double) distance;
+    }
+    return prefs;
+  }
+
+  @Override
+  public double itemSimilarity(long itemID1, long itemID2)
+      throws TasteException {
+    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
+    return (double) distance;
+  }
+
   public int getDimensions() {
     return dimensions;
   }
 
   public void setDimensions(int dim) throws TasteException {
-    if (dim > userDB.getDimensions())
+    if (dim > fullDimensions)
       throw new TasteException();
     this.dimensions = dim;
   }
@@ -264,24 +254,21 @@ public class PointTextDataModel extends AbstractDataModel {
    * @throws TasteException 
    */
   public static void main(String[] args) throws IOException, TasteException {
-    PointTextDataModel model = new PointTextDataModel(args[0]);
+    LSHDataModel model = new LSHDataModel(args[0], new ManhattanDistanceMeasure());
     model.hashCode();
-    double pow =  Math.pow(100, 0.5);
     System.out.println("pow: " + Math.pow(200, 0.5));
     System.out.println("Items");
-    doscan(model.itemDB, model.dimensions);
+    doscan(model.items, model.dimensions);
     System.out.println("Users");
-    doscan(model.userDB, model.dimensions);
+    doscan(model.users, model.dimensions);
     dodistances(model);
   }
 
-  static void dodistances(PointTextDataModel model) throws TasteException {
+  static void dodistances(LSHDataModel model) throws TasteException {
     Float min= 10000f, max = 0f;
-    for(String userID: model.userDB.ids) {
-      for(String itemID: model.itemDB.ids) {
-        long u = Long.parseLong(userID);
-        long id = Long.parseLong(itemID);
-        Float f = model.getPreferenceValue(u, id);
+    for(Long userID: model.users.keySet()) {
+      for(Long itemID: model.items.keySet()) {
+        Float f = model.getPreferenceValue(userID, itemID);
         if (min > f)
           min = f;
         if (max < f)
@@ -299,20 +286,19 @@ public class PointTextDataModel extends AbstractDataModel {
     System.out.println("range:   " + (max - min));
   }
 
-  static void doscan(Lookup points, int dimensions) {
+  static void doscan(Map<Long, Vector> vectors, int dimensions) {
     double min = 100000;
     double max = -100000;
     double sum = 0;
-    for(Point p: points.points) {
-      double[] values = p.values;
+    for(Vector v: vectors.values()) {
       for(int i = 0; i < dimensions;i++) {
-        min = Math.min(values[i], min);
-        max = Math.max(values[i], max);
-        sum += values[i];
+        min = Math.min(v.get(i), min);
+        max = Math.max(v.get(i), max);
+        sum += v.get(i);
       }
     }
-    System.out.println("min: " + min + ", max: " + max + ", mean: " + sum / (points.points.size() * dimensions));
+    System.out.println("min: " + min + ", max: " + max + ", mean: " + sum / (vectors.size() * dimensions));
 
   }
 
-}
+ }

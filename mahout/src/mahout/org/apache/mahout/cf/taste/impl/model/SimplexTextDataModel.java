@@ -75,7 +75,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 
   @Override
   public LongPrimitiveIterator getItemIDs() throws TasteException {
-    return new LPI(itemDB.id2corner.keySet().iterator());
+    return new LPIS(itemDB.id2corner.keySet().iterator());
   }
 
   @Override
@@ -226,7 +226,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
 
   @Override
   public LongPrimitiveIterator getUserIDs() throws TasteException {
-    return new LPI(userDB.id2corner.keySet().iterator());
+    return new LPIS(userDB.id2corner.keySet().iterator());
   }
 
   @Override
