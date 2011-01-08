@@ -49,30 +49,33 @@ import working.SemanticVectorFactory;
  *                            training.dat test.dat     <-- compare training and test data
  */
 
-public class CompareRecommenders {
+public class CompareRecommendersSubsample {
   static final int SAMPLES = 50;
   static SimplexUserNeighborhood sun = null;
 
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-    if (args.length == 1)
-      crossCompare(args);
-    else
+//    if (args.length == 1)
+//      crossCompare(args);
+//    else
       trainingTestCompare(args);
   }
 
   // give two ratings.dat files, training and test
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
-    GroupLensDataModel glModelTraining = new GroupLensDataModel(new File(args[0])); 
-    GroupLensDataModel glModelTest = new GroupLensDataModel(new File(args[1])); 
+    GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
+    SamplingDataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7); 
+    SamplingDataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0); 
     OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
     RunningAverage tracker = new CompactRunningAverage();
 
     Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
     Recommender testRecco = doEstimatingSimplexUser(glModelTest);
+    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "simplex_training_test");
+    System.err.println("Training v.s Test score: " + tracker.getAverage());
 //    Recommender trainingRecco = doEstimatingUser(glModelTraining);
 //    Recommender testRecco = doEstimatingUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "training_test");
-    System.err.println("Training v.s Test score: " + tracker.getAverage());
+//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "training_test");
+//    System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
   private static void crossCompare(String[] args) throws IOException,
@@ -125,10 +128,10 @@ public class CompareRecommenders {
     SimplexSpace userSpaceLOD = getSpace(DIMS);
 //    userSpace.doUnhash = false;
 //    userSpaceLOD.doUnhash = false;
-    userSpaceLOD.setLOD(4);
+    userSpaceLOD.setLOD(3);
     addUserSimplices(userSpace, userSpaceLOD, bcModel);
     SimplexSpace itemSpace = getSpace(DIMS);
-    itemSpace.doUnhash = false;
+//    itemSpace.doUnhash = false;
     addItemSimplices(itemSpace, bcModel);
     UserSimilarity similarity = new SimplexSimilarity(userSpace, itemSpace, null);
     UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace, userSpaceLOD);
@@ -139,11 +142,10 @@ public class CompareRecommenders {
   private static SimplexSpace getSpace(int DIMS) {
 //    DistanceMeasure measure = new ChebyshevDistanceMeasure(); 
 //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
-    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
-//    DistanceMeasure measure = new EuclideanDistanceMeasure();
-//    DistanceMeasure measure = new ManhattanDistanceMeasure();
-//  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
-    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
+//    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
+    DistanceMeasure measure = new EuclideanDistanceMeasure();
+  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
+//    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
     /*
      * LOD 8
      * mink 1.5

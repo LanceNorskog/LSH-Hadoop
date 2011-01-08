@@ -190,17 +190,16 @@ public class OrderBasedRecommenderEvaluator {
     int[] vectorZ = new int[subset];
     int[] vectorZabs = new int[subset];
 
-    long bubble = sort(itemsL, itemsR);
     int hamming = slidingWindowHamming(itemsR, itemsL);
     if (hamming > samples)
       ((Object)null).hashCode();
+
+    double bubble = 0; // Math.log(sort(itemsL, itemsR));
+//  variance = Math.log(bubble);
     getVectorZ(itemsR, itemsL, vectorZ, vectorZabs);
-    double normalW = normalWilcoxon(vectorZ, vectorZabs);
+    double normalW = 0; // normalWilcoxon(vectorZ, vectorZabs);
     double meanRank = getMeanRank(vectorZabs);
-    double variance = 0;
-    // case statement for requested value
-    variance = meanRank;
-    variance = Math.sqrt(variance);
+    double variance = meanRank;
     if (null != csvOut)
       csvOut.println(tag + "," + userID + "," + samples + "," + subset + "," + hamming + ","  + bubble + "," + meanRank + "," + normalW + "," + variance);
     return variance;

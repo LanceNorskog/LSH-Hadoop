@@ -15,55 +15,59 @@ import org.apache.mahout.math.Vector;
 /**
  * @author lance
  *
- * Implement neighborhood based on LOD-based SimplexSpace
+ * Implement neighborhood based on LOD-based SimplexSpace.
+ * Store two SimplexSpaces, with the same hash values but at two 
+ * different Levels Of Detail (LOD). Neighbors are users in the outer
+ * outer space but not in the local space. (All users in the same
+ * hash are distance 0, so they're not very useful.)
  */
 public class SimplexUserNeighborhood implements UserNeighborhood {
-  final SimplexSpace space;
-  final SimplexSpace spaceLOD;
-  final long[] EMPTY = new long[0];
-  
+  public final SimplexSpace space;
+  public final SimplexSpace spaceLOD;
+  static final long[] EMPTY = new long[0];
+  public int total = 0, subtracted = 0;
+
   public SimplexUserNeighborhood(SimplexSpace space, SimplexSpace spaceLOD) {
     this.space = space;
     this.spaceLOD = spaceLOD;
   }
-  
+
   /*
    * External pass to clone. migrate to here.
    */
   public void addUser(Long userID, Vector v) {
     space.addVector(userID, v);
+    spaceLOD.addVector(userID, v);
   }
-  
-  // All of those crazy recommender collections?
-  
+
   /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.neighborhood.UserNeighborhood#getUserNeighborhood(long)
    */
   @Override
   public long[] getUserNeighborhood(long userID) throws TasteException {
     FastIDSet nabes = space.findNeighbors(userID);
-//    if (null != values)
-//      return values;
     FastIDSet nabesLOD = spaceLOD.findNeighbors(userID);
-    if (null == nabesLOD) 
+    if (null == nabesLOD || nabesLOD.size() == 0) 
       return EMPTY;
-    LongPrimitiveIterator lpi = nabes.iterator();
-    while(lpi.hasNext()) {
-      long id = lpi.nextLong();
-      if (nabesLOD.contains(id))
-        nabesLOD.remove(id);
+    int size = nabesLOD.size();
+    nabesLOD.removeAll(nabes);
+    total += size;
+    subtracted += size - nabesLOD.size();
+    return getLongArray(nabesLOD);
+  }
+
+  private long[] getLongArray(FastIDSet nabes) {
+    if (nabes.size() == 0)
+      return EMPTY;
+    LongPrimitiveIterator lpi;
+    long[] values = new long[nabes.size()];
+    lpi = nabes.iterator();
+    int count = 0;
+    while (lpi.hasNext()) {
+      values[count++] = lpi.nextLong();
     }
-    if (nabesLOD.size() > 0) {
-      long[] values = new long[nabesLOD.size()];
-      lpi = nabesLOD.iterator();
-      int count = 0;
-      while (lpi.hasNext()) {
-        values[count++] = lpi.nextLong();
-      }
-      System.out.println("nabors: " + values.length);
-      return values;
-    }
-    return EMPTY;
+    System.out.println("nabors: " + values.length);
+    return values;
   }
 
   /* (non-Javadoc)
@@ -71,7 +75,8 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
    */
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
-    throw new UnsupportedOperationException();
+    // something else created and maintains the stored spaces
+    ;
   }
 
 }

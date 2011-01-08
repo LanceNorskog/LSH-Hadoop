@@ -12,6 +12,7 @@ import java.util.Set;
 
 import lsh.core.Hasher;
 
+import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -34,7 +35,7 @@ public class SimplexSpace {
   Map<Hash, Set<Long>> hashSetMap = new HashMap<Hash, Set<Long>>();
   final int dimensions;
   public double distance = 0.0001;
-  public int nUsers = 1;
+  public boolean doUnhash = true;
   private final DistanceMeasure measure;
   int lod = 0;
   private int lodMask;
@@ -90,54 +91,54 @@ public class SimplexSpace {
    *    expand - expand search N counts outward
    */
 
-//  public long[] findNeighbors(long id, int expand) {
-//    Hash central = idSetMap.get(id);
-//    if (null == central)
-//      return null;
-//    FastIDSet others = new FastIDSet();
-//    Hash cloned = (Hash) central.clone();
-//    int found = 0;
-//    for (int i = 0; i < dimensions; i++) {
-//      int last = found;
-//      cloned.hashes[i] = central.hashes[i] + 1;
-//      Set<Long> hashLongs = hashSetMap.get(cloned);
-//      if (null != hashLongs)
-//        for(Long otherID: hashLongs) {
-//          if (otherID != id)
-//            others.add(otherID);
-//        }
-//      cloned.hashes[i] = central.hashes[i] - 1;
-//      hashLongs = hashSetMap.get(cloned);
-//      if (null != hashLongs)
-//        for(Long otherID: hashLongs) {
-//          if (otherID != id)
-//            others.add(otherID);
-//        }     
-//      found = others.size();
-//      if (found > last) {
-//        System.out.println(i + "," + (found - last));
-//      }
-//    }
-//    long[] values = new long[others.size()];
-//    LongPrimitiveIterator lpi = others.iterator();
-//    for(int i = 0; i < others.size(); i++) {
-//      values[i] = lpi.nextLong();
-//    }
-//    return values;
-//  }
+  //  public long[] findNeighbors(long id, int expand) {
+  //    Hash central = idSetMap.get(id);
+  //    if (null == central)
+  //      return null;
+  //    FastIDSet others = new FastIDSet();
+  //    Hash cloned = (Hash) central.clone();
+  //    int found = 0;
+  //    for (int i = 0; i < dimensions; i++) {
+  //      int last = found;
+  //      cloned.hashes[i] = central.hashes[i] + 1;
+  //      Set<Long> hashLongs = hashSetMap.get(cloned);
+  //      if (null != hashLongs)
+  //        for(Long otherID: hashLongs) {
+  //          if (otherID != id)
+  //            others.add(otherID);
+  //        }
+  //      cloned.hashes[i] = central.hashes[i] - 1;
+  //      hashLongs = hashSetMap.get(cloned);
+  //      if (null != hashLongs)
+  //        for(Long otherID: hashLongs) {
+  //          if (otherID != id)
+  //            others.add(otherID);
+  //        }     
+  //      found = others.size();
+  //      if (found > last) {
+  //        System.out.println(i + "," + (found - last));
+  //      }
+  //    }
+  //    long[] values = new long[others.size()];
+  //    LongPrimitiveIterator lpi = others.iterator();
+  //    for(int i = 0; i < others.size(); i++) {
+  //      values[i] = lpi.nextLong();
+  //    }
+  //    return values;
+  //  }
 
-    public FastIDSet findNeighbors(long id) {
-      Hash hash = idSetMap.get(id);
-      if (null == hash)
-        return null;
-      FastIDSet others = new FastIDSet();
-      Set<Long> hashLongs = hashSetMap.get(hash);
-      for(Long otherID: hashLongs) {
-        if (otherID != id)
-          others.add(otherID);
-      }
-      return others;
+  public FastIDSet findNeighbors(long id) {
+    Hash hash = idSetMap.get(id);
+    if (null == hash)
+      return null;
+    FastIDSet others = new FastIDSet();
+    Set<Long> hashLongs = hashSetMap.get(hash);
+    for(Long otherID: hashLongs) {
+      if (otherID != id)
+        others.add(otherID);
     }
+    return others;
+  }
 
   public double getDistance(long id1, long id2, DistanceMeasure measure) {
     if (null == measure)
@@ -169,12 +170,15 @@ public class SimplexSpace {
   private double hashDistance(Hash h1, Hash h2, DistanceMeasure measure) {
     double[] d1 = new double[dimensions];
     double[] d2 = new double[dimensions];
-    hasher.unhash(h1.hashes, d1);
-    hasher.unhash(h2.hashes, d2);
-    //     for(int i = 0; i < h1.hashes.length; i++) {
-    //       d1[i] = h1.hashes[i];
-    //       d2[i] = h2.hashes[i];
-    //     }
+    if (doUnhash) {
+      hasher.unhash(h1.hashes, d1);
+      hasher.unhash(h2.hashes, d2);
+    } else {
+      for(int i = 0; i < h1.hashes.length; i++) {
+        d1[i] = h1.hashes[i];
+        d2[i] = h2.hashes[i];
+      }
+    }
     Vector v1 = new DenseVector(d1);
     Vector v2 = new DenseVector(d2);
     double distance = measure.distance(v1, v2);
@@ -184,7 +188,7 @@ public class SimplexSpace {
   public int getDimensions() {
     return dimensions;
   }
-  
+
   public int getLOD() {
     return this.lod;
   }
@@ -198,6 +202,16 @@ public class SimplexSpace {
       x++;
     }
     this.lodMask = mask;
+  }
+
+  public void stDev() {
+    CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
+    for(Hash h: hashSetMap.keySet()) {
+      std.addDatum(hashSetMap.get(h).size());
+    }
+    System.out.println("Entries: " + hashSetMap.size());
+    System.out.println("Mean: " + std.getAverage());
+    System.out.println("Stdev: " + std.getStandardDeviation());
   }
 
   @Override
