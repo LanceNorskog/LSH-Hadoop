@@ -16,7 +16,6 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
@@ -35,12 +34,14 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
-import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
+//import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
+import working.OrderBasedRecommenderEvaluator;
 import working.SemanticVectorFactory;
+import working.OrderBasedRecommenderEvaluator.Formula;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
@@ -64,14 +65,14 @@ public class CompareRecommenders {
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModelTraining = new GroupLensDataModel(new File(args[0])); 
     GroupLensDataModel glModelTest = new GroupLensDataModel(new File(args[1])); 
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
+    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
-    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
-    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
-//    Recommender trainingRecco = doEstimatingUser(glModelTraining);
-//    Recommender testRecco = doEstimatingUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "training_test");
+//    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
+//    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
+    Recommender trainingRecco = doEstimatingUser(glModelTraining);
+    Recommender testRecco = doEstimatingUser(glModelTest);
+    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "training_test");
     System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
@@ -82,11 +83,11 @@ public class CompareRecommenders {
 //    Recommender slope1Recco = doSlope1Recco(glModel);
 //    Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doEstimatingSimplexUser(glModel);
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
+    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
-    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, "estimating_simplex");
+    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, Formula.MEANRANK, tracker, "estimating_simplex");
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");
@@ -139,8 +140,8 @@ public class CompareRecommenders {
   private static SimplexSpace getSpace(int DIMS) {
 //    DistanceMeasure measure = new ChebyshevDistanceMeasure(); 
 //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
-    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
-//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+//    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
+    DistanceMeasure measure = new EuclideanDistanceMeasure();
 //    DistanceMeasure measure = new ManhattanDistanceMeasure();
 //  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
     return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);

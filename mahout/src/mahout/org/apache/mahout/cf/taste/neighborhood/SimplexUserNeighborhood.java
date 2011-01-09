@@ -66,7 +66,7 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
     while (lpi.hasNext()) {
       values[count++] = lpi.nextLong();
     }
-    System.out.println("nabors: " + values.length);
+//    System.out.println("nabors: " + values.length);
     return values;
   }
 

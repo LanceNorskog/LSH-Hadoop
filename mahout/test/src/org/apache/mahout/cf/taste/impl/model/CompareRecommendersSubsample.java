@@ -16,7 +16,6 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
@@ -35,12 +34,14 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
-import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
+//import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
+import working.OrderBasedRecommenderEvaluator;
 import working.SemanticVectorFactory;
+import working.OrderBasedRecommenderEvaluator.Formula;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
@@ -63,19 +64,19 @@ public class CompareRecommendersSubsample {
   // give two ratings.dat files, training and test
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    SamplingDataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7); 
-    SamplingDataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0); 
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0); 
+    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
-    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
-    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "simplex_training_test");
-    System.err.println("Training v.s Test score: " + tracker.getAverage());
-//    Recommender trainingRecco = doEstimatingUser(glModelTraining);
-//    Recommender testRecco = doEstimatingUser(glModelTest);
-//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, "training_test");
+//    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
+//    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
+//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "simplex_training_test");
 //    System.err.println("Training v.s Test score: " + tracker.getAverage());
+    Recommender trainingRecco = doEstimatingUser(glModelTraining);
+    Recommender testRecco = doEstimatingUser(glModelTest);
+    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "training_test");
+    System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
   private static void crossCompare(String[] args) throws IOException,
@@ -85,11 +86,11 @@ public class CompareRecommendersSubsample {
 //    Recommender slope1Recco = doSlope1Recco(glModel);
 //    Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doEstimatingSimplexUser(glModel);
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(System.out);
+    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
-    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, "estimating_simplex");
+    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, Formula.MEANRANK, tracker, "estimating_simplex");
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");

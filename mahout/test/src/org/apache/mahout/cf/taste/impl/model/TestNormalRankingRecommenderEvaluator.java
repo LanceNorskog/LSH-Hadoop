@@ -15,7 +15,6 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
 import org.apache.mahout.cf.taste.impl.model.SimplexRecommender;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
@@ -31,6 +30,9 @@ import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+
+import working.OrderBasedRecommenderEvaluator;
+import working.OrderBasedRecommenderEvaluator.Formula;
 
 /*
  * Evaluate recommender by comparing order of all raw prefs with order in recommender's output for that user.
@@ -62,7 +64,8 @@ public class TestNormalRankingRecommenderEvaluator {
     PointTextDataModel pointModelBig = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k_500d/part-r-00000");
 
     int samples = 500;
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator(null);
+    Formula formula = Formula.MEANRANK;
+    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
     //		WANT: each recommends top N out of all. Find common items. COunt up distances between items. sqrt.
@@ -81,62 +84,62 @@ public class TestNormalRankingRecommenderEvaluator {
 //    System.err.println("Estimating v.s. point model core: " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(25);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(50);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(75);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(100);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(150);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     tracker = new CompactRunningAverage();
     pointModelBig.setDimensions(200);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(250);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(300);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(350);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(400);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(450);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
     pointModelBig.setDimensions(500);
-    bsrv.evaluate(estimatingRecco, pointModelBig, samples, tracker, "estimating_point200");
+    bsrv.evaluate(estimatingRecco, pointModelBig, samples, formula, tracker, "estimating_point200");
     System.err.println("Estimating v.s. point model big score (" + pointModelBig.getDimensions() + "): " + tracker.getAverage());
    
 //    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(pointModel, pointModel200, samples, tracker, "point150_point200");
+//    bsrv.evaluate(pointModel, pointModel200, samples, formula, tracker, "point150_point200");
 //    System.err.println("point150 v.s. point200 score: " + tracker.getAverage());
 
 //    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(estimatingRecco, pearsonRecco, samples, tracker, "estimating_pearson");
+//    bsrv.evaluate(estimatingRecco, pearsonRecco, samples, formula, tracker, "estimating_pearson");
 //    System.err.println("Estimating v.s pearson score: " + tracker.getAverage());
 //    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(estimatingRecco, pointModelTraining, samples, tracker, "estimating_training");
+//    bsrv.evaluate(estimatingRecco, pointModelTraining, samples, formula, tracker, "estimating_training");
 //    System.err.println("Estimating v.s. training score: " + tracker.getAverage());
 //    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(slope1Recco, pointModel, samples, tracker, "slope1_point");
+//    bsrv.evaluate(slope1Recco, pointModel, samples, formula, tracker, "slope1_point");
 //    System.err.println("Slope1 v.s. point model score: " + tracker.getAverage());
 //    tracker = new CompactRunningAverage();
-//    bsrv.evaluate(slope1Recco, pointModelTraining, samples, tracker, "slope1_training");
+//    bsrv.evaluate(slope1Recco, pointModelTraining, samples, formula, tracker, "slope1_training");
 //    System.err.println("Slope1 v.s. point training model score: " + tracker.getAverage());
 //    tracker = new CompactRunningAverage();
 //    bsrv.evaluate(pearsonRecco, pointModel, samples, tracker, "pearson_point");
