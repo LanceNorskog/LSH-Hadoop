@@ -62,27 +62,31 @@ public class SemanticVectorFactory {
     if (samples == 0 || samples >= nItems) {
       for(int i = 0; i < nItems; i++) {
         long itemID = items[i];
-        float pref = model.getPreferenceValue(userID, itemID);
+        Float pref = model.getPreferenceValue(userID, itemID);
+        if (null == pref)
+          continue;
         pref = (pref - minPreference)/(maxPreference - minPreference);
         prefSum += pref;
+        count++;
       }
-      count = nItems;
     } else {
       samples = Math.min(samples, nItems);
-      while(count < samples) {
+      int marker = 0;
+      while(marker < samples) {
         long itemID;
         while(true) {
           long sample;
-          sample = rnd.nextInt(nItems);
+          sample = Math.abs(rnd.nextInt()) % nItems;
           if (items[(int) sample] >= 0) {
             itemID = items[(int) sample];
             items[(int) sample] = -1;
             break;
           }
         }
+        marker++;
         Float pref = model.getPreferenceValue(userID, itemID);
         if (null == pref) {
-          System.out.println("userID not there: " + userID);
+          continue;
         }
         pref = (pref - minPreference)/(maxPreference - minPreference);
         prefSum += pref;
@@ -173,7 +177,7 @@ public class SemanticVectorFactory {
    * @throws IOException 
    * @throws TasteException 
    */
-  public static void main(String[] args) throws IOException, TasteException {
+  public  void main(String[] args) throws IOException, TasteException {
     DataModel model = new GroupLensDataModel(new File("/tmp/lsh_hadoop/GL_100k/ratings.dat"));
     int dimensions = 200;
     DistanceMeasure measure = new MinkowskiDistanceMeasure(1.5);
