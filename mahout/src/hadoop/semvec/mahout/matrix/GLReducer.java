@@ -15,7 +15,7 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.RandomFactory;
 import org.apache.mahout.math.RandomMatrix;
-import org.apache.mahout.math.RandomVector;
+import org.apache.mahout.math.RandomVectorOld;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 

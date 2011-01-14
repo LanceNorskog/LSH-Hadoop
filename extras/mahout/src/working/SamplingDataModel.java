@@ -1,45 +1,43 @@
 /**
  * 
  */
-package org.apache.mahout.cf.taste.impl.model;
+package working;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.hadoop.pseudo.UserIDsMapper;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.model.GenericItemPreferenceArray;
+import org.apache.mahout.cf.taste.impl.model.GenericPreference;
+import org.apache.mahout.cf.taste.impl.model.GenericUserPreferenceArray;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.math.bitvector.BitMatrix;
-import org.apache.mahout.math.bitvector.BitVector;
 
 /**
  * @author lance
  * 
  * Subsample entries in data model.
  */
-public class SamplingBuilderDataModel implements DataModel {
+public class SamplingDataModel implements DataModel {
   final DataModel delegate;
   final double lower;
   final double higher;
   Float defaultPref = 0.0f;
   final long numUsers;
-  final BitMatrix bits;
+  final boolean bits[][];
   final FastByIDMap<Integer> userIDMap = new FastByIDMap<Integer>();
   final FastByIDMap<Integer> itemIDMap = new FastByIDMap<Integer>();
 
-  public SamplingBuilderDataModel(DataModel delegate, double higher) throws TasteException {
+  public SamplingDataModel(DataModel delegate, double higher) throws TasteException {
     //    this.delegate = delegate;
     //    this.lower = 0.0;
     //    this.higher = higher;
@@ -48,12 +46,14 @@ public class SamplingBuilderDataModel implements DataModel {
     this(delegate, 0.0, higher);
   }
 
-  public SamplingBuilderDataModel(DataModel delegate, double lower, double higher) throws TasteException {
+  public SamplingDataModel(DataModel delegate, double lower, double higher) throws TasteException {
     this.delegate = delegate;
     this.lower = lower;
     this.higher = higher;
     numUsers = delegate.getNumUsers();
-    bits = new BitMatrix(delegate.getNumUsers(), delegate.getNumItems());
+    bits = new boolean[delegate.getNumUsers()][];
+    for(int i = 0; i < bits.length; i++)
+      bits[i] = new boolean[delegate.getNumItems()];
     fillBitCache();
   }
 
@@ -285,7 +285,7 @@ public class SamplingBuilderDataModel implements DataModel {
         double sample = rnd.nextDouble();
         if (sample >= lower && sample < higher) {
           Integer itemIndex = itemIDMap.get(pref.getItemID());
-          bits.put((Integer) userIndex, (Integer) itemIndex, true);
+          bits[(Integer) userIndex][(Integer) itemIndex] = true;
         }
       }
     }
@@ -299,7 +299,7 @@ public class SamplingBuilderDataModel implements DataModel {
           throw new NoSuchUserException();
         if (null == itemIndex)
           throw new NoSuchItemException();
-        boolean value = bits.get((int) userIndex, (int) itemIndex);
+        boolean value = bits[(int) userIndex][(int) itemIndex];
         return value;
   }
 
