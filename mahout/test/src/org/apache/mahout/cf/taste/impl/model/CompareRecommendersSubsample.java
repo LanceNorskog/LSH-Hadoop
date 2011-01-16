@@ -41,6 +41,7 @@ import org.apache.mahout.math.Vector;
 import working.ChebyshevDistanceMeasure;
 import working.OrderBasedRecommenderEvaluator;
 import working.PreferenceBasedRecommenderEvaluator;
+import working.RecommenderEvaluator;
 import working.SemanticVectorFactory;
 import working.OrderBasedRecommenderEvaluator.Formula;
 
@@ -71,7 +72,7 @@ public class CompareRecommendersSubsample {
     GroupLensDataModel glModel2 = new GroupLensDataModel(new File(args[1])); 
     DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.USER); 
     DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Mode.USER); 
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
@@ -110,7 +111,7 @@ public class CompareRecommendersSubsample {
 //    Recommender slope1Recco = doSlope1Recco(glModel);
 //    Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doEstimatingSimplexUser(glModel);
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();

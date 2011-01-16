@@ -22,14 +22,16 @@ import java.io.IOException;
 
 import org.apache.commons.cli2.OptionException;
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.TasteOptionParser;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
-import org.apache.mahout.cf.taste.impl.eval.AverageAbsoluteDifferenceRecommenderEvaluator;
-import org.apache.mahout.cf.taste.impl.eval.AverageAbsoluteDifferenceRecommenderEvaluatorDual;
+import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import working.RecommenderEvaluator;
 
 /**
  * <p>A simple example "runner" class which will evaluate the performance of the current
@@ -45,19 +47,18 @@ public final class GroupLensRecommenderEvaluatorRunner {
   
   public static void main(String... args) throws IOException, TasteException, OptionException {
  long start = System.currentTimeMillis();
-    AverageAbsoluteDifferenceRecommenderEvaluatorDual evaluator = new AverageAbsoluteDifferenceRecommenderEvaluatorDual();
+    RecommenderEvaluator evaluator = new PreferenceBasedRecommenderEvaluator();
     File ratingsFile = TasteOptionParser.getRatings(args);
     DataModel model = ratingsFile == null ? new GroupLensDataModel() : new GroupLensDataModel(ratingsFile);
     GroupLensRecommenderBuilder recommenderBuilder = new GroupLensRecommenderBuilder();
-    DataModel training = new SamplingDataModel(model, 0.0, 0.7);
-    DataModel test = new SamplingDataModel(model, 0.4, 1.0);
-    double evaluation = evaluator.evaluateDual(recommenderBuilder, training, test);
-//    double evaluation = evaluator.evaluate(recommenderBuilder,
-//      null,
-//      model,
-//      0.9,
-//      0.3);
-    log.info(String.valueOf(evaluation));
+    DataModel trainingModel = new SamplingDataModel(model, 0.0, 0.7);
+    DataModel testModel = new SamplingDataModel(model, 0.4, 1.0);
+    Recommender trainingRecommender = recommenderBuilder.buildRecommender(trainingModel);
+    Recommender testRecommender = recommenderBuilder.buildRecommender(testModel);
+    RunningAverage tracker = new CompactRunningAverageAndStdDev();
+    evaluator.evaluate(trainingRecommender, testRecommender, 50, tracker, RecommenderEvaluator.Formula.NONE);
+    double average = tracker.getAverage();
+    log.info(String.valueOf(average));
     System.err.println("ms: " + (System.currentTimeMillis() - start));
   }
   

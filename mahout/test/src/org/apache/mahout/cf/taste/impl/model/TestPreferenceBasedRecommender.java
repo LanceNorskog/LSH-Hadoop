@@ -41,6 +41,7 @@ import org.apache.mahout.math.Vector;
 import working.ChebyshevDistanceMeasure;
 import working.OrderBasedRecommenderEvaluator;
 import working.PreferenceBasedRecommenderEvaluator;
+import working.RecommenderEvaluator;
 import working.SemanticVectorFactory;
 import working.OrderBasedRecommenderEvaluator.Formula;
 
@@ -85,7 +86,7 @@ public class TestPreferenceBasedRecommender {
 //    Recommender slope1Recco = doSlope1Recco(glModel);
 //    Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doEstimatingSimplexUser(glModel);
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();

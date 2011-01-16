@@ -35,18 +35,16 @@ import org.slf4j.LoggerFactory;
  * Evaluate recommender by comparing order of all raw prefs with order in 
  * recommender's output for that user. Can also compare data models.
  */
-public final class OrderBasedRecommenderEvaluator {
+public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluator {
 
-  private static final Logger log = LoggerFactory.getLogger(OrderBasedRecommenderEvaluator.class);
-
-  public enum Formula {COMMON, HAMMING, BUBBLE, WILCOXON, MEANRANK};
-
+  /* (non-Javadoc)
+   * @see working.RecommenderEvaluator#evaluate(org.apache.mahout.cf.taste.recommender.Recommender, org.apache.mahout.cf.taste.recommender.Recommender, int, working.RecommenderEvaluator.Formula, org.apache.mahout.cf.taste.impl.common.RunningAverage, java.lang.String)
+   */
   public void evaluate(Recommender recommender1,
       Recommender recommender2,
       int samples,
-      Formula formula,
       RunningAverage tracker,
-      String tag) throws TasteException {
+      Formula formula) throws TasteException {
     LongPrimitiveIterator users = recommender1.getDataModel().getUserIDs();
     
     while (users.hasNext()) {
@@ -64,17 +62,19 @@ public final class OrderBasedRecommenderEvaluator {
       }
       Long[] items1 = getCommonItems(commonSet, recs1, max);
       Long[] items2 = getCommonItems(commonSet, recs2, max);
-      double variance = scoreCommonSubset(tag, userID, formula, samples, max, items1, items2);
+      double variance = scoreCommonSubset(userID, formula, samples, max, items1, items2);
       tracker.addDatum(variance);
     }
   }
 
+  /* (non-Javadoc)
+   * @see working.RecommenderEvaluator#evaluate(org.apache.mahout.cf.taste.recommender.Recommender, org.apache.mahout.cf.taste.model.DataModel, int, working.RecommenderEvaluator.Formula, org.apache.mahout.cf.taste.impl.common.RunningAverage, java.lang.String)
+   */
   public void evaluate(Recommender recommender,
       DataModel model,
       int samples,
-      Formula formula,
       RunningAverage tracker,
-      String tag) throws TasteException {
+      Formula formula) throws TasteException {
     LongPrimitiveIterator users = recommender.getDataModel().getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();
@@ -92,17 +92,19 @@ public final class OrderBasedRecommenderEvaluator {
       }
       Long[] items1 = getCommonItems(commonSet, recs1, max);
       Long[] items2 = getCommonItems(commonSet, prefs2, max);
-      double variance = scoreCommonSubset(tag, userID, formula, samples, max, items1, items2);
+      double variance = scoreCommonSubset(userID, formula, samples, max, items1, items2);
       tracker.addDatum(variance);
     }
   }
 
+  /* (non-Javadoc)
+   * @see working.RecommenderEvaluator#evaluate(org.apache.mahout.cf.taste.model.DataModel, org.apache.mahout.cf.taste.model.DataModel, int, working.RecommenderEvaluator.Formula, org.apache.mahout.cf.taste.impl.common.RunningAverage, java.lang.String)
+   */
   public void evaluate(DataModel model1,
       DataModel model2,
       int samples,
-      Formula formula,
       RunningAverage tracker,
-      String tag) throws TasteException {
+      Formula formula) throws TasteException {
     LongPrimitiveIterator users = model1.getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();
@@ -121,7 +123,7 @@ public final class OrderBasedRecommenderEvaluator {
       }
       Long[] items1 = getCommonItems(commonSet, prefs1, max);
       Long[] items2 = getCommonItems(commonSet, prefs2, max);
-      double variance = scoreCommonSubset(tag, userID, formula, samples, max, items1, items2);
+      double variance = scoreCommonSubset(userID, formula, samples, max, items1, items2);
       tracker.addDatum(variance);
     }
   }
@@ -212,8 +214,7 @@ public final class OrderBasedRecommenderEvaluator {
     * increasing positive number as differences increase.
     * @param formula 
     */
-   private double scoreCommonSubset(String tag,
-       long userID,
+   private double scoreCommonSubset(long userID,
        Formula formula, 
        int samples,
        int subset,

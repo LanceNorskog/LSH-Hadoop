@@ -32,6 +32,7 @@ import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
 import working.OrderBasedRecommenderEvaluator;
+import working.RecommenderEvaluator;
 import working.OrderBasedRecommenderEvaluator.Formula;
 
 /*
@@ -65,7 +66,7 @@ public class TestNormalRankingRecommenderEvaluator {
 
     int samples = 500;
     Formula formula = Formula.MEANRANK;
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
     //		WANT: each recommends top N out of all. Find common items. COunt up distances between items. sqrt.

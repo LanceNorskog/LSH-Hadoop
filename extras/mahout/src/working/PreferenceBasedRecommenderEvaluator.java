@@ -36,14 +36,15 @@ import org.slf4j.LoggerFactory;
  * Evaluate recommender by comparing delta of raw and generated prefs.
  * Can also compare data models.
  */
-public final class PreferenceBasedRecommenderEvaluator {
+public final class PreferenceBasedRecommenderEvaluator implements RecommenderEvaluator {
 
   private static final Logger log = LoggerFactory.getLogger(PreferenceBasedRecommenderEvaluator.class);
 
   public void evaluate(Recommender recco1,
       Recommender recco2,
       int samples,
-      RunningAverage tracker) throws TasteException {
+      RunningAverage tracker,
+      Formula formula) throws TasteException {
     DataModel model1 = recco1.getDataModel();
     
     LongPrimitiveIterator users = model1.getUserIDs();   
@@ -65,7 +66,8 @@ public final class PreferenceBasedRecommenderEvaluator {
   public void evaluate(Recommender recco,
       DataModel model,
       int samples,
-      RunningAverage tracker) throws TasteException {
+      RunningAverage tracker,
+      Formula formula) throws TasteException {
     
     LongPrimitiveIterator users = model.getUserIDs();   
     while (users.hasNext()) {
@@ -86,7 +88,8 @@ public final class PreferenceBasedRecommenderEvaluator {
   public void evaluate(DataModel model1,
       DataModel model2,
       int samples,
-      RunningAverage tracker) throws TasteException {
+      RunningAverage tracker,
+      Formula formula) throws TasteException {
     LongPrimitiveIterator users = model1.getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();

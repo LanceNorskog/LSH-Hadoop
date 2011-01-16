@@ -40,6 +40,7 @@ import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
 import working.OrderBasedRecommenderEvaluator;
+import working.RecommenderEvaluator;
 import working.SemanticVectorFactory;
 import working.OrderBasedRecommenderEvaluator.Formula;
 
@@ -65,7 +66,7 @@ public class CompareRecommenders {
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModelTraining = new GroupLensDataModel(new File(args[0])); 
     GroupLensDataModel glModelTest = new GroupLensDataModel(new File(args[1])); 
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
@@ -83,7 +84,7 @@ public class CompareRecommenders {
 //    Recommender slope1Recco = doSlope1Recco(glModel);
 //    Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doEstimatingSimplexUser(glModel);
-    OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
+    RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
