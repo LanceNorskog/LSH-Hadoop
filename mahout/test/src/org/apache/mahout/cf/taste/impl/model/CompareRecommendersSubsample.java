@@ -40,6 +40,7 @@ import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
 import working.OrderBasedRecommenderEvaluator;
+import working.PreferenceBasedRecommenderEvaluator;
 import working.SemanticVectorFactory;
 import working.OrderBasedRecommenderEvaluator.Formula;
 
@@ -53,19 +54,23 @@ import working.OrderBasedRecommenderEvaluator.Formula;
 public class CompareRecommendersSubsample {
   static final int SAMPLES = 50;
   static SimplexUserNeighborhood sun = null;
+  static boolean doPrefs = true;
 
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-//    if (args.length == 1)
-//      crossCompare(args);
-//    else
+    if (args.length == 1)
+      crossCompare(args);
+    else if (doPrefs)
+      trainingTestComparePrefs(args);
+    else
       trainingTestCompare(args);
   }
 
   // give two ratings.dat files, training and test
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7); 
-    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0); 
+    GroupLensDataModel glModel2 = new GroupLensDataModel(new File(args[1])); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.USER); 
+    DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Mode.USER); 
     OrderBasedRecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
@@ -76,6 +81,25 @@ public class CompareRecommendersSubsample {
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
     bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "training_test");
+    System.err.println("Training v.s Test score: " + tracker.getAverage());
+  }
+
+  // give two ratings.dat files, training and test
+  private static void trainingTestComparePrefs(String[] args) throws IOException, TasteException {
+    GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
+    GroupLensDataModel glModel2 = new GroupLensDataModel(new File(args[1])); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    PreferenceBasedRecommenderEvaluator pbre = new PreferenceBasedRecommenderEvaluator();
+    RunningAverage tracker = new CompactRunningAverage();
+
+//    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
+//    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
+//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "simplex_training_test");
+//    System.err.println("Training v.s Test score: " + tracker.getAverage());
+    Recommender trainingRecco = doEstimatingUser(glModelTraining);
+    Recommender testRecco = doEstimatingUser(glModelTest);
+    pbre.evaluate(testRecco, trainingRecco, SAMPLES, tracker);
     System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 

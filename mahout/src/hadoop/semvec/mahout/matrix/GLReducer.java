@@ -30,6 +30,8 @@ import org.apache.mahout.math.Vector.Element;
  *       Item(i) =  ((sum(U)+ sum(pref(u,i)/#U))/2)/#U
  * 
  * Write projected Item vectors as SequenceFile.
+ * 
+ * TODO: Use SemanticVectorFactory?
  */
 
 

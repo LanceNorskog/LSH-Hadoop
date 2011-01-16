@@ -6,6 +6,7 @@ package org.apache.mahout.cf.taste.impl.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
@@ -23,34 +24,40 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
  * @author lance
  * 
  * Subsample entries in data model.
+ * Two sampling modes: 
+ *  holographic decimates by preference,
+ *  linear decimates users and then a user's preferences
+ *  
+ *  Can give upper and lower bounds, allowing subsets for training/testing.
+ *  Scalability: requires bitmap of prefs existence.
  */
-public class SamplingDataModel implements DataModel {
+public class CopyOfSamplingDataModel implements DataModel {
   final DataModel delegate;
   final double lower;
   final double higher;
+  final Mode samplingMode;
   Float defaultPref = 0.0f;
-  final long numUsers;
-  final boolean bits[][];
+  
+  boolean bits[][]; //[map<userID,integer>][map<itemID,integer>]
   final FastByIDMap<Integer> userIDMap = new FastByIDMap<Integer>();
   final FastByIDMap<Integer> itemIDMap = new FastByIDMap<Integer>();
 
-  public SamplingDataModel(DataModel delegate, double higher) throws TasteException {
-    //    this.delegate = delegate;
-    //    this.lower = 0.0;
-    //    this.higher = higher;
-    //    numUsers = delegate.getNumUsers();
-    //    bits = new BitMatrix(delegate.getNumUsers(), delegate.getNumItems());
-    this(delegate, 0.0, higher);
+  /*
+   * Sampling modes
+   * HOLOGRAPHIC: decimate preferences
+   * LINEAR: decimate users, then decimate items
+   */
+  public enum Mode {HOLOGRAPHIC, LINEAR};
+
+  public CopyOfSamplingDataModel(DataModel delegate, double higher) throws TasteException {
+    this(delegate, 0.0, higher, Mode.LINEAR);
   }
 
-  public SamplingDataModel(DataModel delegate, double lower, double higher) throws TasteException {
+  public CopyOfSamplingDataModel(DataModel delegate, double lower, double higher, Mode samplingMode) throws TasteException {
     this.delegate = delegate;
     this.lower = lower;
     this.higher = higher;
-    numUsers = delegate.getNumUsers();
-    bits = new boolean[delegate.getNumUsers()][];
-    for(int i = 0; i < bits.length; i++)
-      bits[i] = new boolean[delegate.getNumItems()];
+    this.samplingMode = samplingMode;
     fillBitCache();
   }
 
@@ -175,27 +182,29 @@ public class SamplingDataModel implements DataModel {
       exists[0] = true;
     }
     PreferenceArray sampled = new GenericItemPreferenceArray(count);
-    for(int i = 0; i < prefs.length(); i++) {
+    count = 0;
+    for(int i = 0; i < sampled.length(); i++) {
       if (exists[i]) {
         long userID = prefs.getUserID(i);
         float value = prefs.getValue(i);
-        sampled.setUserID(i, userID);
-        sampled.setItemID(i, itemID);
-        sampled.setValue(i, value);
+        sampled.setUserID(count, userID);
+        sampled.setItemID(count, itemID);
+        sampled.setValue(count, value);
+        count++;
       }
     }
     return sampled;
-//    PreferenceArray prefs = delegate.getPreferencesForItem(itemID);
-//    List<Preference> sampled = new ArrayList<Preference>();
-//    for(int i = 0; i < prefs.length(); i++) {
-//      long userID = prefs.getUserID(i);
-//      if (prefExists(userID, itemID)) {
-//        Preference pref = new GenericPreference(userID, itemID, prefs.getValue(i));
-//        sampled.add(pref);
-//      }
-//    }
-//    PreferenceArray array = new GenericItemPreferenceArray(sampled);
-//    return array;
+    //    PreferenceArray prefs = delegate.getPreferencesForItem(itemID);
+    //    List<Preference> sampled = new ArrayList<Preference>();
+    //    for(int i = 0; i < prefs.length(); i++) {
+    //      long userID = prefs.getUserID(i);
+    //      if (prefExists(userID, itemID)) {
+    //        Preference pref = new GenericPreference(userID, itemID, prefs.getValue(i));
+    //        sampled.add(pref);
+    //      }
+    //    }
+    //    PreferenceArray array = new GenericItemPreferenceArray(sampled);
+    //    return array;
   }
 
   /* (non-Javadoc)
@@ -259,14 +268,24 @@ public class SamplingDataModel implements DataModel {
   }
 
   /*
-   * Cache implementation - uses BitMatrix (deprecated at the moment)
+   * Cache implementation 
    */
   private void fillBitCache() throws TasteException {
     final Random rnd = new Random(0);
     LongPrimitiveIterator it = delegate.getUserIDs();
     int count = 0;
     while(it.hasNext()) {
-      userIDMap.put(it.next(), count++);
+      long userID = it.next();
+      double sample = rnd.nextDouble();
+      if (samplingMode == Mode.HOLOGRAPHIC || (sample >= lower && sample < higher)) {
+        userIDMap.put(userID, count++);
+      }
+    }
+    bits = new boolean[count][];
+    int numItems = delegate.getNumItems();
+    Map<boolean[], String> x;
+    for(int i = 0; i < numItems; i++) {
+      bits[i] = new boolean[numItems];
     }
     it = delegate.getItemIDs();
     count = 0;
@@ -288,16 +307,21 @@ public class SamplingDataModel implements DataModel {
     }
   }
 
+  private boolean userExists(long userID) {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
   boolean prefExists(long userID, long itemID) throws TasteException {
-//    return true;
-        Integer userIndex = userIDMap.get(userID);
-        Integer itemIndex = itemIDMap.get(itemID);
-        if (null == userIndex)
-          throw new NoSuchUserException();
-        if (null == itemIndex)
-          throw new NoSuchItemException();
-        boolean value = bits[(int) userIndex][(int) itemIndex];
-        return value;
+    //    return true;
+    Integer userIndex = userIDMap.get(userID);
+    Integer itemIndex = itemIDMap.get(itemID);
+    if (null == userIndex)
+      throw new NoSuchUserException();
+    if (null == itemIndex)
+      throw new NoSuchItemException();
+    boolean value = bits[(int) userIndex][(int) itemIndex];
+    return value;
   }
 
   /**
