@@ -22,12 +22,12 @@ import org.apache.mahout.math.Vector;
  * hash are distance 0, so they're not very useful.)
  */
 public class SimplexUserNeighborhood implements UserNeighborhood {
-  public final SimplexSpace space;
-  public final SimplexSpace spaceLOD;
+  public final SimplexSpace<Long> space;
+  public final SimplexSpace<Long> spaceLOD;
   static final long[] EMPTY = new long[0];
   public int total = 0, subtracted = 0;
 
-  public SimplexUserNeighborhood(SimplexSpace space, SimplexSpace spaceLOD) {
+  public SimplexUserNeighborhood(SimplexSpace<Long> space, SimplexSpace<Long> spaceLOD) {
     this.space = space;
     this.spaceLOD = spaceLOD;
   }

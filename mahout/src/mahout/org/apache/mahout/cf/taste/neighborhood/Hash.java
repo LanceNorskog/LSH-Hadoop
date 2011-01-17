@@ -2,19 +2,31 @@ package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.Comparator;
 
-class Hash implements Comparable<Hash>, Cloneable{
+/*
+ * Simplex box, keyed by "lower-left" corner
+ * Includes Level Of Detail and generic payload
+ * identity functions use corner and level-of-detail
+ * Probably LOD will be managed outside.
+ */
+
+class Hash<T> implements Comparable<Hash<T>>, Cloneable{
   final int[] hashes;
   final int lod;
+  final T payload;
   int code = 0;
 
-  public Hash(int[] hashes) {
-    this.hashes = hashes;
-    this.lod = 0;
+  public Hash(int[] hashes, T payload) { 
+    this(hashes, 0, payload);
   }
 
-  public Hash(int[] hashes, int lod) {
+  public Hash(int[] hashes, int lod, T payload) {
     this.hashes = hashes;
     this.lod = lod;
+    this.payload = payload;
+  }
+
+  public T getPayload() {
+    return payload;
   }
 
   @Override
@@ -27,28 +39,43 @@ class Hash implements Comparable<Hash>, Cloneable{
         code *= 13;
         code = code << 4;
       }
+      code += lod * 13;
       this.code = code;
     }
 
     return code;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
-    Hash other = (Hash) obj;
-    return compareTo(other) == 0;
+    Hash<T> other = (Hash<T>) obj;
+    if (lod != other.lod)
+      return false;
+    if (code > 0 && other.code > 0 && code != other.code)
+      return false;
+    for(int i = 0; i < hashes.length; i++) {
+      if (hashes[i] != other.hashes[i])
+        return false;
+    };
+    return true;
   }
 
   // sort by coordinates in order
   @Override
-  public int compareTo(Hash o) {
+  public int compareTo(Hash<T> o) {
     for(int i = 0; i < hashes.length; i++) {
-      if (hashes[i] < o.hashes[i])
+      if (hashes[i] > o.hashes[i])
         return 1;
-      else if (hashes[i] > o.hashes[i])
+      else if (hashes[i] < o.hashes[i])
         return -1;
     };
-    return 0;
+    if (lod > o.lod)
+      return 1;
+    else if (lod < o.lod)
+      return -1;
+    else
+      return 0;
   }
 
   @Override
@@ -66,28 +93,28 @@ class Hash implements Comparable<Hash>, Cloneable{
     for(int i = 0; i < hashes.length; i++) {
       v[i] = hashes[i];
     }
-    return new Hash(v);
+    return new Hash<T>(v, lod, payload);
   }
 
 }
 
 /* only compare values at index */
-class HashSingleComparator implements Comparator<Hash>{
-  final int index;
-
-  public HashSingleComparator(int index) {
-    this.index = index;
-  }
-
-  @Override
-  public int compare(Hash o1, Hash o2) {
-    if (o1.hashes[index] < o2.hashes[index])
-      return 1;
-    else if (o1.hashes[index] > o2.hashes[index])
-      return -1;
-    else
-      return 0;
-  }
-
-
-}
+//class HashSingleComparator implements Comparator<Hash>{
+//  final int index;
+//
+//  public HashSingleComparator(int index) {
+//    this.index = index;
+//  }
+//
+//  @Override
+//  public int compare(Hash o1, Hash o2) {
+//    if (o1.hashes[index] < o2.hashes[index])
+//      return 1;
+//    else if (o1.hashes[index] > o2.hashes[index])
+//      return -1;
+//    else
+//      return 0;
+//  }
+//
+//
+//}

@@ -52,7 +52,7 @@ import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
  */
 
 public class CompareRecommenders {
-  static final int SAMPLES = 50;
+  static final int SAMPLES = 100;
   static SimplexUserNeighborhood sun = null;
 
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
@@ -73,7 +73,8 @@ public class CompareRecommenders {
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
+    Recommender simplexRecco = doEstimatingSimplexUser(glModelTest);
+    bsrv.evaluate(simplexRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
@@ -123,14 +124,14 @@ public class CompareRecommenders {
   private static Recommender doEstimatingSimplexUser(DataModel bcModel) throws TasteException {
     int DIMS = 100;
 //    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
-    SimplexSpace userSpace = getSpace(DIMS);
-    SimplexSpace userSpaceLOD = getSpace(DIMS);
+    SimplexSpace<Long> userSpace = getSpace(DIMS);
+    SimplexSpace<Long> userSpaceLOD = getSpace(DIMS);
 //    userSpace.doUnhash = false;
 //    userSpaceLOD.doUnhash = false;
-    userSpaceLOD.setLOD(4);
+    userSpaceLOD.setLOD(5);
     addUserSimplices(userSpace, userSpaceLOD, bcModel);
-    SimplexSpace itemSpace = getSpace(DIMS);
-    itemSpace.doUnhash = false;
+    SimplexSpace<Long> itemSpace = getSpace(DIMS);
+    itemSpace.doUnhash = true;
     addItemSimplices(itemSpace, bcModel);
     UserSimilarity similarity = new SimplexSimilarity(userSpace, itemSpace, null);
     UserNeighborhood neighborhood = new SimplexUserNeighborhood(userSpace, userSpaceLOD);
@@ -138,14 +139,14 @@ public class CompareRecommenders {
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
   }
 
-  private static SimplexSpace getSpace(int DIMS) {
+  private static SimplexSpace<Long> getSpace(int DIMS) {
 //    DistanceMeasure measure = new ChebyshevDistanceMeasure(); 
 //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
 //    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
     DistanceMeasure measure = new EuclideanDistanceMeasure();
 //    DistanceMeasure measure = new ManhattanDistanceMeasure();
 //  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
-    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
+    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
     /*
      * LOD 8
      * mink 1.5
@@ -162,12 +163,12 @@ public class CompareRecommenders {
      */
   }
 
-  private static void addUserSimplices(SimplexSpace space, SimplexSpace spaceLOD, DataModel bcModel) throws TasteException {
+  private static void addUserSimplices(SimplexSpace<Long> space, SimplexSpace<Long> spaceLOD, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getUserIDs();
     while (lpi.hasNext()) {
       Long userID = lpi.nextLong();
-      Vector sv = svf.getUserVector(userID, 3, 50);
+      Vector sv = svf.getUserVector(userID, 3, 500);
       if (null != sv) {
         space.addVector(userID, sv);
         if (null != spaceLOD)
@@ -176,7 +177,7 @@ public class CompareRecommenders {
     }
   }
 
-  private static void addItemSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+  private static void addItemSimplices(SimplexSpace<Long> space, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getItemIDs();
     while (lpi.hasNext()) {
