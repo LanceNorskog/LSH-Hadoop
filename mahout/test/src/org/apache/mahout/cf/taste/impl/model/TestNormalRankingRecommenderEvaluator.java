@@ -8,6 +8,7 @@ import java.util.Properties;
 import lsh.hadoop.LSHDriver;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
@@ -15,6 +16,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
+import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.model.PointTextDataModel;
 import org.apache.mahout.cf.taste.impl.model.SimplexRecommender;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
@@ -31,9 +33,7 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
-import working.OrderBasedRecommenderEvaluator;
-import working.RecommenderEvaluator;
-import working.OrderBasedRecommenderEvaluator.Formula;
+import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
 
 /*
  * Evaluate recommender by comparing order of all raw prefs with order in recommender's output for that user.
@@ -65,7 +65,7 @@ public class TestNormalRankingRecommenderEvaluator {
     PointTextDataModel pointModelBig = doPointTextDataModel("/tmp/lsh_hadoop/GL_points_10k_500d/part-r-00000");
 
     int samples = 500;
-    Formula formula = Formula.MEANRANK;
+    RecommenderEvaluator.Formula formula = MEANRANK;
     RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 

@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package working;
+package org.apache.mahout.cf.taste.impl.eval;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
@@ -78,7 +79,7 @@ public final class PreferenceBasedRecommenderEvaluator implements RecommenderEva
         if (null == value || value.equals(Float.NaN))
           continue;
         float variance = Math.abs(value - pref.getValue());
-        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
+//        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
         tracker.addDatum(variance);
       }
     }

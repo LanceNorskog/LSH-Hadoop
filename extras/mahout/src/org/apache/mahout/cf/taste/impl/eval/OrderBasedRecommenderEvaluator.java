@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package working;
+package org.apache.mahout.cf.taste.impl.eval;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;

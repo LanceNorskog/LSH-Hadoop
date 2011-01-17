@@ -2,20 +2,27 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.BitSet;
+import java.util.Iterator;
 import java.util.Random;
 
 import lsh.core.OrthonormalHasher;
 import lsh.core.VertexTransitiveHasher;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
+import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
+import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
+import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
+import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
@@ -24,6 +31,8 @@ import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.model.Preference;
+import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.neighborhood.SimplexSimilarity;
 import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
 import org.apache.mahout.cf.taste.neighborhood.SimplexUserNeighborhood;
@@ -39,11 +48,7 @@ import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
-import working.OrderBasedRecommenderEvaluator;
-import working.PreferenceBasedRecommenderEvaluator;
-import working.RecommenderEvaluator;
 import working.SemanticVectorFactory;
-import working.OrderBasedRecommenderEvaluator.Formula;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
@@ -53,17 +58,81 @@ import working.OrderBasedRecommenderEvaluator.Formula;
  */
 
 public class CompareRecommendersSubsample {
-  static final int SAMPLES = 50;
+  static final int SAMPLES = 100;
   static SimplexUserNeighborhood sun = null;
   static boolean doPrefs = true;
 
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+//    compareSampledIndividual(args);
+    compareSampledFromUser(args);
     if (args.length == 1)
       crossCompare(args);
     else if (doPrefs)
       trainingTestComparePrefs(args);
     else
       trainingTestCompare(args);
+  }
+
+  private static void compareSampledIndividual(String[] args) throws IOException, TasteException {
+    GroupLensDataModel glModel = new GroupLensDataModel(new File(args[1])); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.5, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.5, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    LongPrimitiveIterator users = glModelTraining.getUserIDs();
+    int all = 0;
+    int delta = 0;
+    while(users.hasNext()) {
+      long userID = users.nextLong();
+      LongPrimitiveIterator itemSet = glModel.getItemIDs();
+      while(itemSet.hasNext()) {
+        long itemID = itemSet.nextLong();
+        Float valueTraining = glModelTraining.getPreferenceValue(userID, itemID);
+        Float valueTest = glModelTest.getPreferenceValue(userID, itemID);
+        if ((null == valueTraining) != (null == valueTest)) {
+          delta++;
+        }
+        all++;
+      }
+    }
+    System.out.println("all: " + all);
+    System.out.println("delta: " + delta);
+  }
+
+  private static void compareSampledFromUser(String[] args) throws IOException, TasteException {
+    GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
+    DataModel glModelTraining = glModel; // new SamplingDataModel(glModel, 0.0, 0.9, SamplingDataModel.Mode.USER); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.0, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    LongPrimitiveIterator users = glModel.getUserIDs();
+    int all = 0;
+    int delta = 0;
+    while(users.hasNext()) {
+      long userID = users.nextLong();
+      PreferenceArray userPrefsTraining = glModelTraining.getPreferencesFromUser(userID);
+      PreferenceArray userPrefsTest = glModelTest.getPreferencesFromUser(userID);
+      BitSet trainingSet = new BitSet();
+      BitSet testSet = new BitSet();
+      Iterator<Preference> it = userPrefsTraining.iterator();
+      while (it.hasNext()) {
+        Preference pref = it.next();
+        trainingSet.set((int) pref.getItemID());
+      }
+      it = userPrefsTest.iterator();
+      while (it.hasNext()) {
+        Preference pref = it.next();
+        testSet.set((int) pref.getItemID());
+      }
+      int trainingCard = trainingSet.cardinality();
+      int testCard = testSet.cardinality();
+      BitSet union = (BitSet) trainingSet.clone();
+      union.or(testSet);
+      int uCard = union.cardinality();
+      all += uCard;
+      BitSet intersect = (BitSet) trainingSet.clone();
+      intersect.and(trainingSet);
+      int iCard = intersect.cardinality();
+      delta += uCard - iCard;
+     }
+    System.out.println("all: " + all);
+    System.out.println("delta: " + delta);
   }
 
   // give two ratings.dat files, training and test
@@ -77,31 +146,32 @@ public class CompareRecommendersSubsample {
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
-//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "simplex_training_test");
+//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, MEANRANK, tracker, "simplex_training_test");
 //    System.err.println("Training v.s Test score: " + tracker.getAverage());
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "training_test");
+    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
   // give two ratings.dat files, training and test
   private static void trainingTestComparePrefs(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    GroupLensDataModel glModel2 = new GroupLensDataModel(new File(args[1])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.HOLOGRAPHIC); 
-    DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
-    PreferenceBasedRecommenderEvaluator pbre = new PreferenceBasedRecommenderEvaluator();
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.9, SamplingDataModel.Mode.USER); 
+    DataModel glModelTest = glModel; // new SamplingDataModel(glModel, 0.0, 1.1, SamplingDataModel.Mode.USER); 
+//    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.HOLOGRAPHIC); 
+//    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    RecommenderEvaluator pbre = new PreferenceBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
-//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "simplex_training_test");
+//    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, MEANRANK, tracker, "simplex_training_test");
 //    System.err.println("Training v.s Test score: " + tracker.getAverage());
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
-    pbre.evaluate(testRecco, trainingRecco, SAMPLES, tracker);
-    System.err.println("Training v.s Test score: " + tracker.getAverage());
+    pbre.evaluate(testRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
+    System.err.println("Training v.s Test preference-based score: " + tracker.getAverage());
   }
 
   private static void crossCompare(String[] args) throws IOException,
@@ -115,7 +185,7 @@ public class CompareRecommendersSubsample {
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
-    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, Formula.MEANRANK, tracker, "estimating_simplex");
+    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");

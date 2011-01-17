@@ -16,6 +16,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
+import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
@@ -39,10 +40,9 @@ import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
 import working.ChebyshevDistanceMeasure;
-import working.OrderBasedRecommenderEvaluator;
-import working.RecommenderEvaluator;
 import working.SemanticVectorFactory;
-import working.OrderBasedRecommenderEvaluator.Formula;
+import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
+import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.
@@ -73,7 +73,7 @@ public class CompareRecommenders {
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
-    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, Formula.MEANRANK, tracker, "training_test");
+    bsrv.evaluate(testRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Training v.s Test score: " + tracker.getAverage());
   }
 
@@ -88,7 +88,7 @@ public class CompareRecommenders {
     RunningAverage tracker = null;
 
     tracker = new CompactRunningAverage();
-    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, Formula.MEANRANK, tracker, "estimating_simplex");
+    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");

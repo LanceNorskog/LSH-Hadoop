@@ -6,8 +6,6 @@ package org.apache.mahout.cf.taste.impl.model;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
@@ -32,21 +30,27 @@ import org.apache.mahout.common.RandomUtils;
  *  user decimates users but includes all preferences
  *  
  *  Can give upper and lower bounds, allowing subsets for training/testing.
- *  Scalability: requires bitmap of prefs existence.
+ *  Memory-based. Requires:
+ *      Sparse map of user IDs.
+ *      Dense bitmap per userID of item ID.
+ *      Optional mean/stdev per user ID.
  *  
  *  TODO: boolean prefs? how to add?
  */
 
 public class SamplingDataModel implements DataModel {
+  static BitSet NOBITSET = new BitSet();
+  static PreferenceArray NOUSERPREFS = new GenericUserPreferenceArray(0);
+
   final DataModel delegate;
   final double lower;
   final double higher;
   final Mode samplingMode;
   Float defaultPref = 0.0f;
-  // cache of whether a preference exists
   final FastByIDMap<BitSet> userIDMap = new FastByIDMap<BitSet>();
   final FastByIDMap<Integer> itemIDMap = new FastByIDMap<Integer>();
-  
+  final FastByIDMap<Double> meanMap = new FastByIDMap<Double>();
+
   long timeItems = 0;
   long timeUsers = 0;
   long countItems = 0;
@@ -135,6 +139,8 @@ public class SamplingDataModel implements DataModel {
     LongPrimitiveIterator users = userIDMap.keySetIterator(); // delegate.getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();
+      if (userIDMap.get(userID) == NOBITSET)
+        continue;
       for(int i = 0; i < itemIDs.length; i++) {
         // TODO: user BitSet scan-forward method
         boolean exists = prefExists(userID, itemIDs[i]);
@@ -164,7 +170,13 @@ public class SamplingDataModel implements DataModel {
   @Override
   public Float getPreferenceValue(long userID, long itemID)
   throws TasteException {
-    if (! prefExists(userID, itemID)) {
+    try {
+      if (! prefExists(userID, itemID)) {
+        return null;
+      }
+    } catch (NoSuchUserException e) {
+      return null;
+    } catch (NoSuchItemException e) {
       return null;
     }
     return delegate.getPreferenceValue(userID, itemID);
@@ -179,34 +191,20 @@ public class SamplingDataModel implements DataModel {
     long startTime = System.currentTimeMillis();
     if (! itemIDMap.containsKey(itemID))
       throw new NoSuchItemException();
+    int itemIndex = itemIDMap.get(itemID);
     PreferenceArray prefs = delegate.getPreferencesForItem(itemID);
-    int sampleSize = (int) ((prefs.length() / (higher - lower)));
-    PreferenceArray sampled = new GenericItemPreferenceArray(sampleSize);
+    ArrayList<Preference> prefList = new ArrayList<Preference>();
+    int size = prefs.length();
+    for(int i = 0; i < size; i++) {
+        long userID = prefs.getUserID(i);
+        BitSet itemSet = userIDMap.get(userID);
+        if (! itemSet.get(itemIndex))
+          continue;
+        Preference pref = new GenericPreference(userID, prefs.getItemID(i), prefs.getValue(i));
+        prefList.add(pref);
+    }
+    PreferenceArray sampled = new GenericItemPreferenceArray(prefList);
 
-    int count = 0;
-    for(int i = 0; i < sampleSize && count < sampleSize; i++) {
-      long userID = prefs.getUserID(i);
-      if (prefExists(userID, itemID)) {
-        float value = prefs.getValue(i);
-        sampled.setUserID(count, userID);
-        sampled.setItemID(count, itemID);
-        sampled.setValue(count, value);
-        count++;
-      }
-    }
-    // if underrun, go back and add skipped prefs
-    int j = 0;
-    while(count < sampleSize) {
-      long userID = prefs.getUserID(j);
-      if (! prefExists(userID, itemID)) {
-        float value = prefs.getValue(j);
-        sampled.setUserID(count, userID);
-        sampled.setItemID(count, itemID);
-        sampled.setValue(count, value);
-        count++;
-      }    
-      j++;
-    }
     timeItems += System.currentTimeMillis() - startTime;
     countItems++;
     return sampled;
@@ -221,42 +219,25 @@ public class SamplingDataModel implements DataModel {
     long startTime = System.currentTimeMillis();
     if (! userIDMap.containsKey(userID))
       throw new NoSuchUserException();
+    if (samplingMode == Mode.USER && !isSampledUserID(userID))
+      return NOUSERPREFS;
+    BitSet itemSet = userIDMap.get(userID);
     PreferenceArray prefs = delegate.getPreferencesFromUser(userID);
-    if (samplingMode == Mode.USER)
-      return prefs;
-    Random rnd = RandomUtils.getRandom(userID);
-    int sampleSize = userIDMap.get(userID).cardinality();
-    sampleSize = (int) (sampleSize * (higher - lower));
-    PreferenceArray sampled = new GenericUserPreferenceArray(sampleSize);
-
-    int count = 0;
-    for(int i = 0; i < sampleSize; i++) {
+    ArrayList<Preference> prefList = new ArrayList<Preference>();
+    int size = prefs.length();
+    for(int i = 0; i < size; i++) {
       long itemID = prefs.getItemID(i);
-      if (prefExists(userID, itemID) && isSampled(rnd)) {
-        float value = prefs.getValue(i);
-        sampled.setUserID(count, userID);
-        sampled.setItemID(count, itemID);
-        sampled.setValue(count, value);
-        count++;
+      Integer itemIndex = itemIDMap.get(itemID);
+      if (itemSet.get( itemIndex)) {
+        Preference pref = new GenericPreference(userID, itemID, prefs.getValue(i));
+        prefList.add(pref);
       }
     }
-    // if underrun, go back and add skipped prefs
-    int j = 0;
-    while(count < sampleSize) {
-      long itemID = prefs.getItemID(j);
-      if (! prefExists(userID, itemID)) {
-        float value = prefs.getValue(j);
-        sampled.setUserID(count, userID);
-        sampled.setItemID(count, itemID);
-        sampled.setValue(count, value);
-        count++;
-      }    
-      j++;
-    }
-    timeItems += System.currentTimeMillis() - startTime;
-    countItems++;
+    PreferenceArray sampled = new GenericUserPreferenceArray(prefList);
+    timeUsers += System.currentTimeMillis() - startTime;
+    countUsers++;
     return sampled;
-}
+  }
 
   /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.model.DataModel#getUserIDs()
@@ -280,7 +261,6 @@ public class SamplingDataModel implements DataModel {
    */
   @Override
   public void removePreference(long userID, long itemID) throws TasteException {
-    // just ignore
     delegate.removePreference(userID, itemID);
   }
 
@@ -290,7 +270,6 @@ public class SamplingDataModel implements DataModel {
   @Override
   public void setPreference(long userID, long itemID, float value)
   throws TasteException {
-    // just ignore
     delegate.setPreference(userID, itemID, value);
   }
 
@@ -299,25 +278,25 @@ public class SamplingDataModel implements DataModel {
    */
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
-    // just ignore
     delegate.refresh(alreadyRefreshed);
   }
 
   /*
-   * Cache implementation 
+   * Cache implementation of whether a preference exists
    * 
+   * userIDMap: user ID -> bitset of whether a preference exists for an item ID
+   * itemIDMap: item ID -> index into above bitset
    */
   private void fillBitCache() throws TasteException {
-    final Random rnd = new Random(0);
+    final Random rnd = RandomUtils.getRandom(17);
     LongPrimitiveIterator it = delegate.getUserIDs();
     int numItems = delegate.getNumItems();
     while(it.hasNext()) {
       long userID = it.next();
-      double sample = rnd.nextDouble();
       if (samplingMode == Mode.HOLOGRAPHIC || isSampled(rnd)) {
         userIDMap.put(userID, new BitSet(numItems));
       } else {
-        userIDMap.put(userID, null);
+        userIDMap.put(userID, NOBITSET);
         continue;
       }
     }
@@ -330,6 +309,8 @@ public class SamplingDataModel implements DataModel {
     while(it.hasNext()) {
       long userID = it.next();
       BitSet itemBits = userIDMap.get(userID);
+      if (itemBits == NOBITSET)
+        continue;
       PreferenceArray items = delegate.getPreferencesFromUser(userID);
       for(Preference pref: items) {
         if (isSampled(rnd)) {
@@ -344,31 +325,25 @@ public class SamplingDataModel implements DataModel {
     double sample = rnd.nextDouble();
     return sample >= lower && sample < higher;
   }
-  
-//  private boolean userExists(long userID) {
-//    return userIDMap.containsKey(userID) && null != userIDMap.get(userID);
-//  }
+
+  private boolean isSampledUserID(long userID) {
+    BitSet userBits = userIDMap.get(userID);
+    int cardinality = userBits.cardinality();
+    return userBits != NOBITSET;
+  }
 
   boolean prefExists(long userID, long itemID) throws TasteException {
     if (! userIDMap.containsKey(userID))
       throw new NoSuchUserException();
-      
+
     BitSet itemBits = userIDMap.get(userID);
     Integer itemIndex = itemIDMap.get(itemID);
-    if (null == itemBits)
+    if (samplingMode == Mode.USER && NOBITSET == itemBits)
       return false;
     if (null == itemIndex)
       throw new NoSuchItemException();
     boolean value = itemBits.get(itemIndex);
     return value;
-  }
-
-  /**
-   * @param args
-   */
-  public static void main(String[] args) {
-    // TODO Auto-generated method stub
-
   }
 
 }
