@@ -17,11 +17,11 @@ import org.apache.mahout.common.distance.DistanceMeasure;
  * SimplexSpace can store User->Item or Item->Item.
  */
 public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
-  private final SimplexSpace userSpace;
-  private final SimplexSpace itemSpace;
+  private final SimplexSpace<Long> userSpace;
+  private final SimplexSpace<Long> itemSpace;
   private final DistanceMeasure measure;
   
-  public SimplexSimilarity(SimplexSpace userSpace, SimplexSpace itemSpace, DistanceMeasure measure) {
+  public SimplexSimilarity(SimplexSpace<Long> userSpace, SimplexSpace<Long> itemSpace, DistanceMeasure measure) {
     this.userSpace = userSpace;
     this.itemSpace = itemSpace;
     this.measure = measure;

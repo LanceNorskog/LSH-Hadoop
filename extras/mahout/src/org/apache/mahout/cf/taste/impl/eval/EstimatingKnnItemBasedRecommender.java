@@ -49,7 +49,7 @@ public final class EstimatingKnnItemBasedRecommender extends GenericItemBasedRec
                                  Optimizer optimizer,
                                  CandidateItemsStrategy candidateItemsStrategy,
                                  int neighborhoodSize) {
-    super(dataModel, similarity, candidateItemsStrategy);
+    super(dataModel, similarity, candidateItemsStrategy, null);
     this.optimizer = optimizer;
     this.neighborhoodSize = neighborhoodSize;
   }

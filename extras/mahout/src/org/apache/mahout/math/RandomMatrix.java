@@ -30,6 +30,10 @@ import com.google.common.collect.Maps;
  * Double.MIN_Value -> Double.MAX_VALUE 
  * Linear, limited gaussian, and raw Gaussian distributions
  * 
+ * Seed for [row][col] is this.seed + (row * #columns) + column.
+ * This allows a RandomVector to take seed + (row * #columns) as its seed
+ * and be reproducible from this matrix.
+ * 
  * Is read-only. Can be given a writable cache.
  * One quirk: Matrix.like() means "give a writable matrix
  * with the same dense/sparsity profile. The cache also supplies that.
@@ -43,7 +47,7 @@ public class RandomMatrix extends AbstractMatrix {
   final private Random rnd = new Random();
   final private long seed;
   final private int distribution;
-
+  
   /**
    * Constructs a zero-size matrix.
    * Some serialization thing?
@@ -77,14 +81,14 @@ public class RandomMatrix extends AbstractMatrix {
    * @param seed Random seed.
    * @param distribution Random distribution: LINEAR, GAUSSIAN, GAUSSIAN01.
    * @param cache Vector to use as cache. Doubles as 'like' source.
-   */
+  */
   public RandomMatrix(int rows, int columns, long seed, int distribution) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
     this.seed = seed;
     this.distribution = distribution;
   }
-
+  
   @Override
   public Matrix clone() {
     // it would thread-safe to pass the cache object itself.
@@ -107,15 +111,12 @@ public class RandomMatrix extends AbstractMatrix {
     rnd.setSeed(getSeed(row, column));
     double value = getRandom();
     if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
-      throw new Error("RandomMatrix: getQuick created NaN");
+      throw new Error("RandomVector: getQuick created NaN");
     return value;
   }
 
-  // as it turns out, numbers from consecutive seeds are highly correlated.
   private long getSeed(int row, int column) {
-    long starter = seed + (row * columnSize()) + column;
-    rnd.setSeed(starter);
-    return rnd.nextLong();
+    return seed + (row * columnSize()) + column;
   }
 
   double getRandom() {
@@ -142,7 +143,7 @@ public class RandomMatrix extends AbstractMatrix {
   }
 
   @Override
-  public Matrix like(int rows, int columns) {
+ public Matrix like(int rows, int columns) {
     return new DenseMatrix(rows, columns);
   }
 
@@ -202,27 +203,33 @@ public class RandomMatrix extends AbstractMatrix {
   public Matrix assign(double[][] values) {
     throw new UnsupportedOperationException();
   }
-
+  
   @Override
   public Matrix assign(UnaryFunction function) {
     throw new UnsupportedOperationException();
   }
-
+  
   @Override
   public Matrix assign(Matrix other, BinaryFunction function) {
     throw new UnsupportedOperationException();
   }
-
+  
   @Override
   public Vector getColumn(int column) {
-    return viewColumn(column);
+    if (column < 0 || column >= columnSize()) {
+      throw new IndexException(column, columnSize());
+    }
+    return new RandomVectorOld(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], distribution);
+
   }
 
+  // TODO: make matching cache vector for RandomVector
   @Override
   public Vector getRow(int row) {
-    if (row < 0 || row >= rowSize())
+    if (row < 0 || row >= rowSize()) {
       throw new IndexException(row, rowSize());
-    return viewRow(row);
+    }
+    return new RandomVectorOld(columnSize(), seed + row * columnSize(), 1, distribution);
   }
 
   /*
@@ -230,7 +237,7 @@ public class RandomMatrix extends AbstractMatrix {
    * Can fetch values for bindings.
    * Cannot set values with bindings.
    */
-
+  
   @Override
   public
   void set(String rowLabel, String columnLabel, double value) {
@@ -256,7 +263,7 @@ public class RandomMatrix extends AbstractMatrix {
   void set(String rowLabel, int row, double[] rowData) {		
     throw new UnsupportedOperationException();
   }
-
+  
   @Override
   public boolean equals(Object o) {
     if (o.getClass() == RandomMatrix.class) {
@@ -265,7 +272,7 @@ public class RandomMatrix extends AbstractMatrix {
     }
     return false;
   }
-
+  
   @Override
   public int hashCode() {
     return RandomUtils.hashLong(seed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize());
