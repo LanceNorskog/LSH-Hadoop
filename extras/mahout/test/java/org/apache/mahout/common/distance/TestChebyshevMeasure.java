@@ -19,13 +19,9 @@ package org.apache.mahout.common.distance;
 
 import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
-import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.junit.Test;
-
-import working.ChebyshevDistanceMeasure;
 
 public final class TestChebyshevMeasure extends MahoutTestCase {
 

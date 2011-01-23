@@ -28,34 +28,33 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-public abstract class TestFabricatedMatrix extends MahoutTestCase {
+public abstract class CopyOfTestFabricatedMatrix extends MahoutTestCase {
 
-  protected static final int ROW = AbstractMatrix.ROW;
+  protected static final int ROW_SMALL = 6;
+  protected static final int ROW_LARGE = 10000;
+  protected static final int COLUMN_SMALL = 8;
+  protected static final int COLUMN_LARGE = 11000;
 
-  protected static final int COL = AbstractMatrix.COL;
+  int[] cardinalitySmall = {ROW_SMALL, COLUMN_SMALL};
+  int[] cardinalityLarge = {ROW_LARGE, COLUMN_LARGE};
 
-  private final int[] size = {4,5};
-
-  private final double[] vectorAValues = {1.0 / 1.1, 2.0 / 1.1};
-
-  //protected final double[] vectorBValues = {5.0, 10.0, 100.0};
-
-  protected Matrix test;
+  private FabricatedMatrix testSmall;
+  private FabricatedMatrix testLarge;
 
   @Override
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    test = matrixFactory(size[ROW], size[COL]);
+    testSmall = generateTestMatrix(ROW_SMALL, COLUMN_SMALL);
+    testLarge = generateTestMatrix(ROW_LARGE, COLUMN_LARGE);
   }
 
-  public abstract Matrix matrixFactory(int rows, int columns);
-
+  abstract protected FabricatedMatrix generateTestMatrix(int rows, int columns);
   @Test
   public void testCardinality() {
     int[] c = test.size();
-    assertEquals("row cardinality", size[ROW], c[ROW]);
-    assertEquals("col cardinality", size[COL], c[COL]);
+    assertEquals("row cardinality", values.length, c[ROW]);
+    assertEquals("col cardinality", values[0].length, c[COL]);
   }
 
   @Test
@@ -87,7 +86,8 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     int[] c = test.size();
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        assertEquals( test.get(row, col), test.getQuick(row, col), EPSILON);
+        assertEquals("value[" + row + "][" + col + ']', values[row][col], test
+            .getQuick(row, col), EPSILON);
       }
     }
   }
@@ -95,9 +95,9 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   @Test
   public void testLike() {
     Matrix like = test.like();
+    assertSame("type", like.getClass(), test.getClass());
     assertEquals("rows", test.size()[ROW], like.size()[ROW]);
     assertEquals("columns", test.size()[COL], like.size()[COL]);
-    like.set(0,0,0.0d);
   }
 
   @Test
@@ -121,6 +121,13 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
+  public void testSize() {
+    int[] c = test.getNumNondefaultElements();
+    assertEquals("row size", values.length, c[ROW]);
+    assertEquals("col size", values[0].length, c[COL]);
+  }
+
+  @Test
   public void testViewPart() {
     int[] offset = {1, 1};
     int[] size = {2, 1};
@@ -131,7 +138,7 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            test.get(row + 1, col + 1), view.getQuick(row, col), EPSILON);
+            values[row + 1][col + 1], view.getQuick(row, col), EPSILON);
       }
     }
   }
@@ -187,8 +194,16 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     test.assign(new double[c[ROW] + 1][c[COL]]);
   }
 
+  @Test
   public void testAssignMatrixBinaryFunction() {
+    int[] c = test.size();
     test.assign(test, Functions.PLUS);
+    for (int row = 0; row < c[ROW]; row++) {
+      for (int col = 0; col < c[COL]; col++) {
+        assertEquals("value[" + row + "][" + col + ']', 2 * values[row][col],
+            test.getQuick(row, col), EPSILON);
+      }
+    }
   }
 
   @Test(expected = CardinalityException.class)
@@ -197,7 +212,16 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
-  public void testLikeIsRW() {
+  public void testAssignMatrix() {
+    int[] c = test.size();
+    Matrix value = test.like();
+    value.assign(test);
+    for (int row = 0; row < c[ROW]; row++) {
+      for (int col = 0; col < c[COL]; col++) {
+        assertEquals("value[" + row + "][" + col + ']',
+            test.getQuick(row, col), value.getQuick(row, col), EPSILON);
+      }
+    }
   }
 
   @Test(expected = CardinalityException.class)
@@ -207,7 +231,14 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
 
   @Test
   public void testAssignUnaryFunction() {
+    int[] c = test.size();
     test.assign(Functions.mult(-1));
+    for (int row = 0; row < c[ROW]; row++) {
+      for (int col = 0; col < c[COL]; col++) {
+        assertEquals("value[" + row + "][" + col + ']', -values[row][col], test
+            .getQuick(row, col), EPSILON);
+      }
+    }
   }
 
   @Test
@@ -301,7 +332,18 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            test.get(row, col) / 4.53, value.getQuick(row, col), EPSILON);
+            values[row][col] / 4.53, value.getQuick(row, col), EPSILON);
+      }
+    }
+  }
+
+  @Test
+  public void testGet() {
+    int[] c = test.size();
+    for (int row = 0; row < c[ROW]; row++) {
+      for (int col = 0; col < c[COL]; col++) {
+        assertEquals("value[" + row + "][" + col + ']', values[row][col], test
+            .get(row, col), EPSILON);
       }
     }
   }
@@ -350,7 +392,7 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            test.get(row, col) + 4.53, value.getQuick(row, col), EPSILON);
+            values[row][col] + 4.53, value.getQuick(row, col), EPSILON);
       }
     }
   }
@@ -361,7 +403,7 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     Matrix value = test.plus(test);
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
-        assertEquals("value[" + row + "][" + col + ']', test.get(row, col) * 2,
+        assertEquals("value[" + row + "][" + col + ']', values[row][col] * 2,
             value.getQuick(row, col), EPSILON);
       }
     }
@@ -399,12 +441,11 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     for (int row = 0; row < c[ROW]; row++) {
       for (int col = 0; col < c[COL]; col++) {
         assertEquals("value[" + row + "][" + col + ']',
-            test.get(row, col) * 4.53, value.getQuick(row, col), EPSILON);
+            values[row][col] * 4.53, value.getQuick(row, col), EPSILON);
       }
     }
   }
 
-  /*
   @Test
   public void testTimesMatrix() {
     int[] c = test.size();
@@ -427,6 +468,7 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     }
 
     Matrix timestest = new DenseMatrix(10, 1);
+    /* will throw ArrayIndexOutOfBoundsException exception without MAHOUT-26 */
     timestest.transpose().times(timestest);
   }
 
@@ -451,7 +493,6 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
         ttASlow.minus(ttA).norm(2) < 1.0e-12);
 
   }
-  */
 
   @Test(expected = CardinalityException.class)
   public void testTimesMatrixCardinality() {
@@ -475,11 +516,17 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
-  public abstract void testZSum();
+  public void testZSum() {
+    double sum = test.zSum();
+    assertEquals("zsum", 23.1, sum, EPSILON);
+  }
 
   @Test
   public void testAssignRow() {
+    double[] data = {2.1, 3.2};
     test.assignRow(1, new DenseVector(data));
+    assertEquals("test[1][0]", 2.1, test.getQuick(1, 0), EPSILON);
+    assertEquals("test[1][1]", 3.2, test.getQuick(1, 1), EPSILON);
   }
 
   @Test(expected = CardinalityException.class)
@@ -490,7 +537,11 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
 
   @Test
   public void testAssignColumn() {
+    double[] data = {2.1, 3.2, 4.3};
     test.assignColumn(1, new DenseVector(data));
+    assertEquals("test[0][1]", 2.1, test.getQuick(0, 1), EPSILON);
+    assertEquals("test[1][1]", 3.2, test.getQuick(1, 1), EPSILON);
+    assertEquals("test[2][1]", 4.3, test.getQuick(2, 1), EPSILON);
   }
 
   @Test(expected = CardinalityException.class)
@@ -500,7 +551,10 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
-  public abstract void testGetRow();
+  public void testGetRow() {
+    Vector row = test.getRow(1);
+    assertEquals("row size", 2, row.getNumNondefaultElements());
+  }
 
   @Test(expected = IndexException.class)
   public void testGetRowIndexUnder() {
@@ -513,7 +567,10 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
-  public abstract void testGetColumn();
+  public void testGetColumn() {
+    Vector column = test.getColumn(1);
+    assertEquals("row size", 3, column.getNumNondefaultElements());
+  }
 
   @Test(expected = IndexException.class)
   public void testGetColumnIndexUnder() {
@@ -526,12 +583,16 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
   }
 
   @Test
-  public abstract void testDeterminant();
+  public void testDetermitant() {
+    Matrix m = matrixFactory(new double[][]{{1, 3, 4}, {5, 2, 3},
+        {1, 4, 2}});
+    assertEquals("determinant", 43.0, m.determinant(), EPSILON);
+  }
 
   @Test
   public void testAsFormatString() {
     String string = test.asFormatString();
-    int[] cardinality = {size[ROW], size[COL]};
+    int[] cardinality = {values.length, values[0].length};
     Matrix m = AbstractMatrix.decodeMatrix(string);
     for (int row = 0; row < cardinality[ROW]; row++) {
       for (int col = 0; col < cardinality[COL]; col++) {
@@ -602,4 +663,5 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     Matrix mm = AbstractMatrix.decodeMatrix(json);
     assertEquals("Fee", m.get(0, 1), mm.get("Fee", "Bar"), EPSILON);
   }
+
 }

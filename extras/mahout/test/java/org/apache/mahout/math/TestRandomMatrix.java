@@ -25,6 +25,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 
 public class TestRandomMatrix extends TestFabricatedMatrix {
 
@@ -32,23 +33,17 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   protected static final int COL = AbstractMatrix.COL;
 
-  protected RandomMatrix testLinear;
-  protected RandomMatrix testGaussian;
-  protected RandomMatrix testGaussian01;
-  protected RandomMatrix testCached;
-
   int rows = 4;
   int columns = 5;
   int[] cardinality = {rows, columns};
+
+  private AbstractMatrix testLinear;
 
   @Override
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    testLinear = new RandomMatrix(rows, columns);
-    testGaussian = new RandomMatrix(rows, columns);
-    testGaussian01 = new RandomMatrix(rows, columns);
-    testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN);
+    testLinear = generateTestMatrix(rows, columns);
   }
 
   @Test
@@ -337,7 +332,7 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
     testLinear.plus(testLinear.transpose());
   }
 
-  @Test(expected = IndexException.class)
+  @Test(expected = UnsupportedOperationException.class)
   public void testSetUnder() {
     int[] c = testLinear.size();
     for (int row = -1; row < c[ROW]; row++) {
@@ -369,21 +364,21 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
     }
   }
 
-  public void testTimesMatrix() {
-    int[] c = testLinear.size();
-    Matrix multiplier = new DenseMatrix(testLinear.rowSize(), testLinear.columnSize());
-    for(int row = 0; row < testLinear.rowSize(); row++)
-      for(int column = 0; column < testLinear.columnSize(); column++)
-        multiplier.setQuick(row, column, 4.53);
-        
-    Matrix value = testLinear.times(multiplier);
-    for (int row = 0; row < c[ROW]; row++) {
-      for (int col = 0; col < c[COL]; col++) {
-        assertEquals("value[" + row + "][" + col + ']',
-            testLinear.getQuick(row, col) * 4.53, value.getQuick(row, col), EPSILON);
-      }
-    }
-  }
+//  public void testTimesMatrix() {
+//    int[] c = testLinear.size();
+//    Matrix multiplier = new DenseMatrix(c[COL], c[ROW]);
+//    for(int row = 0; row < testLinear.columnSize(); row++)
+//      for(int column = 0; column < testLinear.rowSize(); column++)
+//        multiplier.setQuick(row, column, 4.53);
+//        
+//    Matrix value = testLinear.times(multiplier);
+//    for (int row = 0; row < c[ROW]; row++) {
+//      for (int col = 0; col < c[COL]; col++) {
+//        assertEquals("value[" + row + "][" + col + ']',
+//            testLinear.getQuick(row, col) * 4.53, value.getQuick(row, col), EPSILON);
+//      }
+//    }
+//  }
 
   @Test(expected = CardinalityException.class)
   public void testTimesMatrixCardinality() {
@@ -412,8 +407,8 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
     int[] c = testLinear.size();
     assertTrue("zsum", sum > 0);
     assertTrue("zsum", sum < c[0] * c[1]);
-    sum = testGaussian01.zSum();
-    c = testGaussian01.size();
+    sum = testLinear.zSum();
+    c = testLinear.size();
     assertTrue("zsum", sum > 0);
     assertTrue("zsum", sum < c[0] * c[1]);
     // TODO: what is a good assertion about zSum of proper Gaussians?
@@ -471,7 +466,7 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   @Test
   public void testGettingLabelBindings() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     Map<String, Integer> rowBindings = new HashMap<String, Integer>();
     rowBindings.put("Fee", 0);
     rowBindings.put("Fie", 1);
@@ -489,14 +484,14 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings1() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     m.set("Fee", "Foo", 1, 2, 9);
   }
 
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings2() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     double[] row = new double[3];
     m.set("Fee", row);
   }
@@ -504,14 +499,14 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings3() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     double[] row = new double[3];
     m.set("Fee", 2, row);
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings4() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     assertNull("row bindings", m.getRowLabelBindings());
     assertNull("col bindings", m.getColumnLabelBindings());
     m.set("Fee", "Foo", 2);
@@ -520,7 +515,7 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings5() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
     assertNull("row bindings", m.getRowLabelBindings());
     assertNull("col bindings", m.getColumnLabelBindings());
     m.set("Fee", "Foo", 1, 2, 9);
@@ -528,7 +523,7 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
 
   @Test
   public void testLabelBindingSerialization() {
-    Matrix m = new RandomMatrix(3,3);
+    Matrix m = generateTestMatrix(3,3);
 
     assertNull("row bindings", m.getRowLabelBindings());
     assertNull("col bindings", m.getColumnLabelBindings());
@@ -548,5 +543,9 @@ public class TestRandomMatrix extends TestFabricatedMatrix {
     assertEquals("Fee", m.get(0, 1), mm.get("Fee", "Bar"), EPSILON);
   }
 
+  @Override
+  protected FabricatedMatrix matrixFactory(int rows, int columns) {
+    return new RandomMatrix(rows, columns, new Random(0));
+  }
 
 }

@@ -32,7 +32,7 @@ public class TestRandomVector extends TestReadOnlyVector {
 
   @Override
   public ReadOnlyVector generateTestVector(int cardinality) {
-    return new RandomVector(cardinality, 0, 1, new Random());
+    return new RandomVector(cardinality, new Random());
   }
 
   @Test

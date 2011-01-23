@@ -17,7 +17,6 @@
 
 package org.apache.mahout.common.distance;
 
-import working.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;

@@ -20,6 +20,9 @@ package org.apache.mahout.math;
 import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
+import org.apache.mahout.math.AbstractMatrix.TransposeViewVector;
+import org.apache.mahout.math.function.DoubleDoubleFunction;
+import org.apache.mahout.math.function.DoubleFunction;
 
 import com.google.common.collect.Maps;
 
@@ -77,7 +80,7 @@ public class RandomMatrix extends FabricatedMatrix {
     if (column < 0 || column >= columnSize())
       throw new CardinalityException(column, columnSize());
     rnd.setSeed(getSeed(row, column));
-    double value = getRandom();
+    double value = rnd.nextDouble();
     if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
       throw new Error("RandomVector: getQuick created NaN");
     return value;
@@ -85,24 +88,6 @@ public class RandomMatrix extends FabricatedMatrix {
 
   private long getSeed(int row, int column) {
     return seed + (row * columnSize()) + column;
-  }
-
-  double getRandom() {
-    switch (distribution) {
-    case LINEAR: return rnd.nextDouble();
-    case GAUSSIAN: return rnd.nextGaussian();
-    case GAUSSIAN01: return gaussian01();
-    default: throw new Error("RandomMatrix: not a random distribution: " + distribution);
-    }
-  }
-
-  // normal distribution between zero and one
-  private double gaussian01() {
-    double d = rnd.nextGaussian()/6;
-    while(d > 0.5 || d < -0.5) {
-      d = rnd.nextGaussian()/6;
-    }
-    return d;
   }
 
   @Override
@@ -173,33 +158,45 @@ public class RandomMatrix extends FabricatedMatrix {
   }
   
   @Override
-  public Matrix assign(UnaryFunction function) {
+  public Matrix assign(DoubleFunction function) {
     throw new UnsupportedOperationException();
   }
   
   @Override
-  public Matrix assign(Matrix other, BinaryFunction function) {
+  public Matrix assign(Matrix other, DoubleDoubleFunction function) {
     throw new UnsupportedOperationException();
   }
   
   @Override
+  public void set(int row, double[] data) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public void set(int row, int column, double value) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public Matrix assign(Matrix other) {
+    throw new UnsupportedOperationException();    
+  }
+  
   public Vector getColumn(int column) {
     if (column < 0 || column >= columnSize()) {
       throw new IndexException(column, columnSize());
     }
-    return new RandomVectorOld(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], distribution);
-
+    return new TransposeViewVector(this, column);
   }
-
-  // TODO: make matching cache vector for RandomVector
-  @Override
+  
   public Vector getRow(int row) {
     if (row < 0 || row >= rowSize()) {
       throw new IndexException(row, rowSize());
     }
-    return new RandomVectorOld(columnSize(), seed + row * columnSize(), 1, distribution);
+    Vector wrap = new MatrixVectorView(this, row, 0, 0, 1);
+    return wrap;
   }
-
+  
   /*
    * Can set bindings for all rows and columns.
    * Can fetch values for bindings.

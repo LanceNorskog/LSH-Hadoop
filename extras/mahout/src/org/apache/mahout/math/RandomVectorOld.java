@@ -29,7 +29,7 @@ import org.apache.mahout.math.function.BinaryFunction;
  * 
  * 'stride' allows this to be a RandomMatrix column view
  */
-public class RandomVector extends ReadOnlyVector {
+public class RandomVectorOld extends ReadOnlyVector {
   final int cardinality;
   final Random rnd = new Random();
   final long seed;
