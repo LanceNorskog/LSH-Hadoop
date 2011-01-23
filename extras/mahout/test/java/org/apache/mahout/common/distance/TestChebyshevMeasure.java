@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package test.working;
+package org.apache.mahout.common.distance;
 
 import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.distance.DistanceMeasure;

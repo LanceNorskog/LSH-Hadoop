@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package working;
+package org.apache.mahout.common.distance;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,21 +23,20 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.parameters.ClassParameter;
 import org.apache.mahout.common.parameters.DoubleParameter;
 import org.apache.mahout.common.parameters.Parameter;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
 /** 
- * Implement Minkowski distance, a real-valued generalization of the integral L(n) distances: Manhattan = L1, Euclidean = L2. 
- * For high numbers of dimensions, near-zero exponents give more useful distances. 
+ * Implement Minkowski distance, a real-valued generalization of the 
+ * integral L(n) distances: Manhattan = L1, Euclidean = L2. 
+ * For high numbers of dimensions, very high exponents give more useful distances. 
  * 
  * Note: Math.pow is clever about integer-valued doubles.
  **/
 public class MinkowskiDistanceMeasure implements DistanceMeasure {
-  static public final double EXPONENT = 2;
+  static public final double EXPONENT = 3;
   private List<Parameter<?>> parameters;
   private double exponent = EXPONENT;
   
@@ -84,7 +83,10 @@ public class MinkowskiDistanceMeasure implements DistanceMeasure {
       Element e = it.next();
       sum += Math.pow(Math.abs(e.get()), exponent);
     }
-    return Math.pow(sum, 1/exponent);
+    double value = Math.pow(sum, 1/exponent);
+//    double eu = Math.sqrt(v1.getDistanceSquared(v2));
+//    System.out.println(Math.abs(value - eu));
+    return value;
   }
 
   // TODO: how?

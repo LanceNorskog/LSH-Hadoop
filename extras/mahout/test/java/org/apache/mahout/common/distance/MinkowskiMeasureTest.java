@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package test.working;
+package org.apache.mahout.common.distance;
 
 import working.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.MahoutTestCase;

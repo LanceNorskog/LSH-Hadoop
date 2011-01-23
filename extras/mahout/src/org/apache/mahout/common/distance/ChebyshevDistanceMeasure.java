@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package working;
+package org.apache.mahout.common.distance;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.parameters.Parameter;
 import org.apache.mahout.math.CardinalityException;
 import org.apache.mahout.math.Vector;
