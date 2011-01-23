@@ -15,14 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.math;
+package test.working;
 
 import java.util.Random;
 
 import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.ReadOnlyVector;
 import org.apache.mahout.math.TestReadOnlyVector;
-import org.junit.Test;
 
 public class TestRandomVector extends TestReadOnlyVector {
 
@@ -35,11 +34,6 @@ public class TestRandomVector extends TestReadOnlyVector {
     return new RandomVector(cardinality, 0, 1, new Random());
   }
 
-  @Test
-  @Override
-  public void testZSum() {
-    // assumes random generator is 0 -> 1
-    assertTrue("linear zSum < length", four.zSum() < 4);
-  }
+   
 
 }

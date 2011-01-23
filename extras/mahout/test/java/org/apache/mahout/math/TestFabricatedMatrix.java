@@ -26,30 +26,28 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class TestRandomMatrix extends TestFabricatedMatrix {
+public abstract class TestFabricatedMatrix extends MahoutTestCase {
 
-  protected static final int ROW = AbstractMatrix.ROW;
+  protected static final int ROW_SMALL = 6;
+  protected static final int ROW_LARGE = 10000;
+  protected static final int COLUMN_SMALL = 8;
+  protected static final int COLUMN_LARGE = 11000;
 
-  protected static final int COL = AbstractMatrix.COL;
+  int[] cardinalitySmall = {ROW_SMALL, COLUMN_SMALL};
+  int[] cardinalityLarge = {ROW_LARGE, COLUMN_LARGE};
 
-  protected RandomMatrix testLinear;
-  protected RandomMatrix testGaussian;
-  protected RandomMatrix testGaussian01;
-  protected RandomMatrix testCached;
-
-  int rows = 4;
-  int columns = 5;
-  int[] cardinality = {rows, columns};
+  private FabricatedMatrix testSmall;
+  private FabricatedMatrix testLargs;
 
   @Override
   @Before
   public void setUp() throws Exception {
     super.setUp();
-    testLinear = new RandomMatrix(rows, columns);
-    testGaussian = new RandomMatrix(rows, columns);
-    testGaussian01 = new RandomMatrix(rows, columns);
-    testCached = new RandomMatrix(rows, columns, 500, RandomMatrix.GAUSSIAN);
+    testSmall = generateTestMatrix(ROW_SMALL, COLUMN_SMALL);
+    testLarge = generateTestMatrix(ROW_LARGE, COLUMN_LARGE);
   }
+
+  abstract protected FabricatedMatrix generateTestMatrix(int rows, int columns);
 
   @Test
   public void testCardinality() {

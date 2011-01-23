@@ -1,16 +1,16 @@
 package org.apache.mahout.math;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import org.apache.mahout.math.Vector.Element;
+import org.apache.mahout.math.function.DoubleDoubleFunction;
+import org.apache.mahout.math.function.DoubleFunction;
 
 /*
- * Vector that always returns the same value.
- * Useful for zero/unit vectors.
- * Superclass for other prefab-value Vectors.
+ * Superclass for value-generating Vectors: ReadOnlyVector, RandomVector
+ * 
+ * Assumes Dense case
  */
 
 public abstract class ReadOnlyVector extends AbstractVector implements Vector {
@@ -32,6 +32,36 @@ public abstract class ReadOnlyVector extends AbstractVector implements Vector {
   public void setQuick(int index, double value) {
     throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
   }
+  
+  @Override
+  public Vector assign(double value) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
+  
+  @Override
+  public Vector assign(DoubleDoubleFunction f, double y) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
+  
+  @Override
+  public Vector assign(Vector other) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
+  
+  @Override
+  public Vector assign(Vector other, DoubleDoubleFunction function) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
+  
+  @Override
+  public Vector assign(DoubleFunction function) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
+  
+  @Override
+  public Vector assign(double[] values) {
+    throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
+  }
 
   @Override
   public Vector clone() {
@@ -46,6 +76,10 @@ public abstract class ReadOnlyVector extends AbstractVector implements Vector {
   protected Matrix matrixLike(int rows, int columns) {
     AbstractVector dense = new DenseVector(size());
     return dense.matrixLike(rows, columns);
+  }
+  
+  public Iterator<Element> iterator() {
+    return new AllIterator(this);
   }
 
   protected final class AllIterator implements Iterator<Element> {
@@ -71,7 +105,7 @@ public abstract class ReadOnlyVector extends AbstractVector implements Vector {
     }
 
     public void remove() {
-      throw new UnsupportedOperationException();
+      throw new UnsupportedOperationException(ReadOnlyVector.CANNOT_SET_READ_ONLY_VECTOR);
     }
   }
 

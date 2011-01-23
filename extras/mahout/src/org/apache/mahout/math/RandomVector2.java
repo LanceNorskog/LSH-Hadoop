@@ -15,7 +15,7 @@ import org.apache.mahout.math.Vector.Element;
  * @author lance
  *
  */
-public class RandomVector extends ReadOnlyVector {
+public class RandomVector2 extends ReadOnlyVector {
   
   final private Random rnd;
   final long seed;
@@ -26,10 +26,9 @@ public class RandomVector extends ReadOnlyVector {
    * @param value
    * @param stride
    *    If vector is a column-stride vector created by a RandomMatrix.
-   *    TODO: this feature is not technically necessary because of the VectorView stuff
    * @param rnd
    */
-  public RandomVector(int size, long seed, long stride, Random rnd) {
+  public RandomVector2(int size, long seed, long stride, Random rnd) {
     super(size);
     this.rnd = rnd;
     this.seed = seed;

@@ -17,10 +17,19 @@
 
 package org.apache.mahout.math;
 
+import org.junit.Test;
+
 public class TestFixedValueVector extends TestReadOnlyVector {
+  static double VALUE = 2.5d;
 
   @Override
-  ReadOnlyVector generateTestVector(int cardinality) {
-    return new FixedValueVector(cardinality, 2.5);
+  public ReadOnlyVector generateTestVector(int cardinality) {
+    return new FixedValueVector(cardinality, VALUE);
   }
+  
+  @Test
+  public void testZSum() {
+    assertEquals("linear zSum < length", four.zSum(), VALUE * 4, EPSILON);
+  }
+
 }
