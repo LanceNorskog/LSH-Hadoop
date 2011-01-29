@@ -37,7 +37,8 @@ import com.google.common.collect.Maps;
  **/
 public class RandomMatrix extends FabricatedMatrix {
 
-  final private Random rnd;
+  final long startSeed;
+  final private Random rnd = new Random();
   final private long seed;
   
   /**
@@ -48,8 +49,8 @@ public class RandomMatrix extends FabricatedMatrix {
   public RandomMatrix() {
     cardinality[ROW] = 0;
     cardinality[COL] = 0;
+    startSeed = 0;
     seed = 0;
-    rnd = null;
   }
 
   /**
@@ -58,17 +59,17 @@ public class RandomMatrix extends FabricatedMatrix {
    * @param columns The number of columns in the result.
    * @param rnd Random number generator.
    */
-  public RandomMatrix(int rows, int columns, Random rnd) {
+  public RandomMatrix(int rows, int columns, long startSeed) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
-    seed = rnd.nextLong();
-    this.rnd = rnd;
+    this.startSeed = startSeed;
+    seed = startSeed;
   }
 
   @Override
   public Matrix clone() {
     // it would thread-safe to pass the cache object itself.
-    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), rnd);
+    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), startSeed);
     super.cloneBindings(clone);
     return clone;
   }
