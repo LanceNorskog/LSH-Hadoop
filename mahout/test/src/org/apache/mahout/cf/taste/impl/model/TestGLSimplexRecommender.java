@@ -19,7 +19,6 @@ import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommender;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommenderBuilder;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.eval.AverageAbsoluteDifferenceRecommenderEvaluator;
-import org.apache.mahout.cf.taste.impl.eval.AverageAbsoluteDifferenceRecommenderEvaluatorDual;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;

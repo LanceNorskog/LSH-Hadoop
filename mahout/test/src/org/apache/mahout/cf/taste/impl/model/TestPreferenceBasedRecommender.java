@@ -41,7 +41,6 @@ import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
-import working.ChebyshevDistanceMeasure;
 import working.SemanticVectorFactory;
 
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
