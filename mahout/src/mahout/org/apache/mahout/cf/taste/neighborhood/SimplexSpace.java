@@ -34,25 +34,26 @@ public class SimplexSpace<T> {
   final Hasher hasher;
   Map<T, Hash<T>> idSetMap = new HashMap<T, Hash<T>>();
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
+  Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
   private final DistanceMeasure measure;
   int lod = 0;
   private int lodMask;
-
+  
   public SimplexSpace(Hasher hasher, int dimensions) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = null;
   }
-
+  
   public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = measure;
   }
-
+  
   // populate hashes
   public void addVector(T payload, Vector v) {
     double[] values = new double[dimensions];
@@ -67,19 +68,19 @@ public class SimplexSpace<T> {
       this.hashCode();
     hashKeys.add(payload);
   }
-
+  
   /*
    * Mask hash value to the current level of detail
    */
   private Hash<T> getHashLOD(double[] values, T payload) {
     int[] hashes = hasher.hash(values);
-
+    
     for(int i = 0; i < dimensions; i++) {
       hashes[i] &= ~lodMask;
     }
     return new Hash<T>(hashes, lod, payload);
   }
-
+  
   private void getValues(Vector v, double[] values) {
     Iterator<Element> el = v.iterateNonZero();
     while(el.hasNext()) {
@@ -87,12 +88,12 @@ public class SimplexSpace<T> {
       values[e.index()] = e.get();
     }
   }    
-
+  
   /*
    * Search for neighbors of given ID.
    *    expand - expand search N counts outward
    */
-
+  
   //  public long[] findNeighbors(long id, int expand) {
   //    Hash central = idSetMap.get(id);
   //    if (null == central)
@@ -128,7 +129,7 @@ public class SimplexSpace<T> {
   //    }
   //    return values;
   //  }
-
+  
   /*
    * Enumerate other co-resident hashes.
    * Do not add input hash.
@@ -147,7 +148,7 @@ public class SimplexSpace<T> {
     }
     return others;
   }
-
+  
   public Map<T, Set<T>> findNeighbors(T other) {
     Hash<T> hash = idSetMap.get(other);
     if (null == hash)
@@ -160,7 +161,7 @@ public class SimplexSpace<T> {
     }
     return others;
   }
-
+  
   public double getDistance(long id1, long id2, DistanceMeasure measure) {
     if (null == measure)
       measure = this.measure;
@@ -168,11 +169,11 @@ public class SimplexSpace<T> {
     Hash<T> h2 = idSetMap.get(id2);
     if (null == h1 || null == h2)
       return -1;
-
+    
     double d = hashDistance(h1, h2, measure);
     return d;
   }
-
+  
   public double getDistance(long id1, long id2, SimplexSpace<T> otherSpace, DistanceMeasure measure) {
     if (null == measure)
       measure = this.measure;
@@ -181,13 +182,13 @@ public class SimplexSpace<T> {
     if (null == h1 || null == h2) {
       return -1;
     }
-
+    
     double d = hashDistance(h1, h2, measure);
     if (d != 0.0)
       System.out.println(d);
     return d;
   }
-
+  
   private double hashDistance(Hash<T> h1, Hash<T> h2, DistanceMeasure measure) {
     double[] d1 = new double[dimensions];
     double[] d2 = new double[dimensions];
@@ -205,15 +206,15 @@ public class SimplexSpace<T> {
     double distance = measure.distance(v1, v2);
     return distance;
   }
-
+  
   public int getDimensions() {
     return dimensions;
   }
-
+  
   public int getLOD() {
     return this.lod;
   }
-
+  
   public void setLOD(int lod){
     this.lod = lod;
     int mask = 0;
@@ -224,8 +225,8 @@ public class SimplexSpace<T> {
     }
     this.lodMask = mask;
   }
-
-  public void stDev() {
+  
+  public void stDevCounts() {
     CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
     for(Hash<T> h: hashSetMap.keySet()) {
       std.addDatum(hashSetMap.get(h).size());
@@ -234,7 +235,27 @@ public class SimplexSpace<T> {
     System.out.println("Mean: " + std.getAverage());
     System.out.println("Stdev: " + std.getStandardDeviation());
   }
-
+  
+  public void stDevCenters() {
+    CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
+    for(Hash<T> h: vectorSetMap.keySet()) {
+      Vector center = new DenseVector(dimensions);
+      Set<Vector> vectors = vectorSetMap.get(h);
+      for (Vector v: vectors) {
+        v.addTo(center);
+      }
+      center = center.divide(vectors.size());
+      double distance = 0;
+      for (Vector v: vectors) {
+        distance += measure.distance(v, center);
+      }
+      std.addDatum(distance / vectors.size());
+    }
+    System.out.println("Entries: " + hashSetMap.size());
+    System.out.println("Mean: " + std.getAverage());
+    System.out.println("Stdev: " + std.getStandardDeviation());
+  }
+  
   @Override
   public String toString() {
     String x = "";
@@ -261,5 +282,9 @@ public class SimplexSpace<T> {
       x += "}";
     }
     return x;
+  }
+  
+  public int getNumHashes() {
+    return hashSetMap.keySet().size();
   }
 }

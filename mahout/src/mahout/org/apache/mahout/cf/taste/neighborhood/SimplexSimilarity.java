@@ -50,8 +50,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
    */
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
-    // TODO Auto-generated method stub
-
+    throw new UnsupportedOperationException();
   }
 
   /* (non-Javadoc)

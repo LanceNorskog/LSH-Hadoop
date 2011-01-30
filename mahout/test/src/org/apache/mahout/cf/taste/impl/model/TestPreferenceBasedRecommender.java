@@ -98,10 +98,10 @@ public class TestPreferenceBasedRecommender {
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");
-    sun.space.stDev();
+    sun.space.stDevCounts();
     if (null != sun.spaceLOD) {
       System.out.println("LOD space");
-      sun.spaceLOD.stDev();
+      sun.spaceLOD.stDevCounts();
     }
     tracker = new CompactRunningAverage();
 //    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, formula);
@@ -129,13 +129,13 @@ public class TestPreferenceBasedRecommender {
   private static Recommender doEstimatingSimplexUser(DataModel bcModel) throws TasteException {
     int DIMS = 100;
     //    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
-    SimplexSpace userSpace = getSpace(DIMS);
-    SimplexSpace userSpaceLOD = getSpace(DIMS);
+    SimplexSpace<Long> userSpace = getSpace(DIMS);
+    SimplexSpace<Long> userSpaceLOD = getSpace(DIMS);
     //    userSpace.doUnhash = false;
     //    userSpaceLOD.doUnhash = false;
     userSpaceLOD.setLOD(3);
     addUserSimplices(userSpace, userSpaceLOD, bcModel);
-    SimplexSpace itemSpace = getSpace(DIMS);
+    SimplexSpace<Long> itemSpace = getSpace(DIMS);
     //    itemSpace.doUnhash = false;
     addItemSimplices(itemSpace, bcModel);
     UserSimilarity similarity = new CachingUserSimilarity(new SimplexSimilarity(userSpace, itemSpace, null), bcModel);
@@ -144,12 +144,12 @@ public class TestPreferenceBasedRecommender {
     return new EstimatingUserBasedRecommender(bcModel, neighborhood, similarity);
   }
 
-  private static SimplexSpace getSpace(int DIMS) {
+  private static SimplexSpace<Long> getSpace(int DIMS) {
     //    DistanceMeasure measure = new ChebyshevDistanceMeasure(); 
     //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
     //    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
     DistanceMeasure measure = new EuclideanDistanceMeasure();
-    return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
+    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
     //    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
     /*
      * LOD 8
@@ -167,7 +167,7 @@ public class TestPreferenceBasedRecommender {
      */
   }
 
-  private static void addUserSimplices(SimplexSpace space, SimplexSpace spaceLOD, DataModel bcModel) throws TasteException {
+  private static void addUserSimplices(SimplexSpace<Long> space, SimplexSpace<Long> spaceLOD, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getUserIDs();
     while (lpi.hasNext()) {
@@ -181,7 +181,7 @@ public class TestPreferenceBasedRecommender {
     }
   }
 
-  private static void addItemSimplices(SimplexSpace space, DataModel bcModel) throws TasteException {
+  private static void addItemSimplices(SimplexSpace<Long> space, DataModel bcModel) throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(bcModel, space.getDimensions(), new Random(0));
     LongPrimitiveIterator lpi = bcModel.getItemIDs();
     while (lpi.hasNext()) {

@@ -92,10 +92,10 @@ public class CompareRecommenders {
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");
-    sun.space.stDev();
+    sun.space.stDevCounts();
     if (null != sun.spaceLOD) {
       System.out.println("LOD space");
-      sun.spaceLOD.stDev();
+      sun.spaceLOD.stDevCounts();
     }
     //    tracker = new CompactRunningAverage();
     //    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
