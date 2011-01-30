@@ -37,6 +37,7 @@ import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+import org.apache.mahout.common.distance.ChebyshevDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
@@ -62,11 +63,12 @@ import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
 public class SimplexSizes {
   static SimplexUserNeighborhood sun = null;
   static int DIMS = 200;
-  static double SIZE = 0.1;
+  static double SIZE = 0.008;
   
   public static void main(String[] args) throws TasteException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    for(int lod = 0; lod <= 9; lod++) {
+    System.out.println("lod,countOrtho,countVT,ratio,stdevOrtho,stdevVT,ratio");
+    for(int lod = 0; lod <= 19; lod++) {
       stats(glModel, lod);
     }
   }
@@ -80,14 +82,14 @@ public class SimplexSizes {
     spaceVT.setLOD(lod);
     int countVT = loadSpace(glModel, spaceVT);
     double stdevVT = getStdev(spaceVT);
-    System.out.println("LOD: " + lod + ", Ortho: " + countOrtho + ", VT: " + countVT + ", ratio:" + ((double) countOrtho)/countVT);
+//    System.out.println("LOD: " + lod + ", Ortho: " + countOrtho + ", VT: " + countVT + ", ratio:" + ((double) countOrtho)/countVT);
+    System.out.println(lod + "," + countOrtho + "," + countVT + "," + (((double) countOrtho)/countVT) +
+      "," + stdevOrtho + "," + stdevVT + "," + (stdevOrtho/stdevVT));
   }
   
   private static double getStdev(SimplexSpace<Long> space) {
-    RunningAverageAndStdDev stdev = new FullRunningAverageAndStdDev();
-    
-    
-    return stdev.getStandardDeviation();
+    double value = space.stDevCenters();
+    return value;
   }
 
   // give two ratings.dat files, training and test
@@ -98,11 +100,17 @@ public class SimplexSizes {
   }
   
   private static SimplexSpace<Long> getSpaceOrthonormal(int DIMS) {
-    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, SIZE), DIMS, null);
+  DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
+//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, SIZE), DIMS, measure);
   }
   
   private static SimplexSpace<Long> getSpaceVT(int DIMS) {
-    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, SIZE / 2), DIMS, null);
+    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
+//    DistanceMeasure measure = new ChebyshevDistanceMeasure();
+//    DistanceMeasure measure = new ManhattanDistanceMeasure();
+//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, SIZE), DIMS, measure);
   }
   
   private static void addSimplices(SimplexSpace<Long> space, DataModel bcModel) throws TasteException {

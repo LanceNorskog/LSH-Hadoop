@@ -3,10 +3,12 @@
  */
 package org.apache.mahout.cf.taste.neighborhood;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,7 +17,10 @@ import lsh.core.Hasher;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -35,6 +40,7 @@ public class SimplexSpace<T> {
   Map<T, Hash<T>> idSetMap = new HashMap<T, Hash<T>>();
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
   Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
+  Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
@@ -61,12 +67,16 @@ public class SimplexSpace<T> {
     Hash<T> hash = getHashLOD(values, payload);
     idSetMap.put(payload, hash);
     Set<T> hashKeys = hashSetMap.get(hash);
+    Set<Vector> vectorKeys = vectorSetMap.get(hash);
     if (null == hashKeys) {
       hashKeys = new HashSet<T>();
       hashSetMap.put(hash, hashKeys);
+      vectorKeys = new HashSet<Vector>();
+      vectorSetMap.put(hash, vectorKeys);
     } else
       this.hashCode();
     hashKeys.add(payload);
+    vectorKeys.add(v);
   }
   
   /*
@@ -88,47 +98,6 @@ public class SimplexSpace<T> {
       values[e.index()] = e.get();
     }
   }    
-  
-  /*
-   * Search for neighbors of given ID.
-   *    expand - expand search N counts outward
-   */
-  
-  //  public long[] findNeighbors(long id, int expand) {
-  //    Hash central = idSetMap.get(id);
-  //    if (null == central)
-  //      return null;
-  //    FastIDSet others = new FastIDSet();
-  //    Hash cloned = (Hash) central.clone();
-  //    int found = 0;
-  //    for (int i = 0; i < dimensions; i++) {
-  //      int last = found;
-  //      cloned.hashes[i] = central.hashes[i] + 1;
-  //      Set<Long> hashLongs = hashSetMap.get(cloned);
-  //      if (null != hashLongs)
-  //        for(Long otherID: hashLongs) {
-  //          if (otherID != id)
-  //            others.add(otherID);
-  //        }
-  //      cloned.hashes[i] = central.hashes[i] - 1;
-  //      hashLongs = hashSetMap.get(cloned);
-  //      if (null != hashLongs)
-  //        for(Long otherID: hashLongs) {
-  //          if (otherID != id)
-  //            others.add(otherID);
-  //        }     
-  //      found = others.size();
-  //      if (found > last) {
-  //        System.out.println(i + "," + (found - last));
-  //      }
-  //    }
-  //    long[] values = new long[others.size()];
-  //    LongPrimitiveIterator lpi = others.iterator();
-  //    for(int i = 0; i < others.size(); i++) {
-  //      values[i] = lpi.nextLong();
-  //    }
-  //    return values;
-  //  }
   
   /*
    * Enumerate other co-resident hashes.
@@ -236,24 +205,49 @@ public class SimplexSpace<T> {
     System.out.println("Stdev: " + std.getStandardDeviation());
   }
   
-  public void stDevCenters() {
-    CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
+//  public double stDevCenters() {
+//    FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
+//    for(Hash<T> h: vectorSetMap.keySet()) {
+//      Vector center = new DenseVector(dimensions);
+//      Set<Vector> vectors = vectorSetMap.get(h);
+//      for (Vector v: vectors) {
+//        v.addTo(center);
+//      }
+//      center = center.divide(vectors.size());
+//      double distance = 0;
+//      for (Vector v: vectors) {
+//        distance += measure.distance(v, center);
+//      }
+//      std.addDatum(distance);
+//    }
+//    System.out.println("Entries: " + hashSetMap.size());
+//    System.out.println("Mean: " + std.getAverage());
+//    System.out.println("Stdev: " + std.getStandardDeviation());
+//    return std.getStandardDeviation();
+//  }
+  
+  public double stDevCenters() {
+    FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
+    
     for(Hash<T> h: vectorSetMap.keySet()) {
+//      List<FullRunningAverageAndStdDev> devs = new ArrayList<FullRunningAverageAndStdDev>();
+//      for(int i = 0; i < dimensions; i++) {
       Vector center = new DenseVector(dimensions);
       Set<Vector> vectors = vectorSetMap.get(h);
       for (Vector v: vectors) {
         v.addTo(center);
       }
       center = center.divide(vectors.size());
-      double distance = 0;
+      RunningAverage avg = new FullRunningAverage();
       for (Vector v: vectors) {
-        distance += measure.distance(v, center);
+        avg.addDatum(Math.abs(measure.distance(v, center)));
       }
-      std.addDatum(distance / vectors.size());
+      std.addDatum(avg.getAverage());
     }
-    System.out.println("Entries: " + hashSetMap.size());
-    System.out.println("Mean: " + std.getAverage());
-    System.out.println("Stdev: " + std.getStandardDeviation());
+//    System.out.println("Entries: " + hashSetMap.size());
+//    System.out.println("Mean: " + std.getAverage());
+//    System.out.println("Stdev: " + std.getStandardDeviation());
+    return std.getStandardDeviation();
   }
   
   @Override
@@ -267,6 +261,17 @@ public class SimplexSpace<T> {
         Hash<T> h = idSetMap.get(key);
         Set<T> ids = hashSetMap.get(h);
         x += ids.size() + ",";
+      }
+      x += "}";
+    }
+    if (null != hashSetMap) {
+      x += "HASH{";
+      for(Hash<T> h: hashSetMap.keySet()) {
+        Set<T> hs = hashSetMap.get(h);
+        if (null == hs)
+          x += "0,";
+        else
+          x += hs.size() + ",";
       }
       x += "}";
     }
