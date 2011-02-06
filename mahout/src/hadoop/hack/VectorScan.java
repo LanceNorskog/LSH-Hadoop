@@ -27,6 +27,7 @@ import java.nio.charset.Charset;
 
 import lsh.core.Hasher;
 import lsh.core.OrthonormalHasher;
+import lsh.core.VertexTransitiveHasher;
 
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.Group;
@@ -43,7 +44,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.mahout.cf.taste.neighborhood.DenseHash;
+import org.apache.mahout.cf.taste.neighborhood.Hash;
 import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
+import org.apache.mahout.cf.taste.neighborhood.SparseHash;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
@@ -98,7 +102,7 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        spaces = makeSpaces(2);
+        spaces = makeSpaces(10);
         try {
           int sub = Integer.MAX_VALUE;
           if (cmdLine.hasOption(substringOpt)) {
@@ -106,6 +110,7 @@ public final class VectorScan {
           }
           Text key = (Text) reader.getKeyClass().asSubclass(Writable.class).newInstance();
           VectorWritable value = (VectorWritable) reader.getValueClass().asSubclass(Writable.class).newInstance();
+          int count = 0;
           while (reader.next(key, value)) {
             String text = key.toString();
             Vector v = value.get();
@@ -114,6 +119,11 @@ public final class VectorScan {
             v.hashCode();
 //            System.out.println(size + "," + density);
             addSpaces(spaces, text, v);
+            count++;
+            if (count % 100 == 0)
+              System.out.print(".");
+            if (count == 10000)
+              break;
           }
           printSpaces(spaces);
         } finally {
@@ -129,24 +139,30 @@ public final class VectorScan {
   
   private static void printSpaces(SimplexSpace<String>[] spaces) {
     for(int i = 0; i < spaces.length; i++) {
-      System.out.println(spaces[i].getNumHashes());
+      System.out.println(spaces[i].getNonZeroNumHashes());
     }   
   }
 
+  /*
+   * Count the number of entries in this hash- ignore the payload
+   */
   private static void addSpaces(SimplexSpace<String>[] spaces, String key, Vector v) {
-    for(int i = 0; i < spaces.length; i++) {
-      spaces[i].addVector(key, v);
+    Hash<String> h = spaces[0].getHashLOD(v, null);
+    int[] hashes = h.getHashes();
+    for(int lod = 0; lod < spaces.length; lod++) {
+      Hash<String> spot = new SparseHash<String>(hashes, lod, key);
+      spaces[lod].addHash(null, v, spot);
     }
   }
 
   private static SimplexSpace<String>[] makeSpaces(int n) {
-    Hasher hasher = new OrthonormalHasher(DIMS, null);
+    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = 0; i < n; i++) {
       SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMS, measure, false, true);
       spaces[i] = space;
-      space.setLOD(n);
+      space.setLOD(i);
     }
     return spaces;
   }

@@ -96,7 +96,7 @@ public class SimplexSpaceUtils {
   
   private static int loadSpace(DataModel model, SimplexSpace<Long> space) throws TasteException {
     addSimplices(space, model);
-    return space.getNumHashes();
+    return space.getNonZeroNumHashes();
   }
   
   private static SimplexSpace<Long> getSpaceOrthonormal(int DIMS) {

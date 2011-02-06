@@ -42,13 +42,13 @@ public class SimplexSpace<T> {
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
   Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
   Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
-  Map<Hash<T>, IntWritable> countMap = new HashMap<Hash<T>,IntWritable>();
+//  Map<Integer, IntWritable> countMap = new HashMap<Integer,IntWritable>();
+  Map<Hash<T>, Integer> countMap = new HashMap<Hash<T>,Integer>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
   private final DistanceMeasure measure;
   int lod = 0;
-  private int lodMask;
   final boolean doCenter;
   final boolean doCount;
   
@@ -70,17 +70,22 @@ public class SimplexSpace<T> {
   
   // populate hashes
   public void addVector(T payload, Vector v) {
-    double[] values = new double[dimensions];
-    getValues(v, values);
-    Hash<T> hash = getHashLOD(values, payload);
+    Hash<T> hash = getHashLOD(v, payload);
+    addHash(payload, v, hash);
+  }
+  
+  public void addHash(T payload, Vector v, Hash<T> hash) {
     if (doCount) {
-      IntWritable counter = countMap.get(hash);
-      if (null == counter) {
-        counter = new IntWritable();
+      if (!countMap.containsKey(hash)) {
+        countMap.put(hash, null);
+      } else {
+        Integer counter = countMap.get(hash);
+        if (null == counter) {
+          counter = 1;
+        }
+        counter++;
         countMap.put(hash, counter);
       }
-      int value = counter.get();
-      counter.set(value + 1);
     } else {
       idSetMap.put(payload, hash);
       Set<T> hashKeys = hashSetMap.get(hash);
@@ -100,13 +105,26 @@ public class SimplexSpace<T> {
   /*
    * Mask hash value to the current level of detail
    */
-  private Hash<T> getHashLOD(double[] values, T payload) {
-    int[] hashes = hasher.hash(values);
-    
-    for(int i = 0; i < dimensions; i++) {
-      hashes[i] &= ~lodMask;
+  public Hash<T> getHashLOD(Vector v, T payload) {
+    int[] hashes;
+    if (v.isDense()) {
+      double[] values = new double[dimensions];
+      getValues(v, values);
+      hashes = hasher.hash(values);
+      return new DenseHash<T>(hashes, lod, payload);
+    } else {
+      hashes = new int[dimensions];
+      double[] d = new double[1];
+      int[] h = new int[1];
+      Iterator<Element> el = v.iterateNonZero();
+      while(el.hasNext()) {
+        Element e = el.next();
+        d[0] = e.get();
+        h = hasher.hash(d);
+        hashes[e.index()] = h[0];
+      }
+      return new SparseHash<T>(hashes, lod, payload);
     }
-    return new Hash<T>(hashes, lod, payload);
   }
   
   private void getValues(Vector v, double[] values) {
@@ -179,13 +197,15 @@ public class SimplexSpace<T> {
   private double hashDistance(Hash<T> h1, Hash<T> h2, DistanceMeasure measure) {
     double[] d1 = new double[dimensions];
     double[] d2 = new double[dimensions];
+    int[] hashes1 = h1.getHashes();
+    int[] hashes2 = h2.getHashes();
     if (doUnhash) {
-      hasher.unhash(h1.hashes, d1);
-      hasher.unhash(h2.hashes, d2);
+      hasher.unhash(hashes1, d1);
+      hasher.unhash(hashes2, d2);
     } else {
-      for(int i = 0; i < h1.hashes.length; i++) {
-        d1[i] = h1.hashes[i];
-        d2[i] = h2.hashes[i];
+      for(int i = 0; i < dimensions; i++) {
+        d1[i] = hashes1[i];
+        d2[i] = hashes2[i];
       }
     }
     Vector v1 = new DenseVector(d1);
@@ -204,13 +224,6 @@ public class SimplexSpace<T> {
   
   public void setLOD(int lod){
     this.lod = lod;
-    int mask = 0;
-    int x = 0;
-    while(x < lod) {
-      mask |= (1 << x);
-      x++;
-    }
-    this.lodMask = mask;
   }
   
   public void stDevCounts() {
@@ -307,10 +320,19 @@ public class SimplexSpace<T> {
     return x;
   }
   
-  public int getNumHashes() {
-    if (doCount)
-      return countMap.keySet().size();
-    else
+  public int getNonZeroNumHashes() {
+    if (doCount) {
+      int nonZero = 0;
+      for(Integer i: countMap.values()) {
+        if (null == i) {
+//          nonZero++;
+          continue;
+        }
+        if (null != i)
+          nonZero++;
+      }
+      return nonZero;
+    } else
       return hashSetMap.keySet().size();
   }
 }
