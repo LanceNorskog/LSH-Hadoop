@@ -14,6 +14,7 @@ import java.util.Set;
 
 import lsh.core.Hasher;
 
+import org.apache.hadoop.io.IntWritable;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
@@ -41,23 +42,30 @@ public class SimplexSpace<T> {
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
   Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
   Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
+  Map<Hash<T>, IntWritable> countMap = new HashMap<Hash<T>,IntWritable>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
   private final DistanceMeasure measure;
   int lod = 0;
   private int lodMask;
+  final boolean doCenter;
+  final boolean doCount;
   
   public SimplexSpace(Hasher hasher, int dimensions) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = null;
+    doCenter = false;
+    doCount = false;
   }
   
-  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure) {
+  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean center, boolean count) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = measure;
+    doCenter = center;
+    doCount = count;
   }
   
   // populate hashes
@@ -65,18 +73,28 @@ public class SimplexSpace<T> {
     double[] values = new double[dimensions];
     getValues(v, values);
     Hash<T> hash = getHashLOD(values, payload);
-    idSetMap.put(payload, hash);
-    Set<T> hashKeys = hashSetMap.get(hash);
-    Set<Vector> vectorKeys = vectorSetMap.get(hash);
-    if (null == hashKeys) {
-      hashKeys = new HashSet<T>();
-      hashSetMap.put(hash, hashKeys);
-      vectorKeys = new HashSet<Vector>();
-      vectorSetMap.put(hash, vectorKeys);
-    } else
-      this.hashCode();
-    hashKeys.add(payload);
-    vectorKeys.add(v);
+    if (doCount) {
+      IntWritable counter = countMap.get(hash);
+      if (null == counter) {
+        counter = new IntWritable();
+        countMap.put(hash, counter);
+      }
+      int value = counter.get();
+      counter.set(value + 1);
+    } else {
+      idSetMap.put(payload, hash);
+      Set<T> hashKeys = hashSetMap.get(hash);
+      Set<Vector> vectorKeys = vectorSetMap.get(hash);
+      if (null == hashKeys) {
+        hashKeys = new HashSet<T>();
+        hashSetMap.put(hash, hashKeys);
+        vectorKeys = new HashSet<Vector>();
+        vectorSetMap.put(hash, vectorKeys);
+      } else
+        this.hashCode();
+      hashKeys.add(payload);
+      vectorKeys.add(v);
+    }
   }
   
   /*
@@ -205,33 +223,33 @@ public class SimplexSpace<T> {
     System.out.println("Stdev: " + std.getStandardDeviation());
   }
   
-//  public double stDevCenters() {
-//    FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
-//    for(Hash<T> h: vectorSetMap.keySet()) {
-//      Vector center = new DenseVector(dimensions);
-//      Set<Vector> vectors = vectorSetMap.get(h);
-//      for (Vector v: vectors) {
-//        v.addTo(center);
-//      }
-//      center = center.divide(vectors.size());
-//      double distance = 0;
-//      for (Vector v: vectors) {
-//        distance += measure.distance(v, center);
-//      }
-//      std.addDatum(distance);
-//    }
-//    System.out.println("Entries: " + hashSetMap.size());
-//    System.out.println("Mean: " + std.getAverage());
-//    System.out.println("Stdev: " + std.getStandardDeviation());
-//    return std.getStandardDeviation();
-//  }
+  //  public double stDevCenters() {
+  //    FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
+  //    for(Hash<T> h: vectorSetMap.keySet()) {
+  //      Vector center = new DenseVector(dimensions);
+  //      Set<Vector> vectors = vectorSetMap.get(h);
+  //      for (Vector v: vectors) {
+  //        v.addTo(center);
+  //      }
+  //      center = center.divide(vectors.size());
+  //      double distance = 0;
+  //      for (Vector v: vectors) {
+  //        distance += measure.distance(v, center);
+  //      }
+  //      std.addDatum(distance);
+  //    }
+  //    System.out.println("Entries: " + hashSetMap.size());
+  //    System.out.println("Mean: " + std.getAverage());
+  //    System.out.println("Stdev: " + std.getStandardDeviation());
+  //    return std.getStandardDeviation();
+  //  }
   
   public double stDevCenters() {
     FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
     
     for(Hash<T> h: vectorSetMap.keySet()) {
-//      List<FullRunningAverageAndStdDev> devs = new ArrayList<FullRunningAverageAndStdDev>();
-//      for(int i = 0; i < dimensions; i++) {
+      //      List<FullRunningAverageAndStdDev> devs = new ArrayList<FullRunningAverageAndStdDev>();
+      //      for(int i = 0; i < dimensions; i++) {
       Vector center = new DenseVector(dimensions);
       Set<Vector> vectors = vectorSetMap.get(h);
       for (Vector v: vectors) {
@@ -244,9 +262,9 @@ public class SimplexSpace<T> {
       }
       std.addDatum(avg.getAverage());
     }
-//    System.out.println("Entries: " + hashSetMap.size());
-//    System.out.println("Mean: " + std.getAverage());
-//    System.out.println("Stdev: " + std.getStandardDeviation());
+    //    System.out.println("Entries: " + hashSetMap.size());
+    //    System.out.println("Mean: " + std.getAverage());
+    //    System.out.println("Stdev: " + std.getStandardDeviation());
     return std.getStandardDeviation();
   }
   
@@ -290,6 +308,9 @@ public class SimplexSpace<T> {
   }
   
   public int getNumHashes() {
-    return hashSetMap.keySet().size();
+    if (doCount)
+      return countMap.keySet().size();
+    else
+      return hashSetMap.keySet().size();
   }
 }

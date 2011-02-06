@@ -60,7 +60,7 @@ import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
  *                            training.dat test.dat     <-- compare training and test data
  */
 
-public class SimplexSizes {
+public class SimplexSpaceUtils {
   static SimplexUserNeighborhood sun = null;
   static int DIMS = 200;
   static double SIZE = 0.008;
@@ -102,7 +102,7 @@ public class SimplexSizes {
   private static SimplexSpace<Long> getSpaceOrthonormal(int DIMS) {
   DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
 //    DistanceMeasure measure = new EuclideanDistanceMeasure();
-    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, SIZE), DIMS, measure);
+    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, SIZE), DIMS, measure, false, false);
   }
   
   private static SimplexSpace<Long> getSpaceVT(int DIMS) {
@@ -110,7 +110,7 @@ public class SimplexSizes {
 //    DistanceMeasure measure = new ChebyshevDistanceMeasure();
 //    DistanceMeasure measure = new ManhattanDistanceMeasure();
 //    DistanceMeasure measure = new EuclideanDistanceMeasure();
-    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, SIZE), DIMS, measure);
+    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, SIZE), DIMS, measure, false, false);
   }
   
   private static void addSimplices(SimplexSpace<Long> space, DataModel bcModel) throws TasteException {
