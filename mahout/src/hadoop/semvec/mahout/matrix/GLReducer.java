@@ -15,7 +15,7 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.RandomFactory;
 import org.apache.mahout.math.RandomMatrix;
-import org.apache.mahout.math.RandomVectorOld;
+import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -80,7 +80,8 @@ Reducer<LongWritable, MyTupleWritable, Text, Text> {
       return;
     Vector item = new DenseVector(dimension);
     for(int dim = 0; dim < dimension; dim++) {
-      Vector random = factory.getVector(100000, RandomMatrix.GAUSSIAN01);
+      int cardinality = 100000;
+      Vector random = new RandomVector(cardinality, factory.getRandom(cardinality, RandomFactory.Distribution.LINEAR));
       Iterator<Element> sparse = column.iterateNonZero();
       double userSum = 0;
       double prefSum = 0;

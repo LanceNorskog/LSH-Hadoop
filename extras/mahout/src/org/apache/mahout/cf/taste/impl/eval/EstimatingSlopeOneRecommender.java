@@ -39,6 +39,8 @@ import org.apache.mahout.cf.taste.recommender.slopeone.DiffStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
+
 /**
  * <p>
  * A basic "slope one" recommender. (See an <a href="http://www.daniel-lemire.com/fr/abstracts/SDM2005.html">
@@ -95,12 +97,9 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
                              Weighting stdDevWeighting,
                              DiffStorage diffStorage) {
     super(dataModel);
-    if ((stdDevWeighting == Weighting.WEIGHTED) && (weighting == Weighting.UNWEIGHTED)) {
-      throw new IllegalArgumentException("weighted required when stdDevWeighted is set");
-    }
-    if (diffStorage == null) {
-      throw new IllegalArgumentException("diffStorage is null");
-    }
+    Preconditions.checkArgument(stdDevWeighting != Weighting.WEIGHTED || weighting != Weighting.UNWEIGHTED,
+      "weighted required when stdDevWeighted is set");
+    Preconditions.checkArgument(diffStorage != null, "diffStorage is null");
     this.weighted = weighting == Weighting.WEIGHTED;
     this.stdDevWeighted = stdDevWeighting == Weighting.WEIGHTED;
     this.diffStorage = diffStorage;
@@ -108,30 +107,27 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
   
   @Override
   public List<RecommendedItem> recommend(long userID, int howMany, IDRescorer rescorer) throws TasteException {
-    if (howMany < 1) {
-      throw new IllegalArgumentException("howMany must be at least 1");
-    }
-    
+    Preconditions.checkArgument(howMany >= 1, "howMany must be at least 1");
     log.debug("Recommending items for user ID '{}'", userID);
-    
+
     FastIDSet possibleItemIDs = diffStorage.getRecommendableItemIDs(userID);
-    
+
     TopItems.Estimator<Long> estimator = new Estimator(userID);
-    
+
     List<RecommendedItem> topItems = TopItems.getTopItems(howMany, possibleItemIDs.iterator(), rescorer,
       estimator);
-    
+
     log.debug("Recommendations are: {}", topItems);
     return topItems;
   }
   
   @Override
   public float estimatePreference(long userID, long itemID) throws TasteException {
-//    DataModel model = getDataModel();
-//    Float actualPref = model.getPreferenceValue(userID, itemID);
-//    if (actualPref != null) {
-//      return actualPref;
-//    }
+    DataModel model = getDataModel();
+    Float actualPref = model.getPreferenceValue(userID, itemID);
+    if (actualPref != null) {
+      return actualPref;
+    }
     return doEstimatePreference(userID, itemID);
   }
   
@@ -177,15 +173,20 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
   @Override
   public void setPreference(long userID, long itemID, float value) throws TasteException {
     DataModel dataModel = getDataModel();
-    float prefDelta;
+    Float oldPref;
     try {
-      Float oldPref = dataModel.getPreferenceValue(userID, itemID);
-      prefDelta = oldPref == null ? value : value - oldPref;
+      oldPref = dataModel.getPreferenceValue(userID, itemID);
     } catch (NoSuchUserException nsee) {
-      prefDelta = value;
+      oldPref = null;
     }
     super.setPreference(userID, itemID, value);
-    diffStorage.updateItemPref(itemID, prefDelta, false);
+    if (oldPref == null) {
+      // Add new preference
+      diffStorage.addItemPref(userID, itemID, value);
+    } else {
+      // Update preference
+      diffStorage.updateItemPref(itemID, value - oldPref);
+    }
   }
   
   @Override
@@ -194,7 +195,7 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
     Float oldPref = dataModel.getPreferenceValue(userID, itemID);
     super.removePreference(userID, itemID);
     if (oldPref != null) {
-      diffStorage.updateItemPref(itemID, oldPref, true);
+      diffStorage.removeItemPref(userID, itemID, oldPref);
     }
   }
   

@@ -17,12 +17,12 @@
 
 package org.apache.mahout.cf.taste.impl.eval;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.eval.DataModelBuilder;
+import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.model.DataModel;
@@ -30,16 +30,12 @@ import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.recommender.RecommendedItem;
 import org.apache.mahout.cf.taste.recommender.Recommender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Evaluate recommender by comparing delta of raw and generated prefs.
  * Can also compare data models.
  */
 public final class PreferenceBasedRecommenderEvaluator implements RecommenderEvaluator {
-
-  private static final Logger log = LoggerFactory.getLogger(PreferenceBasedRecommenderEvaluator.class);
 
   public void evaluate(Recommender recco1,
       Recommender recco2,
@@ -103,6 +99,52 @@ public final class PreferenceBasedRecommenderEvaluator implements RecommenderEva
         tracker.addDatum(variance);
       }
     }
+  }
+
+
+  @Override
+  public double evaluate(RecommenderBuilder recommenderBuilder,
+      DataModelBuilder dataModelBuilder, DataModel dataModel,
+      double trainingPercentage, double evaluationPercentage)
+      throws TasteException {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+
+  @Override
+  public double evaluate(RecommenderBuilder recommenderBuilder,
+      DataModel trainingModel, DataModel testModel) throws TasteException {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+
+  @Override
+  public float getMaxPreference() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+
+  @Override
+  public float getMinPreference() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+
+  @Override
+  public void setMaxPreference(float maxPreference) {
+    // TODO Auto-generated method stub
+    
+  }
+
+
+  @Override
+  public void setMinPreference(float minPreference) {
+    // TODO Auto-generated method stub
+    
   }
 
 }

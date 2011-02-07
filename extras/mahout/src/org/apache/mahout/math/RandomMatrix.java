@@ -20,33 +20,26 @@ package org.apache.mahout.math;
 import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
-import org.apache.mahout.math.function.BinaryFunction;
-import org.apache.mahout.math.function.UnaryFunction;
+import org.apache.mahout.math.AbstractMatrix.TransposeViewVector;
+import org.apache.mahout.math.function.DoubleDoubleFunction;
+import org.apache.mahout.math.function.DoubleFunction;
 
 import com.google.common.collect.Maps;
 
 /** 
  * Matrix of random but consistent doubles. 
- * Double.MIN_Value -> Double.MAX_VALUE 
- * Linear, limited gaussian, and raw Gaussian distributions
+ * -Double.MAX_Value -> Double.MAX_VALUE 
+ * Whatever the given generator provides
  * 
  * Seed for [row][col] is this.seed + (row * #columns) + column.
  * This allows a RandomVector to take seed + (row * #columns) as its seed
  * and be reproducible from this matrix.
- * 
- * Is read-only. Can be given a writable cache.
- * One quirk: Matrix.like() means "give a writable matrix
- * with the same dense/sparsity profile. The cache also supplies that.
- * */
-public class RandomMatrix extends AbstractMatrix {
-  // TODO: use enums for this? don't know how to use them
-  public static final int LINEAR = 0;
-  public static final int GAUSSIAN = 1;
-  public static final int GAUSSIAN01 = 2;
+ **/
+public class RandomMatrix extends FabricatedMatrix {
 
+  final long startSeed;
   final private Random rnd = new Random();
   final private long seed;
-  final private int distribution;
   
   /**
    * Constructs a zero-size matrix.
@@ -56,49 +49,28 @@ public class RandomMatrix extends AbstractMatrix {
   public RandomMatrix() {
     cardinality[ROW] = 0;
     cardinality[COL] = 0;
+    startSeed = 0;
     seed = 0;
-    distribution = LINEAR;
   }
 
   /**
-   * Constructs an empty matrix of the given size.
-   * Linear distribution.
+   * Constructs random matrix of the given size.
    * @param rows  The number of rows in the result.
    * @param columns The number of columns in the result.
+   * @param rnd Random number generator.
    */
-  public RandomMatrix(int rows, int columns) {
+  public RandomMatrix(int rows, int columns, long startSeed) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
-    seed = 0;
-    distribution = LINEAR;
+    this.startSeed = startSeed;
+    seed = startSeed;
   }
 
-  /*
-   * Constructs an empty matrix of the given size.
-   * Linear distribution.
-   * @param rows  The number of rows in the result.
-   * @param columns The number of columns in the result.
-   * @param seed Random seed.
-   * @param distribution Random distribution: LINEAR, GAUSSIAN, GAUSSIAN01.
-   * @param cache Vector to use as cache. Doubles as 'like' source.
-  */
-  public RandomMatrix(int rows, int columns, long seed, int distribution) {
-    cardinality[ROW] = rows;
-    cardinality[COL] = columns;
-    this.seed = seed;
-    this.distribution = distribution;
-  }
-  
   @Override
   public Matrix clone() {
     // it would thread-safe to pass the cache object itself.
-    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), seed, distribution);
-    if (rowLabelBindings != null) {
-      clone.rowLabelBindings = Maps.newHashMap(rowLabelBindings);
-    }
-    if (columnLabelBindings != null) {
-      clone.columnLabelBindings = Maps.newHashMap(columnLabelBindings);
-    }
+    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), startSeed);
+    super.cloneBindings(clone);
     return clone;
   }
 
@@ -109,7 +81,7 @@ public class RandomMatrix extends AbstractMatrix {
     if (column < 0 || column >= columnSize())
       throw new CardinalityException(column, columnSize());
     rnd.setSeed(getSeed(row, column));
-    double value = getRandom();
+    double value = rnd.nextDouble();
     if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
       throw new Error("RandomVector: getQuick created NaN");
     return value;
@@ -117,24 +89,6 @@ public class RandomMatrix extends AbstractMatrix {
 
   private long getSeed(int row, int column) {
     return seed + (row * columnSize()) + column;
-  }
-
-  double getRandom() {
-    switch (distribution) {
-    case LINEAR: return rnd.nextDouble();
-    case GAUSSIAN: return rnd.nextGaussian();
-    case GAUSSIAN01: return gaussian01();
-    default: throw new Error("RandomMatrix: not a random distribution: " + distribution);
-    }
-  }
-
-  // normal distribution between zero and one
-  private double gaussian01() {
-    double d = rnd.nextGaussian()/6;
-    while(d > 0.5 || d < -0.5) {
-      d = rnd.nextGaussian()/6;
-    }
-    return d;
   }
 
   @Override
@@ -205,33 +159,45 @@ public class RandomMatrix extends AbstractMatrix {
   }
   
   @Override
-  public Matrix assign(UnaryFunction function) {
+  public Matrix assign(DoubleFunction function) {
     throw new UnsupportedOperationException();
   }
   
   @Override
-  public Matrix assign(Matrix other, BinaryFunction function) {
+  public Matrix assign(Matrix other, DoubleDoubleFunction function) {
     throw new UnsupportedOperationException();
   }
   
   @Override
+  public void set(int row, double[] data) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public void set(int row, int column, double value) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public Matrix assign(Matrix other) {
+    throw new UnsupportedOperationException();    
+  }
+  
   public Vector getColumn(int column) {
     if (column < 0 || column >= columnSize()) {
       throw new IndexException(column, columnSize());
     }
-    return new RandomVectorOld(cardinality[ROW], seed + cardinality[COL] * column, cardinality[COL], distribution);
-
+    return new TransposeViewVector(this, column);
   }
-
-  // TODO: make matching cache vector for RandomVector
-  @Override
+  
   public Vector getRow(int row) {
     if (row < 0 || row >= rowSize()) {
       throw new IndexException(row, rowSize());
     }
-    return new RandomVectorOld(columnSize(), seed + row * columnSize(), 1, distribution);
+    Vector wrap = new MatrixVectorView(this, row, 0, 0, 1);
+    return wrap;
   }
-
+  
   /*
    * Can set bindings for all rows and columns.
    * Can fetch values for bindings.

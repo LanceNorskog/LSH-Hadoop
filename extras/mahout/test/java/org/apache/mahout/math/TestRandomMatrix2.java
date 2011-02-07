@@ -17,29 +17,51 @@
 
 package org.apache.mahout.math;
 
-import java.util.Random;
-
-import org.apache.mahout.math.RandomVector;
-import org.apache.mahout.math.ReadOnlyVector;
-import org.apache.mahout.math.TestReadOnlyVector;
+import org.apache.mahout.math.function.Functions;
+import org.apache.mahout.math.function.VectorFunction;
+import org.junit.Before;
 import org.junit.Test;
 
-public class TestRandomVector extends TestReadOnlyVector {
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
 
-//  static private RandomVector testLinear = new RandomVector(2);
-//  static private RandomVector testBig = new RandomVector(500);
-//  static private RandomVector testG = new RandomVector(4, 0, new Date().getTime(), RandomMatrix.GAUSSIAN);
+public class TestRandomMatrix2 extends TestFabricatedMatrix {
+
+  protected static final int ROW = AbstractMatrix.ROW;
+
+  protected static final int COL = AbstractMatrix.COL;
+
+  int rows = 4;
+  int columns = 5;
+  int[] cardinality = {rows, columns};
+
+//  private AbstractMatrix testLinear;
 
   @Override
-  public ReadOnlyVector generateTestVector(int cardinality) {
-    return new RandomVector(cardinality, new Random());
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
   }
 
-  @Test
+  @Override
+  public
+   FabricatedMatrix matrixFactory(int rows, int columns) {
+    return new RandomMatrix(rows, columns, 0);
+  }
+
   @Override
   public void testZSum() {
-    // assumes random generator is 0 -> 1
-    assertTrue("linear zSum < length", four.zSum() < 4);
+    // TODO Auto-generated method stub
+    
   }
+  
+  @Override
+  public void testDeterminant() {
+    // TODO Auto-generated method stub
+    
+  }
+
 
 }

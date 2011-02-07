@@ -12,25 +12,29 @@ import org.apache.mahout.math.ReadOnlyVector.AllIterator;
 import org.apache.mahout.math.Vector.Element;
 
 /**
- * 
- * Vector with repeatable random values.
+ * @author lance
  *
  */
-public class RandomVector extends ReadOnlyVector {
+public class RandomVector2 extends ReadOnlyVector {
   
   final private Random rnd;
-  final private int seed;
+  final long seed;
+  final long stride;
   
-  /*
-  * @param size
-  * @param rnd
-  */
-  public RandomVector(int size, Random rnd) {
+  /**
+   * @param size
+   * @param value
+   * @param stride
+   *    If vector is a column-stride vector created by a RandomMatrix.
+   * @param rnd
+   */
+  public RandomVector2(int size, long seed, long stride, Random rnd) {
     super(size);
     this.rnd = rnd;
-    seed = rnd.nextInt();
+    this.seed = seed;
+    this.stride = stride;
   }
-  
+
   public int getNumNondefaultElements() {
     return size();
   }
@@ -41,7 +45,7 @@ public class RandomVector extends ReadOnlyVector {
   }
   
   private long getSeed(int index) {
-    return seed + index;
+    return seed + (index * stride);
   }
 
   public Iterator<Element> iterateNonZero() {

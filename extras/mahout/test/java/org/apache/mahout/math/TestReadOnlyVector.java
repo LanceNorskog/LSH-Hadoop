@@ -37,7 +37,7 @@ public abstract class TestReadOnlyVector extends MahoutTestCase {
     twoK = generateTestVector(2000);
   }
   
-  abstract ReadOnlyVector generateTestVector(int cardinality);
+  abstract public ReadOnlyVector generateTestVector(int cardinality);
 
   /* TODO: why doesn't this work? some library problem? 
   @Test

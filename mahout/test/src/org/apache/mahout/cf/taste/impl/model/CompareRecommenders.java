@@ -39,7 +39,6 @@ import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 
-import working.ChebyshevDistanceMeasure;
 import working.SemanticVectorFactory;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
@@ -93,10 +92,10 @@ public class CompareRecommenders {
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
     System.out.println("Small space");
-    sun.space.stDev();
+    sun.space.stDevCounts();
     if (null != sun.spaceLOD) {
       System.out.println("LOD space");
-      sun.spaceLOD.stDev();
+      sun.spaceLOD.stDevCounts();
     }
     //    tracker = new CompactRunningAverage();
     //    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");

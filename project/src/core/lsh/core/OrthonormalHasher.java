@@ -8,59 +8,79 @@ package lsh.core;
  */
 
 public class OrthonormalHasher implements Hasher {
-	double[] stretch;
-	
-	public OrthonormalHasher(int dim, double stretch) {
-		this.stretch = new double[dim];
-		for(int i = 0; i < dim; i++)
-			this.stretch[i] = stretch;
-	}
+    double[] stretch;
+    final int dimensions;
 
-	public OrthonormalHasher(double stretch[]) {
-		this.stretch = stretch;
+    public OrthonormalHasher(int dim, Double stretch) {
+	dimensions = dim;
+	if (null != stretch) {
+	    this.stretch = new double[dim];
+	    for(int i = 0; i < dim; i++) {
+		this.stretch[i] = stretch;
+	    }
 	}
-	
-	public OrthonormalHasher() {
-		
-	}
-	
-	@Override
-	public void setStretch(double[] stretch) {
-		this.stretch = stretch;
-	}
+    }
 
-	@Override
-	public int[] hash(double[] values) {
-		int[] hashed = new int[values.length];
-		for(int i = 0; i < hashed.length; i++) {
-			hashed[i] = (int) Math.floor(values[i] / stretch[i]);
-		}
-		return hashed;
-	}
+    public OrthonormalHasher(double stretch[]) {
+	this.dimensions = stretch.length;
+	this.stretch = stretch;
+    }
 
-	@Override
-	public void project(double[] values, double[] gp) {
-		for(int i = 0; i < values.length; i++)
-			gp[i] = values[i] / stretch[i];
-	}
-	
-	@Override
-	public void unhash(int[] hash, double[] values) {
-		for (int i = 0; i < hash.length; i++) {
-			values[i] = hash[i] * stretch[i];
-		}
-	}
+    public OrthonormalHasher() {
+	dimensions = 0;
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Orthonormal Hasher: dim (" + stretch.length + ") stretch = [" + stretch[0]);
-		for(int i = 1; i < stretch.length; i++) {
-			sb.append(',');
-			sb.append(stretch[i]);
-		}
-		sb.append("]");
-		return sb.toString();
+    @Override
+    public void setStretch(double[] stretch) {
+	this.stretch = stretch;
+    }
+
+    @Override
+    public int[] hash(double[] values) {
+	int[] hashed = new int[values.length];
+	for(int i = 0; i < hashed.length; i++) {
+	    if (null != stretch) {
+		hashed[i] = (int) Math.floor(values[i] / stretch[i]);
+	    } else {
+		hashed[i] = (int) Math.floor(values[i]);
+	    } 
 	}
+	return hashed;
+    }
+
+    @Override
+    public void project(double[] values, double[] gp) {
+	for(int i = 0; i < values.length; i++)
+	    if (null != stretch)
+		gp[i] = values[i] / stretch[i];
+	    else
+		gp[i] = values[i];
+    }
+
+    @Override
+    public void unhash(int[] hash, double[] values) {
+	for (int i = 0; i < hash.length; i++) {
+	    if (null != stretch) 
+		values[i] = hash[i] * stretch[i];
+	    else
+		values[i] = hash[i];
+	}
+    }
+
+    @Override
+    public String toString() {
+	StringBuilder sb = new StringBuilder();
+	sb.append("Orthonormal Hasher: dim=" + dimensions);
+	if (null != stretch) {
+	    sb.append("[");
+	    for(int i = 0; i < stretch.length; i++) {
+		sb.append(stretch[i]);
+		sb.append(',');
+	    }
+	    sb.setLength(sb.length() - 1);
+	    sb.append("]");
+	}
+	return sb.toString();
+    }
 
 }
