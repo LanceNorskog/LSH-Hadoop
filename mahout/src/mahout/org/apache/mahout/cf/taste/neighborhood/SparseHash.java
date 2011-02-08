@@ -1,5 +1,8 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 
@@ -11,6 +14,8 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
  */
 
 public class SparseHash<T> extends Hash<T> {
+  
+  static Map<Hash<?>,int[]> hashCache = new HashMap<Hash<?>, int[]>();
 //  final int[] hashes;
   FastByIDMap<Integer> sparseHashKeys;
   int[] sparseHashes;
@@ -80,13 +85,13 @@ public class SparseHash<T> extends Hash<T> {
   }
   
   public int[] getHashes() {
-    int[] hashes = new int[dimensions];
-    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-    while(it.hasNext()) {
-      long x = it.next();
-      int index = sparseHashKeys.get(x);
-      hashes[(int) x] = sparseHashes[index];
-    }
+//    int[] hashes = new int[dimensions];
+//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+//    while(it.hasNext()) {
+//      long x = it.next();
+//      int index = sparseHashKeys.get(x);
+//      hashes[(int) x] = sparseHashes[index];
+//    }
     return hashes;
   }
   
@@ -110,6 +115,7 @@ public class SparseHash<T> extends Hash<T> {
     return code;
   }
   
+  /*
   @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
@@ -132,11 +138,11 @@ public class SparseHash<T> extends Hash<T> {
 //    if (!sparseHashKeys.equals(other.sparseHashKeys))
 //      return false;
 
-    walk parallel things
     return true;
   }
+  */
   
- /* @SuppressWarnings("unchecked")
+ @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -151,12 +157,12 @@ public class SparseHash<T> extends Hash<T> {
     int[] otherHashes = other.getHashes();
     int[] hashes = this.getHashes();
     for(int i = 0; i < hashes.length; i++) {
-      if ((hashes[i] & ~lodMask) != otherHashes[i])
+      if ((hashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
         return false;
     };
     return true;
   }
-*/  
+  
 
   @Override
   public String toString() {

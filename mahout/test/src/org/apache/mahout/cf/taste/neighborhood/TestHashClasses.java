@@ -22,13 +22,18 @@ public class TestHashClasses extends Assert {
 	}
 
 	public void testEquals() {
-		int dimensions = 2;
-		Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-		SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-		Vector v = new DenseVector(dimensions);
-		checkEquals(space, v, v);
-		v = new RandomAccessSparseVector(dimensions, dimensions);
-		checkEquals(space, v, v);
+	  int dimensions = 2;
+	  Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
+	  for(int i = 0; i < 32; i++) {
+	    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+	    space.setLOD(i);
+	    Vector d = new DenseVector(dimensions);
+	    Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+      checkEquals(space, d, d);
+      checkEquals(space, d, s);
+      checkEquals(space, s, d);
+      checkEquals(space, s, s);
+		}
 	}
 
 	private void checkEquals(SimplexSpace<String> space, Vector v1, Vector v2) {

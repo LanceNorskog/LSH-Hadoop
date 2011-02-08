@@ -319,7 +319,7 @@ public class SimplexSpace<T> {
     return x;
   }
   
-  public int getNonZeroNumHashes() {
+  public int getNonSingleHashes() {
     if (doCount) {
       int nonZero = 0;
       for(Integer i: countMap.values()) {
@@ -357,15 +357,31 @@ public class SimplexSpace<T> {
       for(Hash<T> h: countMap.keySet()) {
         Integer i = countMap.get(h);
         if (null != i) {
-          System.out.print(i + ",");
           if (i > max)
             max = i;
-        } else
-          System.out.print("1,");
+        } 
       }
       System.out.println();
       return max;
     } else
       return hashSetMap.keySet().size();
   }
+  
+  public int printSizes() {
+  if (doCount) {
+    int max = 0;
+    for(Hash<T> h: countMap.keySet()) {
+      Integer i = countMap.get(h);
+      if (null != i) {
+        System.out.print(i + ",");
+        if (i > max)
+          max = i;
+      } else
+        System.out.print("1,");
+    }
+    System.out.println();
+    return max;
+  } else
+    return hashSetMap.keySet().size();
+}
 }

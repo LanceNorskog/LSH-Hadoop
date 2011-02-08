@@ -89,7 +89,6 @@ public final class VectorScan {
       Parser parser = new Parser();
       parser.setGroup(group);
       CommandLine cmdLine = parser.parse(args);
-      SimplexSpace<String> spaces[] = makeSpaces(16);
       
       if (cmdLine.hasOption(helpOpt)) {
         
@@ -102,7 +101,7 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        spaces = makeSpaces(31);
+        SimplexSpace<String>[] spaces = makeSpaces(0,32);
         try {
           int sub = Integer.MAX_VALUE;
           if (cmdLine.hasOption(substringOpt)) {
@@ -138,8 +137,9 @@ public final class VectorScan {
   
   private static void printSpaces(SimplexSpace<String>[] spaces) {
     for(int i = 0; i < spaces.length; i++) {
-//      System.out.println(spaces[i].getNonZeroNumHashes());
-      System.out.println(spaces[i].getMaxHashes());
+      System.out.println(spaces[i].printSizes());
+//      System.out.println(spaces[i].getNonSingleHashes());
+//      System.out.println(spaces[i].getMaxHashes());
 //      System.out.println(spaces[i].getCount());
 //      System.out.println(spaces[i].toString());
     }   
@@ -152,27 +152,18 @@ public final class VectorScan {
     SparseHash<String> h = (SparseHash<String>) spaces[0].getHashLOD(v, null);
     int[] hashes = h.getHashes();
     for(int lod = 0; lod < spaces.length; lod++) {
-//      Hash<String> spot = new SparseHash<String>(h, lod, null);
-//      System.out.println(spot.toString());
     Hash<String> spot = new SparseHash<String>(hashes, lod, null);
-//    Hash<String> spot = new DenseHash<String>(hashes, lod, null);
-//      if (!spot2.equals(spot))
-//        System.out.println("fail");
-//      int[] hashes1 = spot.getHashes();
-//      int[] hashes2 = hashes;
-//      for(int i = 0; i < hashes.length; i++) {
-//        if (hashes1[i] != hashes2[i]) 
-//          System.out.println("[" + i + "]: " + hashes1[i] + "," + hashes2[i]);
-//      }
+    if (null != spaces[lod])
       spaces[lod].addHash(null, v, spot);
     }
   }
 
-  private static SimplexSpace<String>[] makeSpaces(int n) {
-    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
+  private static SimplexSpace<String>[] makeSpaces(int start, int n) {
+    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+//    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
-    for(int i = 0; i < n; i++) {
+    for(int i = start; i < n; i++) {
       SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMS, measure, false, true);
       spaces[i] = space;
       space.setLOD(i);
