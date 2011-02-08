@@ -25,7 +25,7 @@ public class TestHashes extends TestCase {
   public void testEquals() {
     int dimensions = 2;
     Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-    for(int i = 1; i < 32; i++) {
+    for(int i = 7; i <9; i++) {
       SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
       space.setLOD(i);
       Vector d = new DenseVector(dimensions);
@@ -34,6 +34,8 @@ public class TestHashes extends TestCase {
       checkEquals(space, d, s);
       checkEquals(space, s, d);
       checkEquals(space, s, s);
+      checkNotEquals(space, d, s);
+      checkNotEquals(space, s, d);
     }
   }
 
@@ -48,6 +50,19 @@ public class TestHashes extends TestCase {
     assertTrue(h1.equals(h2));
     assertTrue(h2.equals(h1));
     assertTrue(h2.equals(h2));
+  }
+  
+  private void checkNotEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
+    v1.set(0, 1.1);
+    v1.set(1, 2.2);
+    v2.set(0, 50);
+    v2.set(1, 30);
+    Hash<String> h1 = space.getHashLOD(v1, null);
+    Hash<String> h2 = space.getHashLOD(v2, null);
+    assertTrue(null != h1);
+    assertTrue(null != h2);
+    assertFalse(h2.equals(h1));
+    assertFalse(h1.equals(h2));
   }
   
   public void testCollections() {

@@ -85,6 +85,9 @@ public class DenseHash<T> extends Hash<T> {
 //    if (null != payload && !payload.equals(other.payload))
 //      return false;
     int[] otherHashes = other.getHashes();
+    if (null == otherHashes)
+      this.hashCode();
+
     for(int i = 0; i < hashes.length; i++) {
       if ((hashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
         return false;

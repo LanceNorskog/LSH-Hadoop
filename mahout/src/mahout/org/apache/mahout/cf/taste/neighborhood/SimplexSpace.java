@@ -42,7 +42,7 @@ public class SimplexSpace<T> {
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
   Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
   Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
-//  Map<Integer, IntWritable> countMap = new HashMap<Integer,IntWritable>();
+  //  Map<Integer, IntWritable> countMap = new HashMap<Integer,IntWritable>();
   Map<Hash<T>, Integer> countMap = new HashMap<Hash<T>,Integer>();
   final int dimensions;
   public double distance = 0.0001;
@@ -123,6 +123,9 @@ public class SimplexSpace<T> {
         hashes[e.index()] = h[0];
       }
       return new SparseHash<T>(hashes, lod, payload);
+
+//      Iterator<Element> el = v.iterateNonZero();
+//      return new SparseHash<T>(hasher, el, v.size(), lod, payload);
     }
   }
   
@@ -321,18 +324,25 @@ public class SimplexSpace<T> {
   
   public int getNonSingleHashes() {
     if (doCount) {
-      int nonZero = 0;
+      int multi = 0;
       for(Integer i: countMap.values()) {
         if (null == i) {
-//          nonZero++;
+          //          nonZero++;
           continue;
         }
         if (null != i)
-          nonZero++;
+          multi++;
       }
-      return nonZero;
-    } else
-      return hashSetMap.keySet().size();
+      return multi;
+    } else {
+      int multi = 0;
+      for(Set<T> x: hashSetMap.values()) {
+        int count = x.size();
+        if (count > 1)
+          multi++;
+      }
+      return multi;
+    }
   }
   
   public int getCount() {
@@ -364,24 +374,30 @@ public class SimplexSpace<T> {
       System.out.println();
       return max;
     } else
-      return hashSetMap.keySet().size();
+      return -1;
   }
   
   public int printSizes() {
-  if (doCount) {
-    int max = 0;
-    for(Hash<T> h: countMap.keySet()) {
-      Integer i = countMap.get(h);
-      if (null != i) {
-        System.out.print(i + ",");
-        if (i > max)
-          max = i;
-      } else
-        System.out.print("1,");
+    if (doCount) {
+      int max = 0;
+      for(Hash<T> h: countMap.keySet()) {
+        Integer i = countMap.get(h);
+        if (null != i) {
+          System.out.print(i + ",");
+          if (i > max)
+            max = i;
+        } else
+          System.out.print("1,");
+      }
+      System.out.println();
+      return max;
+    } else {
+      int count = 0;
+      for(Set<T> x: hashSetMap.values()) {
+        count += x.size();
+        System.out.print(x.size() + ",");
+      }
+      return count;
     }
-    System.out.println();
-    return max;
-  } else
-    return hashSetMap.keySet().size();
-}
+  }
 }

@@ -1,10 +1,16 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+
+import lsh.core.Hasher;
 
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.math.Vector.Element;
 
 /*
  * Simplex box, keyed by "lower-left" corner
@@ -16,7 +22,7 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 public class SparseHash<T> extends Hash<T> {
   
   static Map<Hash<?>,int[]> hashCache = new HashMap<Hash<?>, int[]>();
-//  final int[] hashes;
+  //  final int[] hashes;
   FastByIDMap<Integer> sparseHashKeys;
   int[] sparseHashes;
   int[] hashes;
@@ -43,7 +49,37 @@ public class SparseHash<T> extends Hash<T> {
     setLOD(lod);
     this.payload = payload;
     this.dimensions = sp.dimensions;
-    hashes = this.getHashes();
+    hashes = sp.getHashes();
+  }
+  
+  public SparseHash(Hasher hasher, Iterator<Element> el, int dimensions, int lod, T payload) {
+    setValues(hasher, el);
+    this.dimensions = dimensions;
+    this.lod = lod;
+    this.payload = payload;
+    setLOD(lod);
+  }
+  
+  private void setValues(Hasher hasher, Iterator<Element> el) {
+    sparseHashKeys = new FastByIDMap<Integer>();
+    List<Integer> values = new ArrayList<Integer>(dimensions);
+    int count = 0;
+    int index = 0;
+    double[] d = new double[1];
+    int[] h = null;
+    
+    while(el.hasNext()) {
+      Element e = el.next();
+      sparseHashKeys.put(e.index(), new Integer(index));
+      d[0] = e.get();
+      h = hasher.hash(d);  
+      values.add(h[0]);
+      index++;
+    } 
+    sparseHashes = new int[index];
+    for(int i = 0; i < index; i++) {
+      sparseHashes[i] = values.get(i);
+    }
   }
   
   private void setHashes(int[] hashes) {
@@ -68,7 +104,7 @@ public class SparseHash<T> extends Hash<T> {
         skip++;
     }
   }
-
+  
   public int getLOD() {
     return lod;
   }
@@ -85,13 +121,15 @@ public class SparseHash<T> extends Hash<T> {
   }
   
   public int[] getHashes() {
-//    int[] hashes = new int[dimensions];
-//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//    while(it.hasNext()) {
-//      long x = it.next();
-//      int index = sparseHashKeys.get(x);
-//      hashes[(int) x] = sparseHashes[index];
-//    }
+    if (null == hashes) {
+      hashes = new int[dimensions];
+      LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+      while(it.hasNext()) {
+        long x = it.next();
+        int index = sparseHashKeys.get(x);
+        hashes[(int) x] = sparseHashes[index];
+      }
+    }
     return hashes;
   }
   
@@ -107,8 +145,8 @@ public class SparseHash<T> extends Hash<T> {
         code += ((sparseHashes[i] & ~lodMask) + i) * i;
       }
       code += lod * 13 * sparseHashes.length;
-//      if (null != payload)
-//        code ^= payload.hashCode();
+      //      if (null != payload)
+      //        code ^= payload.hashCode();
       this.code = code;
     }
     
@@ -140,9 +178,9 @@ public class SparseHash<T> extends Hash<T> {
 
     return true;
   }
-  */
+   */
   
- @SuppressWarnings("unchecked")
+  @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
     if (this == obj)
@@ -150,20 +188,24 @@ public class SparseHash<T> extends Hash<T> {
     Hash<T> other = (Hash<T>) obj;
     if (lod != other.getLOD())
       return false;
-//    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
-//      return false;
-//    if (null != payload && !payload.equals(other.payload))
-//      return false;
+    //    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
+    //      return false;
+    //    if (null != payload && !payload.equals(other.payload))
+    //      return false;
     int[] otherHashes = other.getHashes();
-    int[] hashes = this.getHashes();
-    for(int i = 0; i < hashes.length; i++) {
-      if ((hashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
+    if (null == otherHashes)
+      this.hashCode();
+    int[] myHashes = this.getHashes();
+    if (null == otherHashes)
+      this.hashCode();
+    for(int i = 0; i < myHashes.length; i++) {
+      if ((myHashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
         return false;
     };
     return true;
   }
   
-
+  
   @Override
   public String toString() {
     String x = "{";

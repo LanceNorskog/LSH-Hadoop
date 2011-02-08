@@ -101,7 +101,7 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        SimplexSpace<String>[] spaces = makeSpaces(0,32);
+        SimplexSpace<String>[] spaces = makeSpaces(0,10);
         try {
           int sub = Integer.MAX_VALUE;
           if (cmdLine.hasOption(substringOpt)) {
@@ -150,21 +150,20 @@ public final class VectorScan {
    */
   private static void addSpaces(SimplexSpace<String>[] spaces, String key, Vector v) {
     SparseHash<String> h = (SparseHash<String>) spaces[0].getHashLOD(v, null);
-    int[] hashes = h.getHashes();
     for(int lod = 0; lod < spaces.length; lod++) {
-    Hash<String> spot = new SparseHash<String>(hashes, lod, null);
+    Hash<String> spot = new SparseHash<String>(h, lod, key);
     if (null != spaces[lod])
       spaces[lod].addHash(null, v, spot);
     }
   }
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n) {
-    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
-//    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
+//    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+    Hasher hasher = new VertexTransitiveHasher(DIMS, 1000d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {
-      SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMS, measure, false, true);
+      SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMS, measure, false, false);
       spaces[i] = space;
       space.setLOD(i);
     }
