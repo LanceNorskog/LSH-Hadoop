@@ -95,8 +95,7 @@ public class SimplexSpace<T> {
         hashSetMap.put(hash, hashKeys);
         vectorKeys = new HashSet<Vector>();
         vectorSetMap.put(hash, vectorKeys);
-      } else
-        this.hashCode();
+      } 
       hashKeys.add(payload);
       vectorKeys.add(v);
     }
@@ -306,14 +305,14 @@ public class SimplexSpace<T> {
       }
       x += "}";
     }
-    if (null != hashSetMap) {
-      x += "HASH{";
-      for(Hash<T> h: hashSetMap.keySet()) {
-        Set<T> hs = hashSetMap.get(h);
+    if (null != countMap) {
+      x += "COUNT{";
+      for(Hash<T> h: countMap.keySet()) {
+        Integer hs = countMap.get(h);
         if (null == hs)
-          x += "0,";
+          x += "1,";
         else
-          x += hs.size() + ",";
+          x += hs + ",";
       }
       x += "}";
     }
@@ -332,6 +331,40 @@ public class SimplexSpace<T> {
           nonZero++;
       }
       return nonZero;
+    } else
+      return hashSetMap.keySet().size();
+  }
+  
+  public int getCount() {
+    if (doCount) {
+      int total = 0;
+      for(Integer i: countMap.values()) {
+        if (null == i) {
+          total++;
+          continue;
+        }
+        if (null != i)
+          total += i;
+      }
+      return total;
+    } else
+      return hashSetMap.keySet().size();
+  }
+  
+  public int getMaxHashes() {
+    if (doCount) {
+      int max = 0;
+      for(Hash<T> h: countMap.keySet()) {
+        Integer i = countMap.get(h);
+        if (null != i) {
+          System.out.print(i + ",");
+          if (i > max)
+            max = i;
+        } else
+          System.out.print("1,");
+      }
+      System.out.println();
+      return max;
     } else
       return hashSetMap.keySet().size();
   }

@@ -20,11 +20,19 @@ public class DenseHash<T> extends Hash<T> {
   }
   
   public DenseHash(int[] hashes, int lod, T payload) {
-    this.hashes = hashes;
+    this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
     this.payload = payload;
    }
   
+  private int[] duplicate(int[] hashes2) {
+    int[] dup = new int[hashes2.length];
+    for(int i = 0; i < hashes2.length; i++) {
+      dup[i] = hashes2[i];
+    }
+    return dup;
+    }
+
   public int getLOD() {
     return lod;
   }
@@ -50,16 +58,16 @@ public class DenseHash<T> extends Hash<T> {
   
   @Override
   public int hashCode() {
-    if (this.code == 0) {
+//    if (this.code == 0) {
       int code = 0;
       for(int i = 0; i < hashes.length; i++) {
         int val = hashes[i] & ~lodMask;
-        code += val * i;
+        code += ((hashes[i] & ~lodMask) + i) * i;
       }
-      code += lod * 13;
+      code += lod * 13 * hashes.length;
       this.code = code;
       //      System.out.println(code);
-    }
+//    }
     
     return code;
   }
@@ -67,17 +75,18 @@ public class DenseHash<T> extends Hash<T> {
   @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
-    DenseHash<T> other = (DenseHash<T>) obj;
-    if (lod != other.lod)
+    if (this == obj)
+      return true;
+    Hash<T> other = (Hash<T>) obj;
+    if (lod != other.getLOD())
       return false;
-    if (code > 0 && other.code > 0 && code != other.code)
-      return false;
-    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
-      return false;
-    if (null != payload && !payload.equals(other.payload))
-      return false;
+//    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
+//      return false;
+//    if (null != payload && !payload.equals(other.payload))
+//      return false;
+    int[] otherHashes = other.getHashes();
     for(int i = 0; i < hashes.length; i++) {
-      if ((hashes[i] & ~lodMask) != (other.hashes[i] & ~lodMask))
+      if ((hashes[i] & ~lodMask) != otherHashes[i])
         return false;
     };
     return true;

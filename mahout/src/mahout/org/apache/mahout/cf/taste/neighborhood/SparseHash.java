@@ -14,6 +14,7 @@ public class SparseHash<T> extends Hash<T> {
 //  final int[] hashes;
   FastByIDMap<Integer> sparseHashKeys;
   int[] sparseHashes;
+  int[] hashes;
   int lod;
   private int lodMask;
   final T payload;
@@ -28,6 +29,16 @@ public class SparseHash<T> extends Hash<T> {
     setHashes(hashes);
     setLOD(lod);
     this.payload = payload;
+    this.hashes = hashes;
+  }
+  
+  public SparseHash(SparseHash<T> sp, int lod, T payload) {
+    this.sparseHashes = sp.sparseHashes;
+    this.sparseHashKeys = sp.sparseHashKeys;
+    setLOD(lod);
+    this.payload = payload;
+    this.dimensions = sp.dimensions;
+    hashes = this.getHashes();
   }
   
   private void setHashes(int[] hashes) {
@@ -51,7 +62,6 @@ public class SparseHash<T> extends Hash<T> {
       } else
         skip++;
     }
-    hashCode();
   }
 
   public int getLOD() {
@@ -89,7 +99,7 @@ public class SparseHash<T> extends Hash<T> {
     if (this.code == 0) {
       int code = 0;
       for(int i = 0; i < sparseHashes.length; i++) {
-        code += sparseHashes[i] * i;
+        code += ((sparseHashes[i] & ~lodMask) + i) * i;
       }
       code += lod * 13 * sparseHashes.length;
 //      if (null != payload)
@@ -103,25 +113,51 @@ public class SparseHash<T> extends Hash<T> {
   @SuppressWarnings("unchecked")
   @Override
   public boolean equals(Object obj) {
-    SparseHash<T> other = (SparseHash<T>) obj;
+    if (this == obj)
+      return true;
+   SparseHash<T> other = (SparseHash<T>) obj;
     if (lod != other.lod)
       return false;
-    if (code > 0 && other.code > 0 && code != other.code)
-      return false;
-    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
-      return false;
-    if (null != payload && !payload.equals(other.payload))
-      return false;
-    if (sparseHashes.length != other.sparseHashes.length)
-      return false;
-    for(int i = 0; i < sparseHashes.length; i++) 
-      if ((sparseHashes[i] & ~lodMask) != (other.sparseHashes[i] & ~lodMask))
-        return false;
-    if (!sparseHashKeys.equals(other.sparseHashKeys))
-      return false;
+//    if (code > 0 && other.code > 0 && code != other.code)
+//      return false;
+//    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
+//      return false;
+//    if (null != payload && !payload.equals(other.payload))
+//      return false;
+//    if (sparseHashes.length != other.sparseHashes.length)
+//      return false;
+//    for(int i = 0; i < sparseHashes.length; i++) 
+//      if ((sparseHashes[i] & ~lodMask) != (other.sparseHashes[i] & ~lodMask))
+//        return false;
+//    if (!sparseHashKeys.equals(other.sparseHashKeys))
+//      return false;
+
+    walk parallel things
     return true;
   }
   
+ /* @SuppressWarnings("unchecked")
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    Hash<T> other = (Hash<T>) obj;
+    if (lod != other.getLOD())
+      return false;
+//    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
+//      return false;
+//    if (null != payload && !payload.equals(other.payload))
+//      return false;
+    int[] otherHashes = other.getHashes();
+    int[] hashes = this.getHashes();
+    for(int i = 0; i < hashes.length; i++) {
+      if ((hashes[i] & ~lodMask) != otherHashes[i])
+        return false;
+    };
+    return true;
+  }
+*/  
+
   @Override
   public String toString() {
     String x = "{";
@@ -129,7 +165,7 @@ public class SparseHash<T> extends Hash<T> {
     for(int i = 0; i < sparseHashes.length; i++) {
       x = x + (sparseHashes[i] & ~lodMask) + ",";
     }
-    return x + "}";
+    return x + ": LOD=" + lod + "}";
   }
   
 }
