@@ -193,13 +193,17 @@ public class SparseHash<T> extends Hash<T> {
     //    if (null != payload && !payload.equals(other.payload))
     //      return false;
     int[] otherHashes = other.getHashes();
-    if (null == otherHashes)
-      this.hashCode();
+//    if (null == otherHashes)
+//      this.hashCode();
     int[] myHashes = this.getHashes();
-    if (null == otherHashes)
-      this.hashCode();
+//    if (null == hashes)
+//      this.hashCode();
+    if (hashes == otherHashes)
+      return true;
     for(int i = 0; i < myHashes.length; i++) {
-      if ((myHashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
+      int myVal = myHashes[i] & ~lodMask;
+      int otherval = otherHashes[i] & ~lodMask;
+      if (myVal != otherval)
         return false;
     };
     return true;

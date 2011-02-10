@@ -25,7 +25,8 @@ public class TestHashes extends TestCase {
   public void testEquals() {
     int dimensions = 2;
     Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-    for(int i = 7; i <9; i++) {
+    // at LOD=9, the two hashes are equal- both are zero
+    for(int i = 0; i <9; i++) {
       SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
       space.setLOD(i);
       Vector d = new DenseVector(dimensions);
