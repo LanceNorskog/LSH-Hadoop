@@ -27,7 +27,7 @@ public class SparseHash<T> extends Hash<T> {
   int[] sparseHashes;
   int[] hashes;
   int lod;
-  private int lodMask;
+  private long lodMask;
   final T payload;
   int code = 0;
   int dimensions;
@@ -112,7 +112,7 @@ public class SparseHash<T> extends Hash<T> {
   public void setLOD(int lod) {
     this.lod = lod;
     int mask = 0;
-    int x = 0;
+    long x = 0;
     while(x < lod) {
       mask |= (1 << x);
       x++;
@@ -139,18 +139,19 @@ public class SparseHash<T> extends Hash<T> {
   
   @Override
   public int hashCode() {
-    if (this.code == 0) {
-      int code = 0;
-      for(int i = 0; i < sparseHashes.length; i++) {
-        code += ((sparseHashes[i] & ~lodMask) + i) * i;
-      }
-      code += lod * 13 * sparseHashes.length;
-      //      if (null != payload)
-      //        code ^= payload.hashCode();
-      this.code = code;
-    }
-    
-    return code;
+    return 0;
+//    if (this.code == 0) {
+//      long code = 0;
+//      for(int i = 0; i < sparseHashes.length; i++) {
+//        code += ((sparseHashes[i] & ~lodMask) + i) * i;
+//      }
+//      code += lod * 13 * sparseHashes.length;
+//      //      if (null != payload)
+//      //        code ^= payload.hashCode();
+//      this.code = (int) ( code ^ (code >> 32));
+//    }
+//    
+//    return code;
   }
   
   /*
@@ -201,8 +202,8 @@ public class SparseHash<T> extends Hash<T> {
     if (hashes == otherHashes)
       return true;
     for(int i = 0; i < myHashes.length; i++) {
-      int myVal = myHashes[i] & ~lodMask;
-      int otherval = otherHashes[i] & ~lodMask;
+      long myVal = myHashes[i] & ~lodMask;
+      long otherval = otherHashes[i] & ~lodMask;
       if (myVal != otherval)
         return false;
     };
@@ -213,9 +214,11 @@ public class SparseHash<T> extends Hash<T> {
   @Override
   public String toString() {
     String x = "{";
-    x += sparseHashKeys.toString() + "->";
-    for(int i = 0; i < sparseHashes.length; i++) {
-      x = x + (sparseHashes[i] & ~lodMask) + ",";
+    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+    while(it.hasNext()) {
+      long key = it.nextLong();
+      int index = sparseHashKeys.get(key);
+      x += "(" + index + "," + sparseHashes[index] + "),";
     }
     return x + ": LOD=" + lod + "}";
   }

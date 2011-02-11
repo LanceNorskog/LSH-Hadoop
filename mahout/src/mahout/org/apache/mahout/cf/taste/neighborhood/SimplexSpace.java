@@ -42,7 +42,6 @@ public class SimplexSpace<T> {
   Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
   Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
   Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
-  //  Map<Integer, IntWritable> countMap = new HashMap<Integer,IntWritable>();
   Map<Hash<T>, Integer> countMap = new HashMap<Hash<T>,Integer>();
   final int dimensions;
   public double distance = 0.0001;
@@ -83,6 +82,7 @@ public class SimplexSpace<T> {
         if (null == counter) {
           counter = 1;
         }
+        else hashCode();
         counter++;
         countMap.put(hash, counter);
       }
@@ -95,7 +95,8 @@ public class SimplexSpace<T> {
         hashSetMap.put(hash, hashKeys);
         vectorKeys = new HashSet<Vector>();
         vectorSetMap.put(hash, vectorKeys);
-      } 
+      } else
+        hashCode();
       hashKeys.add(payload);
       vectorKeys.add(v);
     }
@@ -292,23 +293,27 @@ public class SimplexSpace<T> {
       while (lpi.hasNext()) {
         T key = lpi.next();
         Hash<T> h = idSetMap.get(key);
-        Set<T> ids = hashSetMap.get(h);
+        Set<Vector> ids = vectorSetMap.get(h);
         x += ids.size() + ",";
       }
       x += "}";
     }
+    int count = 0;
     if (null != hashSetMap) {
       x += "HASH{";
       for(Hash<T> h: hashSetMap.keySet()) {
-        Set<T> hs = hashSetMap.get(h);
-        if (null == hs)
+        Set<Vector> hs = vectorSetMap.get(h);
+        if (null == hs) {
           x += "0,";
-        else
+          count++;
+        } else {
           x += hs.size() + ",";
+          count += hs.size();
+        }
       }
       x += "}";
     }
-    if (null != countMap) {
+    if (doCount) {
       x += "COUNT{";
       for(Hash<T> h: countMap.keySet()) {
         Integer hs = countMap.get(h);
@@ -318,7 +323,8 @@ public class SimplexSpace<T> {
           x += hs + ",";
       }
       x += "}";
-    }
+    } 
+    x += "TOTAL{" + count + "}";
     return x;
   }
   
@@ -336,7 +342,7 @@ public class SimplexSpace<T> {
       return multi;
     } else {
       int multi = 0;
-      for(Set<T> x: hashSetMap.values()) {
+      for(Set<Vector> x: vectorSetMap.values()) {
         int count = x.size();
         if (count > 1)
           multi++;
@@ -393,10 +399,12 @@ public class SimplexSpace<T> {
       return max;
     } else {
       int count = 0;
-      for(Set<T> x: hashSetMap.values()) {
-        count += x.size();
-        System.out.print(x.size() + ",");
+      for(Hash<T> x: vectorSetMap.keySet()) {
+        Set<Vector> value = vectorSetMap.get(x);
+//        System.out.print(x.toString() +  " -> " + value.size());
+        count += value.size();
       }
+//      System.out.println();
       return count;
     }
   }

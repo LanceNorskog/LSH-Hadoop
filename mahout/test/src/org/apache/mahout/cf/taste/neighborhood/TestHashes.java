@@ -21,12 +21,13 @@ public class TestHashes extends TestCase {
     super.tearDown();
   }
   
-
+  
   public void testEquals() {
     int dimensions = 2;
+    int limit = 9;
     Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-    // at LOD=9, the two hashes are equal- both are zero
-    for(int i = 0; i <9; i++) {
+    // starting at LOD=9, the two hashes are equal- both are zero
+    for(int i = 0; i <32; i++) {
       SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
       space.setLOD(i);
       Vector d = new DenseVector(dimensions);
@@ -35,11 +36,11 @@ public class TestHashes extends TestCase {
       checkEquals(space, d, s);
       checkEquals(space, s, d);
       checkEquals(space, s, s);
-      checkNotEquals(space, d, s);
-      checkNotEquals(space, s, d);
+      checkNotEquals(space, d, s, i >= limit);
+      checkNotEquals(space, s, d, i >= limit);
     }
   }
-
+  
   private void checkEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
     v1.set(0, 1.1);
     v1.set(1, 2.2);
@@ -53,7 +54,7 @@ public class TestHashes extends TestCase {
     assertTrue(h2.equals(h2));
   }
   
-  private void checkNotEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
+  private void checkNotEquals(SimplexSpace<String> space, Vector v1, Vector v2, boolean eq) {
     v1.set(0, 1.1);
     v1.set(1, 2.2);
     v2.set(0, 50);
@@ -62,13 +63,18 @@ public class TestHashes extends TestCase {
     Hash<String> h2 = space.getHashLOD(v2, null);
     assertTrue(null != h1);
     assertTrue(null != h2);
-    assertFalse(h2.equals(h1));
-    assertFalse(h1.equals(h2));
+    if (eq) {
+      assertTrue(h2.equals(h1));
+      assertTrue(h1.equals(h2)); 
+    } else {
+      assertFalse(h2.equals(h1));
+      assertFalse(h1.equals(h2));
+    }
   }
   
   public void testCollections() {
     int dimensions = 2;
-    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
     SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
     Vector d1 = new DenseVector(dimensions);
     Vector d2 = new DenseVector(dimensions);
@@ -79,8 +85,8 @@ public class TestHashes extends TestCase {
     checkCollection(space, s1, d1);
     checkCollection(space, s1, s2);
   }
-
-
+  
+  
   private void checkCollection(SimplexSpace<String> space, Vector v1, Vector v2) {
     Map<Hash<?>,String> m = new HashMap<Hash<?>,String>();
     v1.set(0, 1.1);
@@ -101,14 +107,14 @@ public class TestHashes extends TestCase {
     m.put(h2, "b");
     assertEquals(m.get(h1), "b");
   }
-
+  
   public void testDenseCount() {
     int dimensions = 2;
     Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
     SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
     Vector v = new DenseVector(dimensions);
   }
-
-
+  
+  
   
 }
