@@ -96,7 +96,7 @@ public class SimplexSpace<T> {
         vectorKeys = new HashSet<Vector>();
         vectorSetMap.put(hash, vectorKeys);
       } else
-        hashCode();
+        hashKeys.hashCode();
       hashKeys.add(payload);
       vectorKeys.add(v);
     }
@@ -294,7 +294,10 @@ public class SimplexSpace<T> {
         T key = lpi.next();
         Hash<T> h = idSetMap.get(key);
         Set<Vector> ids = vectorSetMap.get(h);
-        x += ids.size() + ",";
+        if (ids.size() == 1)
+          x += ",";
+        else
+          x += ids.size() + ",";
       }
       x += "}";
     }

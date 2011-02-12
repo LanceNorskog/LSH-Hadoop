@@ -11,7 +11,7 @@ public class DenseHash<T> extends Hash<T> {
   final int[] hashes;
   int lod;
   
-  private int lodMask;
+  private long lodMask;
   final T payload;
   int code = 0;
   
@@ -23,7 +23,7 @@ public class DenseHash<T> extends Hash<T> {
     this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
     this.payload = payload;
-   }
+  }
   
   private int[] duplicate(int[] hashes2) {
     int[] dup = new int[hashes2.length];
@@ -31,22 +31,22 @@ public class DenseHash<T> extends Hash<T> {
       dup[i] = hashes2[i];
     }
     return dup;
-    }
-
+  }
+  
   public int getLOD() {
     return lod;
   }
   
   public void setLOD(int lod) {
     this.lod = lod;
-    int mask = 0;
-    int x = 0;
+    long mask = 0;
+    long x = 0;
     while(x < lod) {
-      mask |= (1 << x);
+      mask |= (1L << x);
       x++;
     }
     this.lodMask = mask;
- }
+  }
   
   public int[] getHashes() {
     return hashes;
@@ -56,19 +56,18 @@ public class DenseHash<T> extends Hash<T> {
     return payload;
   }
   
+  // Has to match SparseHash formula
   @Override
   public int hashCode() {
-//    if (this.code == 0) {
-      int code = 0;
+    if (this.code == 0) {
+      long bits = 0;
       for(int i = 0; i < hashes.length; i++) {
-        int val = hashes[i] & ~lodMask;
-        code += ((hashes[i] & ~lodMask) + i) * i;
+        long val = ((long) hashes[i]) & ~lodMask;
+        bits += val + val * i;
       }
-      code += lod * 13 * hashes.length;
-      this.code = code;
-      //      System.out.println(code);
-//    }
-    
+      bits += (lod + 1) * 13 * getDimensions();
+      this.code = (int) ( bits ^ (bits >> 32));
+    }
     return code;
   }
   
@@ -77,21 +76,20 @@ public class DenseHash<T> extends Hash<T> {
   public boolean equals(Object obj) {
     if (this == obj)
       return true;
-    Hash<T> other = (Hash<T>) obj;
+    if (obj.getClass() == SparseHash.class) 
+      return ((SparseHash) obj).equalsDense(this);
+    DenseHash<T> other = (DenseHash<T>) obj;
     if (lod != other.getLOD())
       return false;
-//    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
-//      return false;
-//    if (null != payload && !payload.equals(other.payload))
-//      return false;
-    int[] otherHashes = other.getHashes();
-    if (null == otherHashes)
-      this.hashCode();
-
-    for(int i = 0; i < hashes.length; i++) {
-      if ((hashes[i] & ~lodMask) != (otherHashes[i] & ~lodMask))
+    int[] myHashes = hashes;
+    int[] otherHashes = other.hashes;
+    for(int i = 0; i < myHashes.length; i++) {
+      long myVal = ((long) myHashes[i]) & ~lodMask;
+      long otherval = ((long) otherHashes[i]) & ~lodMask;
+      if (myVal != otherval)
         return false;
     };
+     
     return true;
   }
   
@@ -122,12 +120,13 @@ public class DenseHash<T> extends Hash<T> {
   }
   
   @Override
-  protected Object clone() {
-    int[] v = new int[hashes.length];
-    for(int i = 0; i < hashes.length; i++) {
-      v[i] = hashes[i];
-    }
-    return new DenseHash<T>(v, lod, payload);
+  public int getDimensions() {
+    return hashes.length;
+  }
+  
+  @Override
+  public int getNumEntries() {
+    return hashes.length;
   }
   
   //  @Override

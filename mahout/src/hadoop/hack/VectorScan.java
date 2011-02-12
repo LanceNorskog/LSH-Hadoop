@@ -106,7 +106,7 @@ public final class VectorScan {
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
         int start = 0;
-        int end = 14;
+        int end = 20;
         SimplexSpace<String>[] spaces = makeSpaces(start, end, doCount);
         try {
           int sub = Integer.MAX_VALUE;
@@ -119,14 +119,14 @@ public final class VectorScan {
           while (reader.next(key, value)) {
             String text = key.toString();
             Vector v = value.get();
-            int size = v.size();
-            int density = v.getNumNondefaultElements();
+//            int size = v.size();
+//            int density = v.getNumNondefaultElements();
 //            System.out.println(size + "," + density);
             addSpaces(spaces, start, text, v);
             count++;
             if (count % 100 == 0)
               System.out.print(".");
-            if (count == 1000)
+            if (count == 200)
               break;
           }
           printSpaces(spaces, start);
@@ -143,6 +143,7 @@ public final class VectorScan {
   
   private static void printSpaces(SimplexSpace<String>[] spaces, int start) {
     for(int i = start; i < spaces.length; i++) {
+      System.out.println("#" + i);
       System.out.println("sizes:      " + spaces[i].printSizes());
       System.out.println("non-single: " + spaces[i].getNonSingleHashes());
       System.out.println("max:        " + spaces[i].getMaxHashes());
@@ -166,7 +167,7 @@ public final class VectorScan {
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n, boolean doCount) {
 //    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
-    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {

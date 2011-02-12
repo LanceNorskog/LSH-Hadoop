@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
+import org.junit.Test;
 
 import junit.framework.TestCase;
 import lsh.core.Hasher;
@@ -21,25 +22,25 @@ public class TestHashes extends TestCase {
     super.tearDown();
   }
   
-  
-  public void testEquals() {
-    int dimensions = 2;
-    int limit = 9;
-    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-    // starting at LOD=9, the two hashes are equal- both are zero
-    for(int i = 0; i <32; i++) {
-      SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-      space.setLOD(i);
-      Vector d = new DenseVector(dimensions);
-      Vector s = new RandomAccessSparseVector(dimensions, dimensions);
-      checkEquals(space, d, d);
-      checkEquals(space, d, s);
-      checkEquals(space, s, d);
-      checkEquals(space, s, s);
-      checkNotEquals(space, d, s, i >= limit);
-      checkNotEquals(space, s, d, i >= limit);
-    }
-  }
+//  @Test
+//  public void testEquals() {
+//    int dimensions = 2;
+//    int limit = 9;
+//    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
+//    // starting at LOD=9, the two hashes are equal- both are zero
+//    for(int i = 0; i <32; i++) {
+//      SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+//      space.setLOD(i);
+//      Vector d = new DenseVector(dimensions);
+//      Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+//      checkEquals(space, d, d);
+//      checkEquals(space, d, s);
+//      checkEquals(space, s, d);
+//      checkEquals(space, s, s);
+//      checkNotEquals(space, d, s, i >= limit);
+//      checkNotEquals(space, s, d, i >= limit);
+//    }
+//  }
   
   private void checkEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
     v1.set(0, 1.1);
@@ -95,7 +96,7 @@ public class TestHashes extends TestCase {
     v2.set(1, 2.2);
     Hash<String> h1 = space.getHashLOD(v1, null);
     Hash<String> h2 = space.getHashLOD(v2, null);
-    m.put(h1, "a");
+     m.put(h1, "a");
     assertTrue(m.containsKey(h1));
     assertTrue(m.containsKey(h2));
     m.clear();
@@ -106,6 +107,10 @@ public class TestHashes extends TestCase {
     m.put(h1, "a");
     m.put(h2, "b");
     assertEquals(m.get(h1), "b");
+    Vector v = new DenseVector(2);
+    v.set(1,3);
+    Hash<String> h = space.getHashLOD(v, null);
+    assertFalse(m.containsKey(h));
   }
   
   public void testDenseCount() {
