@@ -47,8 +47,8 @@ public class TestHashes extends TestCase {
     v1.set(1, 2.2);
     v2.set(0, 1.1);
     v2.set(1, 2.2);
-    Hash<String> h1 = space.getHashLOD(v1, null);
-    Hash<String> h2 = space.getHashLOD(v2, null);
+    Hash h1 = space.getHashLOD(v1);
+    Hash h2 = space.getHashLOD(v2);
     assertTrue(h1.equals(h1));
     assertTrue(h1.equals(h2));
     assertTrue(h2.equals(h1));
@@ -60,8 +60,8 @@ public class TestHashes extends TestCase {
     v1.set(1, 2.2);
     v2.set(0, 50);
     v2.set(1, 30);
-    Hash<String> h1 = space.getHashLOD(v1, null);
-    Hash<String> h2 = space.getHashLOD(v2, null);
+    Hash h1 = space.getHashLOD(v1);
+    Hash h2 = space.getHashLOD(v2);
     assertTrue(null != h1);
     assertTrue(null != h2);
     if (eq) {
@@ -89,13 +89,13 @@ public class TestHashes extends TestCase {
   
   
   private void checkCollection(SimplexSpace<String> space, Vector v1, Vector v2) {
-    Map<Hash<?>,String> m = new HashMap<Hash<?>,String>();
+    Map<Hash,String> m = new HashMap<Hash,String>();
     v1.set(0, 1.1);
     v1.set(1, 2.2);
     v2.set(0, 1.1);
     v2.set(1, 2.2);
-    Hash<String> h1 = space.getHashLOD(v1, null);
-    Hash<String> h2 = space.getHashLOD(v2, null);
+    Hash h1 = space.getHashLOD(v1);
+    Hash h2 = space.getHashLOD(v2);
      m.put(h1, "a");
     assertTrue(m.containsKey(h1));
     assertTrue(m.containsKey(h2));
@@ -109,7 +109,7 @@ public class TestHashes extends TestCase {
     assertEquals(m.get(h1), "b");
     Vector v = new DenseVector(2);
     v.set(1,3);
-    Hash<String> h = space.getHashLOD(v, null);
+    Hash h = space.getHashLOD(v);
     assertFalse(m.containsKey(h));
   }
   

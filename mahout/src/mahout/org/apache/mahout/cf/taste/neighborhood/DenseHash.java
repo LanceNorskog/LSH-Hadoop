@@ -7,22 +7,20 @@ package org.apache.mahout.cf.taste.neighborhood;
  * Probably LOD will be managed outside.
  */
 
-public class DenseHash<T> extends Hash<T> {
+public class DenseHash extends Hash{
   final int[] hashes;
   int lod;
   
   private long lodMask;
-  final T payload;
   int code = 0;
   
-  public DenseHash(int[] hashes, T payload) { 
-    this(hashes, 0, payload);
+  public DenseHash(int[] hashes) { 
+    this(hashes, 0);
   }
   
-  public DenseHash(int[] hashes, int lod, T payload) {
+  public DenseHash(int[] hashes, int lod) {
     this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
-    this.payload = payload;
   }
   
   private int[] duplicate(int[] hashes2) {
@@ -52,10 +50,6 @@ public class DenseHash<T> extends Hash<T> {
     return hashes;
   }
   
-  public T getPayload() {
-    return payload;
-  }
-  
   // Has to match SparseHash formula
   @Override
   public int hashCode() {
@@ -78,7 +72,7 @@ public class DenseHash<T> extends Hash<T> {
       return true;
     if (obj.getClass() == SparseHash.class) 
       return ((SparseHash) obj).equalsDense(this);
-    DenseHash<T> other = (DenseHash<T>) obj;
+    DenseHash other = (DenseHash) obj;
     if (lod != other.getLOD())
       return false;
     int[] myHashes = hashes;

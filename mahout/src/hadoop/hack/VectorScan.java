@@ -126,7 +126,7 @@ public final class VectorScan {
             count++;
             if (count % 100 == 0)
               System.out.print(".");
-            if (count == 200)
+            if (count == 500)
               break;
           }
           printSpaces(spaces, start);
@@ -156,12 +156,14 @@ public final class VectorScan {
    * Count the number of entries in this hash- ignore the payload
    */
   private static void addSpaces(SimplexSpace<String>[] spaces, int start, String key, Vector v) {
-    Hash<String> h = spaces[start].getHashLOD(v, null);
+    Hash h = spaces[start].getHashLOD(v);
     int[] hashes = h.getHashes();
     for(int lod = start; lod < spaces.length; lod++) {
-      Hash<String> spot = new SparseHash<String>(hashes, lod, key);
-      if (null != spaces[lod])
-        spaces[lod].addHash(null, v, spot);
+      Hash spot = new SparseHash(hashes, lod);
+      if (null != spaces[lod]) {
+        spaces[lod].addHash(v, spot, key);
+        // set key as payload
+      }
     }
   }
 

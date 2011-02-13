@@ -35,45 +35,47 @@ import org.apache.mahout.math.Vector.Element;
  * LOD - Level Of Detail
  * 
  * Does not know of User or Item - type T is long
+ * 
+ * Have to store payloads at this level instead of in Hash objects.
+ * Needed for 'findneighbors'.
  */
 public class SimplexSpace<T> {
   final Hasher hasher;
-  Map<T, Hash<T>> idSetMap = new HashMap<T, Hash<T>>();
-  Map<Hash<T>, Set<T>> hashSetMap = new HashMap<Hash<T>, Set<T>>();
-  Map<Hash<T>, Set<Vector>> vectorSetMap = new HashMap<Hash<T>, Set<Vector>>();
-  Map<Hash<T>, Vector> centerMap = new HashMap<Hash<T>, Vector>();
-  Map<Hash<T>, Integer> countMap = new HashMap<Hash<T>,Integer>();
+  Map<T, Vector> id2vectorMap = new HashMap<T, Vector>();
+  Map<T, Hash> id2hashMap = new HashMap<T, Hash>();
+  Map<Hash, Set<Vector>> vectorSetMap = new HashMap<Hash, Set<Vector>>();
+  Map<Hash, Integer> countMap = new HashMap<Hash,Integer>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
   private final DistanceMeasure measure;
   int lod = 0;
-  final boolean doCenter;
+  final boolean doMapVectors;
   final boolean doCount;
   
   public SimplexSpace(Hasher hasher, int dimensions) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = null;
-    doCenter = false;
+    doMapVectors = false;
     doCount = false;
   }
   
-  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean center, boolean count) {
+  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean mapVectors, boolean count) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = measure;
-    doCenter = center;
+    doMapVectors = mapVectors;
     doCount = count;
   }
   
   // populate hashes
-  public void addVector(T payload, Vector v) {
-    Hash<T> hash = getHashLOD(v, payload);
-    addHash(payload, v, hash);
+  public void addVector(Vector v, T payload) {
+    Hash hash = getHashLOD(v);
+    addHash(v, hash, payload);
   }
   
-  public void addHash(T payload, Vector v, Hash<T> hash) {
+  public void addHash(Vector v, Hash hash, T payload) {
     if (doCount) {
       if (!countMap.containsKey(hash)) {
         countMap.put(hash, null);
@@ -87,31 +89,30 @@ public class SimplexSpace<T> {
         countMap.put(hash, counter);
       }
     } else {
-      idSetMap.put(payload, hash);
-      Set<T> hashKeys = hashSetMap.get(hash);
       Set<Vector> vectorKeys = vectorSetMap.get(hash);
-      if (null == hashKeys) {
-        hashKeys = new HashSet<T>();
-        hashSetMap.put(hash, hashKeys);
+      if (null == vectorKeys) {
         vectorKeys = new HashSet<Vector>();
         vectorSetMap.put(hash, vectorKeys);
       } else
-        hashKeys.hashCode();
-      hashKeys.add(payload);
+        vectorKeys.hashCode();
       vectorKeys.add(v);
+      if (null != payload) {
+        id2vectorMap.put(payload, v);
+        id2hashMap.put(payload, hash);
+      }
     }
   }
   
   /*
    * Mask hash value to the current level of detail
    */
-  public Hash<T> getHashLOD(Vector v, T payload) {
+  public Hash getHashLOD(Vector v) {
     int[] hashes;
     if (v.isDense()) {
       double[] values = new double[dimensions];
       getValues(v, values);
       hashes = hasher.hash(values);
-      return new DenseHash<T>(hashes, lod, payload);
+      return new DenseHash(hashes, lod);
     } else {
       hashes = new int[dimensions];
       double[] d = new double[1];
@@ -123,10 +124,10 @@ public class SimplexSpace<T> {
         h = hasher.hash(d);
         hashes[e.index()] = h[0];
       }
-      return new SparseHash<T>(hashes, lod, payload);
-
-//      Iterator<Element> el = v.iterateNonZero();
-//      return new SparseHash<T>(hasher, el, v.size(), lod, payload);
+      return new SparseHash(hashes, lod);
+      
+      //      Iterator<Element> el = v.iterateNonZero();
+      //      return new SparseHash<T>(hasher, el, v.size(), lod, payload);
     }
   }
   
@@ -142,62 +143,62 @@ public class SimplexSpace<T> {
    * Enumerate other co-resident hashes.
    * Do not add input hash.
    */
-  public FastIDSet findNeighbors(long other) {
-    Hash<T> hash = idSetMap.get(other);
-    if (null == hash)
-      return null;
-    FastIDSet others = new FastIDSet(idSetMap.size());
-    Set<T> hashKeys = hashSetMap.get(hash);
-    for(T otherID: hashKeys) {
-      if (! otherID.equals(other)){
-        long id = (Long) otherID;
-        others.add(id);
-      }
-    }
-    return others;
-  }
+  //  public FastIDSet findNeighbors(long other) {
+  //    Hash<T> hash = idSetMap.get(other);
+  //    if (null == hash)
+  //      return null;
+  //    FastIDSet others = new FastIDSet(idSetMap.size());
+  //    Set<T> hashKeys = hashSetMap.get(hash);
+  //    for(T otherID: hashKeys) {
+  //      if (! otherID.equals(other)){
+  //        long id = (Long) otherID;
+  //        others.add(id);
+  //      }
+  //    }
+  //    return others;
+  //  }
+  //  
+  //  public Map<T, Set<T>> findNeighbors(T other) {
+  //    Hash<T> hash = idSetMap.get(other);
+  //    if (null == hash)
+  //      return null;
+  //    Map<T, Set<T>> others = new HashMap<T, Set<T>>();
+  //    Set<T> hashKeys = hashSetMap.get(hash);
+  //    for(T otherID: hashKeys) {
+  //      if (! otherID.equals(other))
+  //        hashKeys.add(other);
+  //    }
+  //    return others;
+  //  }
+  //  
+  //  public double getDistance(long id1, long id2, DistanceMeasure measure) {
+  //    if (null == measure)
+  //      measure = this.measure;
+  //    Hash<T> h1 = idSetMap.get(id1);
+  //    Hash<T> h2 = idSetMap.get(id2);
+  //    if (null == h1 || null == h2)
+  //      return -1;
+  //    
+  //    double d = hashDistance(h1, h2, measure);
+  //    return d;
+  //  }
+  //  
+  //  public double getDistance(long id1, long id2, SimplexSpace<T> otherSpace, DistanceMeasure measure) {
+  //    if (null == measure)
+  //      measure = this.measure;
+  //    Hash<T> h1 = idSetMap.get(id1);
+  //    Hash<T> h2 = otherSpace.idSetMap.get(id2);
+  //    if (null == h1 || null == h2) {
+  //      return -1;
+  //    }
+  //    
+  //    double d = hashDistance(h1, h2, measure);
+  //    if (d != 0.0)
+  //      System.out.println(d);
+  //    return d;
+  //  }
   
-  public Map<T, Set<T>> findNeighbors(T other) {
-    Hash<T> hash = idSetMap.get(other);
-    if (null == hash)
-      return null;
-    Map<T, Set<T>> others = new HashMap<T, Set<T>>();
-    Set<T> hashKeys = hashSetMap.get(hash);
-    for(T otherID: hashKeys) {
-      if (! otherID.equals(other))
-        hashKeys.add(other);
-    }
-    return others;
-  }
-  
-  public double getDistance(long id1, long id2, DistanceMeasure measure) {
-    if (null == measure)
-      measure = this.measure;
-    Hash<T> h1 = idSetMap.get(id1);
-    Hash<T> h2 = idSetMap.get(id2);
-    if (null == h1 || null == h2)
-      return -1;
-    
-    double d = hashDistance(h1, h2, measure);
-    return d;
-  }
-  
-  public double getDistance(long id1, long id2, SimplexSpace<T> otherSpace, DistanceMeasure measure) {
-    if (null == measure)
-      measure = this.measure;
-    Hash<T> h1 = idSetMap.get(id1);
-    Hash<T> h2 = otherSpace.idSetMap.get(id2);
-    if (null == h1 || null == h2) {
-      return -1;
-    }
-    
-    double d = hashDistance(h1, h2, measure);
-    if (d != 0.0)
-      System.out.println(d);
-    return d;
-  }
-  
-  private double hashDistance(Hash<T> h1, Hash<T> h2, DistanceMeasure measure) {
+  private double hashDistance(Hash h1, Hash h2, DistanceMeasure measure) {
     double[] d1 = new double[dimensions];
     double[] d2 = new double[dimensions];
     int[] hashes1 = h1.getHashes();
@@ -231,10 +232,10 @@ public class SimplexSpace<T> {
   
   public void stDevCounts() {
     CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
-    for(Hash<T> h: hashSetMap.keySet()) {
-      std.addDatum(hashSetMap.get(h).size());
+    for(Hash h: vectorSetMap.keySet()) {
+      std.addDatum(vectorSetMap.get(h).size());
     }
-    System.out.println("Entries: " + hashSetMap.size());
+    System.out.println("Entries: " + vectorSetMap.size());
     System.out.println("Mean: " + std.getAverage());
     System.out.println("Stdev: " + std.getStandardDeviation());
   }
@@ -263,7 +264,7 @@ public class SimplexSpace<T> {
   public double stDevCenters() {
     FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
     
-    for(Hash<T> h: vectorSetMap.keySet()) {
+    for(Hash h: vectorSetMap.keySet()) {
       //      List<FullRunningAverageAndStdDev> devs = new ArrayList<FullRunningAverageAndStdDev>();
       //      for(int i = 0; i < dimensions; i++) {
       Vector center = new DenseVector(dimensions);
@@ -287,24 +288,19 @@ public class SimplexSpace<T> {
   @Override
   public String toString() {
     String x = "";
-    if (null != idSetMap) {
+    if (null != id2vectorMap) {
       x += "ID{";
-      Iterator<T> lpi = idSetMap.keySet().iterator();
+      Iterator<T> lpi = id2vectorMap.keySet().iterator();
       while (lpi.hasNext()) {
         T key = lpi.next();
-        Hash<T> h = idSetMap.get(key);
-        Set<Vector> ids = vectorSetMap.get(h);
-        if (ids.size() == 1)
-          x += ",";
-        else
-          x += ids.size() + ",";
+        x += key.toString() + ",";
       }
       x += "}";
     }
     int count = 0;
-    if (null != hashSetMap) {
+    if (null != vectorSetMap) {
       x += "HASH{";
-      for(Hash<T> h: hashSetMap.keySet()) {
+      for(Hash h: vectorSetMap.keySet()) {
         Set<Vector> hs = vectorSetMap.get(h);
         if (null == hs) {
           x += "0,";
@@ -318,7 +314,7 @@ public class SimplexSpace<T> {
     }
     if (doCount) {
       x += "COUNT{";
-      for(Hash<T> h: countMap.keySet()) {
+      for(Hash h: countMap.keySet()) {
         Integer hs = countMap.get(h);
         if (null == hs)
           x += "1,";
@@ -367,13 +363,13 @@ public class SimplexSpace<T> {
       }
       return total;
     } else
-      return hashSetMap.keySet().size();
+      return vectorSetMap.keySet().size();
   }
   
   public int getMaxHashes() {
     if (doCount) {
       int max = 0;
-      for(Hash<T> h: countMap.keySet()) {
+      for(Hash h: countMap.keySet()) {
         Integer i = countMap.get(h);
         if (null != i) {
           if (i > max)
@@ -389,7 +385,7 @@ public class SimplexSpace<T> {
   public int printSizes() {
     if (doCount) {
       int max = 0;
-      for(Hash<T> h: countMap.keySet()) {
+      for(Hash h: countMap.keySet()) {
         Integer i = countMap.get(h);
         if (null != i) {
           System.out.print(i + ",");
@@ -402,12 +398,10 @@ public class SimplexSpace<T> {
       return max;
     } else {
       int count = 0;
-      for(Hash<T> x: vectorSetMap.keySet()) {
+      for(Hash x: vectorSetMap.keySet()) {
         Set<Vector> value = vectorSetMap.get(x);
-//        System.out.print(x.toString() +  " -> " + value.size());
         count += value.size();
       }
-//      System.out.println();
       return count;
     }
   }

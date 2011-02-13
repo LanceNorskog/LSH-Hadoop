@@ -19,44 +19,40 @@ import org.apache.mahout.math.Vector.Element;
  * Probably LOD will be managed outside.
  */
 
-public class SparseHash<T> extends Hash<T> {
+public class SparseHash extends Hash {
   
-  static Map<Hash<?>,int[]> hashCache = new HashMap<Hash<?>, int[]>();
+  static Map<Hash,int[]> hashCache = new HashMap<Hash, int[]>();
   //  final int[] hashes;
   FastByIDMap<Integer> sparseHashKeys;
   int[] sparseHashes;
   int[] hashes;
   int lod;
   private long lodMask;
-  final T payload;
   int code = 0;
   int dimensions;
   
-  public SparseHash(int[] hashes, T payload) { 
-    this(hashes, 0, payload);
+  public SparseHash(int[] hashes) { 
+    this(hashes, 0);
   }
   
-  public SparseHash(int[] hashes, int lod, T payload) {
+  public SparseHash(int[] hashes, int lod) {
     setHashes(hashes);
     setLOD(lod);
-    this.payload = payload;
     this.hashes = hashes;
   }
   
-  public SparseHash(SparseHash<T> sp, int lod, T payload) {
+  public SparseHash(SparseHash sp, int lod) {
     this.sparseHashes = sp.sparseHashes;
     this.sparseHashKeys = sp.sparseHashKeys;
     setLOD(lod);
-    this.payload = payload;
     this.dimensions = sp.dimensions;
     hashes = sp.getHashes();
   }
   
-  public SparseHash(Hasher hasher, Iterator<Element> el, int dimensions, int lod, T payload) {
+  public SparseHash(Hasher hasher, Iterator<Element> el, int dimensions, int lod) {
     setValues(hasher, el);
     this.dimensions = dimensions;
     this.lod = lod;
-    this.payload = payload;
     setLOD(lod);
   }
   
@@ -135,10 +131,6 @@ public class SparseHash<T> extends Hash<T> {
 //    return hashes;
   }
   
-  public T getPayload() {
-    return payload;
-  }
-  
   /*
    * Has to match DenseHash formula
    */
@@ -167,8 +159,8 @@ public class SparseHash<T> extends Hash<T> {
     if (this == obj)
       return true;
      if (obj.getClass() == DenseHash.class)
-      return this.equalsDense((DenseHash<T>) obj);
-    SparseHash<T> other = (SparseHash<T>) obj;
+      return this.equalsDense((DenseHash) obj);
+    SparseHash other = (SparseHash) obj;
     if (lod != other.getLOD())
       return false;
     if (getDimensions() != other.getDimensions())
@@ -193,7 +185,7 @@ public class SparseHash<T> extends Hash<T> {
     return true;
   }
 
-   boolean equalsDense(DenseHash<T> other) {
+   boolean equalsDense(DenseHash other) {
     if (lod != other.getLOD())
       return false;
     if (getDimensions() != other.getDimensions())
