@@ -117,18 +117,18 @@ public class SparseHash extends Hash {
   }
   
   public int[] getHashes() {
-//    if (null == hashes) {
-      int[] myHashes = new int[dimensions];
-      LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-      while(it.hasNext()) {
-        long x = it.next();
-        int index = sparseHashKeys.get(x);
-        myHashes[(int) x] = sparseHashes[index];
-      }
-      return myHashes;
-//      hashes = myHashes;
-//    }
-//    return hashes;
+    //    if (null == hashes) {
+    int[] myHashes = new int[dimensions];
+    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+    while(it.hasNext()) {
+      long x = it.next();
+      int index = sparseHashKeys.get(x);
+      myHashes[(int) x] = sparseHashes[index];
+    }
+    return myHashes;
+    //      hashes = myHashes;
+    //    }
+    //    return hashes;
   }
   
   /*
@@ -158,34 +158,73 @@ public class SparseHash extends Hash {
   public boolean equals(Object obj) {
     if (this == obj)
       return true;
-     if (obj.getClass() == DenseHash.class)
+    if (obj.getClass() == DenseHash.class)
       return this.equalsDense((DenseHash) obj);
     SparseHash other = (SparseHash) obj;
     if (lod != other.getLOD())
       return false;
     if (getDimensions() != other.getDimensions())
       return false;
-//    int index = 0;
-//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//    LongPrimitiveIterator itOther = other.sparseHashKeys.keySetIterator();
-//    while(it.hasNext()) {
-//      int offset = (int) it.nextLong();
-//      long x = (((long) sparseHashes[index]) & ~lodMask) * offset;
-//    }
+    boolean finished = false;
+    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+    LongPrimitiveIterator itOther = other.sparseHashKeys.keySetIterator();
+    int current = (int) it.nextLong();
+    int currentOther = (int) itOther.nextLong();
+    int index = 0;
+    int indexOther = 0;
+    while(! finished) {
+      long value = (((long) sparseHashes[index]) & ~lodMask); 
+      long valueOther = (((long) other.sparseHashes[indexOther]) & ~lodMask);
+      if (current < currentOther) {
+        if (value != 0) {
+          return false; 
+        } 
+        if (!it.hasNext())
+          return false;
+        current = (int) it.nextLong();
+        index++;
+      } else if (current > currentOther) {
+        if (valueOther != 0)
+          return false;
+        if (! itOther.hasNext())
+          return false;
+        currentOther = (int) itOther.nextLong();
+        indexOther++;
+      } else if (current == currentOther) {
+        if (value != valueOther)
+          return false;
+        if (!it.hasNext() && !itOther.hasNext())
+          return true;
+        else if (!it.hasNext() || !itOther.hasNext())
+          return false;
+        current = (int) it.nextLong();
+        index++;
+        currentOther = (int) itOther.nextLong();
+        indexOther++;
+      }
+    }
+    return !(it.hasNext() || itOther.hasNext());
+    //    int index = 0;
+    //    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
+    //    LongPrimitiveIterator itOther = other.sparseHashKeys.keySetIterator();
+    //    while(it.hasNext()) {
+    //      int offset = (int) it.nextLong();
+    //      long x = (((long) sparseHashes[index]) & ~lodMask) * offset;
+    //    }
     // fuck that's hard
-    int[] myHashes = this.getHashes();
-    int[] otherHashes = other.getHashes();
-    for(int i = 0; i < myHashes.length; i++) {
-      long myVal = ((long) myHashes[i]) & ~lodMask;
-      long otherval = ((long) otherHashes[i]) & ~lodMask;
-      if (myVal != otherval)
-        return false;
-    };
-
-    return true;
+    //    int[] myHashes = this.getHashes();
+    //    int[] otherHashes = other.getHashes();
+    //    for(int i = 0; i < myHashes.length; i++) {
+    //      long myVal = ((long) myHashes[i]) & ~lodMask;
+    //      long otherval = ((long) otherHashes[i]) & ~lodMask;
+    //      if (myVal != otherval)
+    //        return false;
+    //    };
+    //
+    //    return true;
   }
-
-   boolean equalsDense(DenseHash other) {
+  
+  boolean equalsDense(DenseHash other) {
     if (lod != other.getLOD())
       return false;
     if (getDimensions() != other.getDimensions())
@@ -200,7 +239,7 @@ public class SparseHash extends Hash {
     };
     return true;
   }
-
+  
   
   /*
   @SuppressWarnings("unchecked")
@@ -233,7 +272,7 @@ public class SparseHash extends Hash {
     };
     return true;
   }
-  */
+   */
   
   
   @Override
@@ -247,12 +286,12 @@ public class SparseHash extends Hash {
     }
     return x + ": LOD=" + lod + "}";
   }
-
+  
   @Override
   public int getNumEntries() {
     return sparseHashes.length;
   }
-
+  
   @Override
   public int getDimensions() {
     return dimensions;

@@ -71,7 +71,7 @@ public class CompareRecommenders {
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
-    Recommender testRecco = doEstimatingUser(glModelTest);
+//    Recommender testRecco = doEstimatingUser(glModelTest);
     Recommender simplexRecco = doEstimatingSimplexUser(glModelTest);
     bsrv.evaluate(simplexRecco, trainingRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Training v.s Test score: " + tracker.getAverage());
@@ -145,7 +145,7 @@ public class CompareRecommenders {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
 //    DistanceMeasure measure = new ManhattanDistanceMeasure();
 //  return new SimplexSpace(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
-    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
+    return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure, false, false);
     /*
      * LOD 8
      * mink 1.5
@@ -169,9 +169,9 @@ public class CompareRecommenders {
       Long userID = lpi.nextLong();
       Vector sv = svf.getUserVector(userID, 3, 500);
       if (null != sv) {
-        space.addVector(userID, sv);
+        space.addVector(sv, userID);
         if (null != spaceLOD)
-          spaceLOD.addVector(userID, sv);
+          spaceLOD.addVector(sv, userID);
       }
     }
   }
@@ -183,7 +183,7 @@ public class CompareRecommenders {
       Long itemID = lpi.nextLong();
       Vector sv = svf.getItemVector(itemID, 3, 50);
       if (null != sv)
-        space.addVector(itemID, sv);
+        space.addVector(sv, itemID);
     }
   }
 

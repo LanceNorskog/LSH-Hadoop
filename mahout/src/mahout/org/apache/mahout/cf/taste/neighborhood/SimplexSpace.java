@@ -43,6 +43,7 @@ public class SimplexSpace<T> {
   final Hasher hasher;
   Map<T, Vector> id2vectorMap = new HashMap<T, Vector>();
   Map<T, Hash> id2hashMap = new HashMap<T, Hash>();
+  Map<Hash, Set<T>> payloadSetMap = new HashMap<Hash, Set<T>>();
   Map<Hash, Set<Vector>> vectorSetMap = new HashMap<Hash, Set<Vector>>();
   Map<Hash, Integer> countMap = new HashMap<Hash,Integer>();
   final int dimensions;
@@ -90,15 +91,23 @@ public class SimplexSpace<T> {
       }
     } else {
       Set<Vector> vectorKeys = vectorSetMap.get(hash);
+      Set<T> payloadKeys = null;
+      if (null != payload)
+        payloadKeys = payloadSetMap.get(hash);
       if (null == vectorKeys) {
         vectorKeys = new HashSet<Vector>();
         vectorSetMap.put(hash, vectorKeys);
+        if (null != payload) {
+          payloadKeys = new HashSet<T>();
+          payloadSetMap.put(hash, payloadKeys);
+        }
       } else
         vectorKeys.hashCode();
       vectorKeys.add(v);
       if (null != payload) {
         id2vectorMap.put(payload, v);
         id2hashMap.put(payload, hash);
+        payloadKeys.add(payload);
       }
     }
   }
@@ -143,60 +152,60 @@ public class SimplexSpace<T> {
    * Enumerate other co-resident hashes.
    * Do not add input hash.
    */
-  //  public FastIDSet findNeighbors(long other) {
-  //    Hash<T> hash = idSetMap.get(other);
-  //    if (null == hash)
-  //      return null;
-  //    FastIDSet others = new FastIDSet(idSetMap.size());
-  //    Set<T> hashKeys = hashSetMap.get(hash);
-  //    for(T otherID: hashKeys) {
-  //      if (! otherID.equals(other)){
-  //        long id = (Long) otherID;
-  //        others.add(id);
-  //      }
-  //    }
-  //    return others;
-  //  }
-  //  
-  //  public Map<T, Set<T>> findNeighbors(T other) {
-  //    Hash<T> hash = idSetMap.get(other);
-  //    if (null == hash)
-  //      return null;
-  //    Map<T, Set<T>> others = new HashMap<T, Set<T>>();
-  //    Set<T> hashKeys = hashSetMap.get(hash);
-  //    for(T otherID: hashKeys) {
-  //      if (! otherID.equals(other))
-  //        hashKeys.add(other);
-  //    }
-  //    return others;
-  //  }
-  //  
-  //  public double getDistance(long id1, long id2, DistanceMeasure measure) {
-  //    if (null == measure)
-  //      measure = this.measure;
-  //    Hash<T> h1 = idSetMap.get(id1);
-  //    Hash<T> h2 = idSetMap.get(id2);
-  //    if (null == h1 || null == h2)
-  //      return -1;
-  //    
-  //    double d = hashDistance(h1, h2, measure);
-  //    return d;
-  //  }
-  //  
-  //  public double getDistance(long id1, long id2, SimplexSpace<T> otherSpace, DistanceMeasure measure) {
-  //    if (null == measure)
-  //      measure = this.measure;
-  //    Hash<T> h1 = idSetMap.get(id1);
-  //    Hash<T> h2 = otherSpace.idSetMap.get(id2);
-  //    if (null == h1 || null == h2) {
-  //      return -1;
-  //    }
-  //    
-  //    double d = hashDistance(h1, h2, measure);
-  //    if (d != 0.0)
-  //      System.out.println(d);
-  //    return d;
-  //  }
+    public FastIDSet findNeighborsIDSet(T payload) {
+      Hash hash = id2hashMap.get(payload);
+      if (null == hash)
+        return null;
+      FastIDSet others = new FastIDSet(id2hashMap.size());
+      Set<T> hashKeys = payloadSetMap.get(hash);
+      for(T otherID: hashKeys) {
+        if (! otherID.equals(payload)){
+          long id = (Long) otherID;
+          others.add(id);
+        }
+      }
+      return others;
+    }
+    
+    public Map<T, Set<T>> findNeighbors(T other) {
+      Hash hash = id2hashMap.get(other);
+      if (null == hash)
+        return null;
+      Map<T, Set<T>> others = new HashMap<T, Set<T>>();
+      Set<T> hashKeys = payloadSetMap.get(hash);
+      for(T otherID: hashKeys) {
+        if (! otherID.equals(other))
+          hashKeys.add(other);
+      }
+      return others;
+    }
+    
+    public double getDistance(T payload1, T payload2, DistanceMeasure measure) {
+      if (null == measure)
+        measure = this.measure;
+      Hash h1 = id2hashMap.get(payload1);
+      Hash h2 = id2hashMap.get(payload2);
+      if (null == h1 || null == h2)
+        return -1;
+      
+      double d = hashDistance(h1, h2, measure);
+      return d;
+    }
+    
+    public double getDistance(T payload1, T payload2, SimplexSpace<T> otherSpace, DistanceMeasure measure) {
+      if (null == measure)
+        measure = this.measure;
+      Hash h1 = id2hashMap.get(payload1);
+      Hash h2 = otherSpace.id2hashMap.get(payload2);
+      if (null == h1 || null == h2) {
+        return -1;
+      }
+      
+      double d = hashDistance(h1, h2, measure);
+      if (d != 0.0)
+        System.out.println(d);
+      return d;
+    }
   
   private double hashDistance(Hash h1, Hash h2, DistanceMeasure measure) {
     double[] d1 = new double[dimensions];

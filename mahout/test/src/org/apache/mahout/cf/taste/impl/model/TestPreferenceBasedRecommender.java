@@ -149,7 +149,7 @@ public class TestPreferenceBasedRecommender {
     //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
     //    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5); 
     DistanceMeasure measure = new EuclideanDistanceMeasure();
-    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, 0.05), DIMS, measure);
+    return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, 0.05), DIMS, measure, false, false);
     //    return new SimplexSpace(new VertexTransitiveHasher(DIMS, 0.2), DIMS, measure);
     /*
      * LOD 8
@@ -174,9 +174,9 @@ public class TestPreferenceBasedRecommender {
       Long userID = lpi.nextLong();
       Vector sv = svf.getUserVector(userID, 3, 50);
       if (null != sv) {
-        space.addVector(userID, sv);
+        space.addVector(sv, userID);
         if (null != spaceLOD)
-          spaceLOD.addVector(userID, sv);
+          spaceLOD.addVector(sv, userID);
       }
     }
   }
@@ -188,7 +188,7 @@ public class TestPreferenceBasedRecommender {
       Long itemID = lpi.nextLong();
       Vector sv = svf.getItemVector(itemID, 3, 50);
       if (null != sv)
-        space.addVector(itemID, sv);
+        space.addVector(sv, itemID);
     }
   }
 

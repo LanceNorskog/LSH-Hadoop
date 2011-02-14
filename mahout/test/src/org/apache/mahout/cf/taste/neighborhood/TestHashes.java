@@ -22,25 +22,25 @@ public class TestHashes extends TestCase {
     super.tearDown();
   }
   
-//  @Test
-//  public void testEquals() {
-//    int dimensions = 2;
-//    int limit = 9;
-//    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-//    // starting at LOD=9, the two hashes are equal- both are zero
-//    for(int i = 0; i <32; i++) {
-//      SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-//      space.setLOD(i);
-//      Vector d = new DenseVector(dimensions);
-//      Vector s = new RandomAccessSparseVector(dimensions, dimensions);
-//      checkEquals(space, d, d);
-//      checkEquals(space, d, s);
-//      checkEquals(space, s, d);
-//      checkEquals(space, s, s);
-//      checkNotEquals(space, d, s, i >= limit);
-//      checkNotEquals(space, s, d, i >= limit);
-//    }
-//  }
+  @Test
+  public void testEquals() {
+    int dimensions = 2;
+    int limit = 9;
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
+    // starting at LOD=9, the two hashes are equal- both are zero
+    for(int i = 0; i <32; i++) {
+      SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+      space.setLOD(i);
+      Vector d = new DenseVector(dimensions);
+      Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+      checkEquals(space, d, d);
+      checkEquals(space, d, s);
+      checkEquals(space, s, d);
+      checkEquals(space, s, s);
+      checkNotEquals(space, d, s, i >= limit);
+      checkNotEquals(space, s, d, i >= limit);
+    }
+  }
   
   private void checkEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
     v1.set(0, 1.1);
@@ -73,6 +73,7 @@ public class TestHashes extends TestCase {
     }
   }
   
+  @Test
   public void testCollections() {
     int dimensions = 2;
     Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
@@ -119,6 +120,24 @@ public class TestHashes extends TestCase {
     SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
     Vector v = new DenseVector(dimensions);
   }
+  
+  @Test
+  public void testSparseEquals() {
+    int dimensions = 20;
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+    Vector s1 = new RandomAccessSparseVector(dimensions, dimensions);
+    Vector s2 = new RandomAccessSparseVector(dimensions, dimensions);
+    s1.set(0, 1.1);
+    s1.set(3, 2.2);
+    s2.set(0, 1.1);
+    s2.set(6, 2.2);
+    Hash h1 = space.getHashLOD(s1);
+    Hash h2 = space.getHashLOD(s2);
+    assertFalse(h1.hashCode() == h2.hashCode());
+    assertFalse(h1.equals(h2));
+  }
+  
   
   
   

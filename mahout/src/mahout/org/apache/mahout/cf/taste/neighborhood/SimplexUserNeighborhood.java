@@ -36,8 +36,8 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
    * External pass to clone. migrate to here.
    */
   public void addUser(Long userID, Vector v) {
-    space.addVector(userID, v);
-    spaceLOD.addVector(userID, v);
+    space.addVector(v, userID);
+    spaceLOD.addVector(v, userID);
   }
 
   /* (non-Javadoc)
@@ -45,8 +45,8 @@ public class SimplexUserNeighborhood implements UserNeighborhood {
    */
   @Override
   public long[] getUserNeighborhood(long userID) throws TasteException {
-    FastIDSet nabes = space.findNeighbors(userID);
-    FastIDSet nabesLOD = spaceLOD.findNeighbors(userID);
+    FastIDSet nabes = space.findNeighborsIDSet(userID);
+    FastIDSet nabesLOD = spaceLOD.findNeighborsIDSet(userID);
     if (null == nabesLOD || nabesLOD.size() == 0) 
       return EMPTY;
     int size = nabesLOD.size();
