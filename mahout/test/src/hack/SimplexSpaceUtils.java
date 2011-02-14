@@ -120,7 +120,7 @@ public class SimplexSpaceUtils {
       Long userID = lpi.nextLong();
       Vector sv = svf.getUserVector(userID, 3, 50);
       if (null != sv) {
-        space.addVector(userID, sv);
+        space.addVector(sv, userID);
       }
     }
   }

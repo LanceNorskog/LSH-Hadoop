@@ -52,7 +52,7 @@ public final class GroupLensRecommenderEvaluatorRunner {
     DataModel model = ratingsFile == null ? new GroupLensDataModel() : new GroupLensDataModel(ratingsFile);
     GroupLensRecommenderBuilder recommenderBuilder = new GroupLensRecommenderBuilder();
     DataModel trainingModel = new SamplingDataModel(model, 0.0, 0.9, Mode.USER);
-    DataModel testModel = model; // new SamplingDataModel(model, 0.3, 1.0, Mode.USER);
+    DataModel testModel = new SamplingDataModel(model, 0.3, 1.0, Mode.USER);
     Recommender trainingRecommender = recommenderBuilder.buildRecommender(trainingModel);
     Recommender testRecommender = recommenderBuilder.buildRecommender(testModel);
     CompactRunningAverageAndStdDev tracker = new CompactRunningAverageAndStdDev();
