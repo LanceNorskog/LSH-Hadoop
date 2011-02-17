@@ -2,17 +2,37 @@ package org.apache.mahout.cf.taste.neighborhood;
 
 /*
  * Simplex box, keyed by "lower-left" corner
- * Includes Level Of Detail and generic payload
- * identity functions use corner and level-of-detail
- * equals & hashCode required: must match for any two subclasses at given level of detail
+ * Includes Level Of Detail
+ * Maintains unique sum of all dimensional values,
+ * which means that available "headroom" for hashes 
+ * shrinks with # of dimensions
  */
 
-public abstract class Hash { // Comparable<Hash<T>>,
-  abstract public int[] getHashes();  // ewwwwww - only for equals()
+public abstract class Hash { 
+  // sum of all (index * value@index);
+  // unique per hash
+  long indexes;
+  
+//  abstract public int[] getHashes();  // ewwwwww - only for equals(). and distance
   public abstract void setLOD(int lod);
   public abstract int getLOD();
   public abstract int getDimensions();
   public abstract int getNumEntries();
+//  public abstract void setBits(Hash other, BitSet bs);
+//  public abstract void setBits(Hash other, FastIDSet fs);
+  public abstract Integer getValue(int index);
+  public abstract boolean contains(int index);
+  
+  public final boolean equals(Object obj) {
+    Hash other = (Hash) obj;
+    if (indexes != other.indexes)
+      this.hashCode();
+    return indexes == other.indexes;
+  }
+  
+  public final int hashCode() {
+    return (int) (indexes ^ (indexes >> 32));
+  }
 }
 
 /* only compare values at index */

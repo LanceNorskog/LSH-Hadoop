@@ -60,6 +60,7 @@ public class SimplexSpace<T> {
     this.measure = null;
     doMapVectors = false;
     doCount = false;
+    allocate();
   }
   
   public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean mapVectors, boolean count) {
@@ -68,8 +69,17 @@ public class SimplexSpace<T> {
     this.measure = measure;
     doMapVectors = mapVectors;
     doCount = count;
-  }
+    allocate();
+    }
   
+  void allocate() {
+    id2vectorMap = new HashMap<T, Vector>(50000);
+    id2hashMap = new HashMap<T, Hash>(50000);
+    payloadSetMap = new HashMap<Hash, Set<T>>(50000);
+    vectorSetMap = new HashMap<Hash, Set<Vector>>(50000);
+    countMap = new HashMap<Hash,Integer>(50000);
+
+  }
   // populate hashes
   public void addVector(Vector v, T payload) {
     Hash hash = getHashLOD(v);
@@ -152,6 +162,7 @@ public class SimplexSpace<T> {
    * Enumerate other co-resident hashes.
    * Do not add input hash.
    */
+  /*
     public FastIDSet findNeighborsIDSet(T payload) {
       Hash hash = id2hashMap.get(payload);
       if (null == hash)
@@ -208,24 +219,26 @@ public class SimplexSpace<T> {
     }
   
   private double hashDistance(Hash h1, Hash h2, DistanceMeasure measure) {
-    double[] d1 = new double[dimensions];
-    double[] d2 = new double[dimensions];
-    int[] hashes1 = h1.getHashes();
-    int[] hashes2 = h2.getHashes();
-    if (doUnhash) {
-      hasher.unhash(hashes1, d1);
-      hasher.unhash(hashes2, d2);
-    } else {
-      for(int i = 0; i < dimensions; i++) {
-        d1[i] = hashes1[i];
-        d2[i] = hashes2[i];
-      }
-    }
-    Vector v1 = new DenseVector(d1);
-    Vector v2 = new DenseVector(d2);
-    double distance = measure.distance(v1, v2);
-    return distance;
+//    double[] d1 = new double[dimensions];
+//    double[] d2 = new double[dimensions];
+//    int[] hashes1 = h1.getHashes();
+//    int[] hashes2 = h2.getHashes();
+//    if (doUnhash) {
+//      hasher.unhash(hashes1, d1);
+//      hasher.unhash(hashes2, d2);
+//    } else {
+//      for(int i = 0; i < dimensions; i++) {
+//        d1[i] = hashes1[i];
+//        d2[i] = hashes2[i];
+//      }
+//    }
+//    Vector v1 = new DenseVector(d1);
+//    Vector v2 = new DenseVector(d2);
+//    double distance = measure.distance(v1, v2);
+//    return distance;
+    return 0;
   }
+  */
   
   public int getDimensions() {
     return dimensions;
@@ -385,7 +398,6 @@ public class SimplexSpace<T> {
             max = i;
         } 
       }
-      System.out.println();
       return max;
     } else
       return -1;
@@ -393,18 +405,15 @@ public class SimplexSpace<T> {
   
   public int printSizes() {
     if (doCount) {
-      int max = 0;
+      int count = 0;
       for(Hash h: countMap.keySet()) {
         Integer i = countMap.get(h);
-        if (null != i) {
-          System.out.print(i + ",");
-          if (i > max)
-            max = i;
-        } else
-          System.out.print("1,");
+        if (null == i)
+          count++;
+        else
+          count += i;
       }
-      System.out.println();
-      return max;
+      return count;
     } else {
       int count = 0;
       for(Hash x: vectorSetMap.keySet()) {

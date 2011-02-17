@@ -1,13 +1,14 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
+import java.util.BitSet;
+
+import org.apache.mahout.cf.taste.impl.common.FastIDSet;
+
 /*
- * Simplex box, keyed by "lower-left" corner
- * Includes Level Of Detail and generic payload
- * identity functions use corner and level-of-detail
- * Probably LOD will be managed outside.
+ * Dense implementation of N-dimensional hash
  */
 
-public class DenseHash extends Hash{
+public class DenseHash extends Hash {
   final int[] hashes;
   int lod;
   
@@ -21,14 +22,7 @@ public class DenseHash extends Hash{
   public DenseHash(int[] hashes, int lod) {
     this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
-  }
-  
-  private int[] duplicate(int[] hashes2) {
-    int[] dup = new int[hashes2.length];
-    for(int i = 0; i < hashes2.length; i++) {
-      dup[i] = hashes2[i];
-    }
-    return dup;
+    setValues(hashes);
   }
   
   public int getLOD() {
@@ -46,46 +40,62 @@ public class DenseHash extends Hash{
     this.lodMask = mask;
   }
   
-  public int[] getHashes() {
-    return hashes;
-  }
+//  @Override
+//  public int[] getHashes() {
+//    return hashes;
+//  }
   
-  // Has to match SparseHash formula
-  @Override
-  public int hashCode() {
-    if (this.code == 0) {
-      long bits = 0;
-      for(int i = 0; i < hashes.length; i++) {
-        long val = ((long) hashes[i]) & ~lodMask;
-        bits += val + val * i;
-      }
-      bits += (lod + 1) * 13 * getDimensions();
-      this.code = (int) ( bits ^ (bits >> 32));
+  private void setValues(int[] hashes) {
+    long sum = 0;
+    for(int i = 0; i < hashes.length; i++) {
+      long val = ((long) hashes[i]) & ~lodMask;
+      if (hashes[i] != 0) 
+        sum += (1 + val) * (i + 1) * getDimensions();
     }
-    return code;
+    super.indexes = sum;
   }
   
-  @SuppressWarnings("unchecked")
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    if (obj.getClass() == SparseHash.class) 
-      return ((SparseHash) obj).equalsDense(this);
-    DenseHash other = (DenseHash) obj;
-    if (lod != other.getLOD())
-      return false;
-    int[] myHashes = hashes;
-    int[] otherHashes = other.hashes;
-    for(int i = 0; i < myHashes.length; i++) {
-      long myVal = ((long) myHashes[i]) & ~lodMask;
-      long otherval = ((long) otherHashes[i]) & ~lodMask;
-      if (myVal != otherval)
-        return false;
-    };
-     
-    return true;
-  }
+//  // Has to match SparseHash formula
+//  @Override
+//  public int hashCode() {
+//    if (this.code == 0) {
+//      long bits = 0;
+//      for(int i = 0; i < hashes.length; i++) {
+//        long val = ((long) hashes[i]) & ~lodMask;
+//        bits += val + val * i;
+//      }
+//      bits += (lod + 1) * 13 * getDimensions();
+//      this.code = (int) ( bits ^ (bits >> 32));
+//    }
+//    return code;
+//  }
+//  
+//  @SuppressWarnings("unchecked")
+//  @Override
+//  public boolean equals(Object obj) {
+//    if (this == obj)
+//      return true;
+//    if (obj.getClass() == SparseHash.class) 
+//      return ((SparseHash) obj).equalsDense(this);
+//    Hash otherH = (Hash) obj;
+//    if (lod != otherH.getLOD())
+//      return false;
+//    if (getDimensions() != otherH.getDimensions())
+//      return false;
+//    if (hashCode() != otherH.hashCode())
+//      return false;
+//    DenseHash other = (DenseHash) obj;
+//    int[] myHashes = hashes;
+//    int[] otherHashes = other.hashes;
+//    for(int i = 0; i < myHashes.length; i++) {
+//      long myVal = ((long) myHashes[i]) & ~lodMask;
+//      long otherval = ((long) otherHashes[i]) & ~lodMask;
+//      if (myVal != otherval)
+//        return false;
+//    };
+//     
+//    return true;
+//  }
   
   //  // sort by coordinates in order
   //  @Override
@@ -122,6 +132,29 @@ public class DenseHash extends Hash{
   public int getNumEntries() {
     return hashes.length;
   }
+
+  @Override
+  public boolean contains(int index) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Integer getValue(int index) {
+    throw new UnsupportedOperationException();
+
+  }
+
+//  @Override
+//  public void setBits(Hash other, BitSet bs) {
+//    throw new UnsupportedOperationException();
+//    
+//  }
+//
+//  @Override
+//  public void setBits(Hash other, FastIDSet fs) {
+//    throw new UnsupportedOperationException();
+//    
+//  }
   
   //  @Override
   //  public int compareTo(Object o) {

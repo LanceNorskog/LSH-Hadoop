@@ -105,8 +105,8 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        int start = 0;
-        int end = 20;
+        int start = 5;
+        int end = 15;
         SimplexSpace<String>[] spaces = makeSpaces(start, end, doCount);
         try {
           int sub = Integer.MAX_VALUE;
@@ -126,7 +126,7 @@ public final class VectorScan {
             count++;
             if (count % 100 == 0)
               System.out.print(".");
-            if (count == 500)
+            if (count == 5000)
               break;
           }
           printSpaces(spaces, start);
@@ -148,7 +148,7 @@ public final class VectorScan {
       System.out.println("non-single: " + spaces[i].getNonSingleHashes());
       System.out.println("max:        " + spaces[i].getMaxHashes());
       System.out.println("count:      " + spaces[i].getCount());
-      System.out.println("space:      " + spaces[i].toString());
+//      System.out.println("space:      " + spaces[i].toString());
     }   
   }
 
@@ -156,10 +156,9 @@ public final class VectorScan {
    * Count the number of entries in this hash- ignore the payload
    */
   private static void addSpaces(SimplexSpace<String>[] spaces, int start, String key, Vector v) {
-    Hash h = spaces[start].getHashLOD(v);
-    int[] hashes = h.getHashes();
+   SparseHash sh = (SparseHash) spaces[start].getHashLOD(v);
     for(int lod = start; lod < spaces.length; lod++) {
-      Hash spot = new SparseHash(hashes, lod);
+      Hash spot = new SparseHash(sh, lod);
       if (null != spaces[lod]) {
         spaces[lod].addHash(v, spot, key);
         // set key as payload
@@ -168,8 +167,8 @@ public final class VectorScan {
   }
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n, boolean doCount) {
-//    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
-    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
+    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+//    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {
