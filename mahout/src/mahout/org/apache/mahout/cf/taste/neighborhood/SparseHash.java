@@ -24,7 +24,7 @@ public class SparseHash extends Hash {
   //  final int[] hashes;
   FastByIDMap<Integer> sparseHashKeys;
   int[] sparseHashes;
-  int lod;
+  int lod = -1;
   private long lodMask;
   int code = 0;
   int dimensions;
@@ -54,6 +54,7 @@ public class SparseHash extends Hash {
     this.dimensions = dimensions;
     this.lod = lod;
     setLOD(lod);
+    setIndexes();
   }
   
   private void setValues(Hasher hasher, Iterator<Element> el) {
@@ -72,10 +73,8 @@ public class SparseHash extends Hash {
       index++;
     } 
     sparseHashes = new int[index];
-    long sum = 0;
     for(int i = 0; i < index; i++) {
       sparseHashes[i] = values.get(i);
-      sum += (1 + (sparseHashes[i] & ~lodMask)) * (i + 1) * getDimensions();
     }
   }
   
@@ -95,7 +94,7 @@ public class SparseHash extends Hash {
       if (hashes[i] != 0) {
         sparseHashKeys.put(i, new Integer(index));
         sparseHashes[index] = hashes[i];
-        sum += (1 + (hashes[i] & ~lodMask)) * (i + 1) * getDimensions();
+        sum += (((long) hashes[i]) & ~lodMask) * (i + 1) * getDimensions();
         index++;
       } else
         skip++;
@@ -106,13 +105,15 @@ public class SparseHash extends Hash {
   private void setIndexes() {
     LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
     long sum = 0;
+    int dim = getDimensions();
     while(it.hasNext()) {
       long index = it.nextLong();
-      int i = sparseHashKeys.get(index);
-      int dim = getDimensions();
-      long value = (1 + (sparseHashes[(int) index] & ~lodMask)) * (i + 1) * dim;
+      Integer i = sparseHashKeys.get(index);
+      i.hashCode();
+      long value = (((long) sparseHashes[(int) i]) & ~lodMask) * (index + 1) * dim;
       sum += value;
     }
+    this.indexes = sum;
   }
 
   public int getLOD() {
@@ -129,147 +130,6 @@ public class SparseHash extends Hash {
     }
     this.lodMask = mask;
   }
-  
-//  @Override
-//  public int[] getHashes() {
-//    ((Object) null).hashCode();
-//    if (null == hashes) {
-//      int[] myHashes = new int[dimensions];
-//      LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//      while(it.hasNext()) {
-//        long x = it.next();
-//        int index = sparseHashKeys.get(x);
-//        myHashes[(int) x] = sparseHashes[index];
-//      }
-//      hashes = myHashes;
-//    }
-//    return hashes;
-//  }
-  
-  /*
-   * Has to match DenseHash formula
-   */
-//  @Override
-//  public int hashCode() {
-//    if (this.code == 0) {
-//      long bits = 0;
-//      int index = 0;
-//      LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//      while(it.hasNext()) {
-//        int offset = (int) it.nextLong();
-//        long val = ((long) sparseHashes[index]) & ~lodMask;
-//        bits += val + val * offset;
-//        index++;
-//      }
-//      bits += (lod + 1) * 13 * getDimensions();
-//      this.code = (int) ( bits ^ (bits >> 32));
-//    }
-//    
-//    return this.code;
-//  }
-//  
-//  @SuppressWarnings("unchecked")
-//  @Override
-//  public boolean equals(Object obj) {
-//    if (this == obj)
-//      return true;
-//    Hash otherH = (Hash) obj;
-//    if (lod != otherH.getLOD())
-//      return false;
-//    if (getDimensions() != otherH.getDimensions())
-//      return false;
-//    if (hashCode() != obj.hashCode())
-//      return false;
-//    if (obj.getClass() == DenseHash.class)
-//      return this.equalsDense((DenseHash) obj);
-//    SparseHash other = (SparseHash) obj;
-//    boolean finished = false;
-//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//    LongPrimitiveIterator itOther = other.sparseHashKeys.keySetIterator();
-//    int current = (int) it.nextLong();
-//    int currentOther = (int) itOther.nextLong();
-//    int index = 0;
-//    int indexOther = 0;
-//    while(! finished) {
-//      long value = (((long) sparseHashes[index]) & ~lodMask); 
-//      long valueOther = (((long) other.sparseHashes[indexOther]) & ~lodMask);
-//      if (current < currentOther) {
-//        if (value != 0) {
-//          return false; 
-//        } 
-//        if (!it.hasNext())
-//          return false;
-//        current = (int) it.nextLong();
-//        index++;
-//      } else if (current > currentOther) {
-//        if (valueOther != 0)
-//          return false;
-//        if (! itOther.hasNext())
-//          return false;
-//        currentOther = (int) itOther.nextLong();
-//        indexOther++;
-//      } else if (current == currentOther) {
-//        if (value != valueOther)
-//          return false;
-//        if (!it.hasNext() && !itOther.hasNext())
-//          return true;
-//        else if (!it.hasNext() || !itOther.hasNext())
-//          return false;
-//        current = (int) it.nextLong();
-//        index++;
-//        currentOther = (int) itOther.nextLong();
-//        indexOther++;
-//      }
-//    }
-//    return !(it.hasNext() || itOther.hasNext());
-//  }
-  
-//   boolean equalsDense(DenseHash other) {
-//    int[] myHashes = this.getHashes();
-//    int[] otherHashes = other.getHashes();
-//    for(int i = 0; i < myHashes.length; i++) {
-//      long myVal = ((long) myHashes[i]) & ~lodMask;
-//      long otherval = ((long) otherHashes[i]) & ~lodMask;
-//      if (myVal != otherval)
-//        return false;
-//    };
-//    return true;
-//  }
-  
-  
-  /*
-  @SuppressWarnings("unchecked")
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj)
-      return true;
-    Hash<T> other = (Hash<T>) obj;
-    if (lod != other.getLOD())
-      return false;
-    
-    //    if ((null == payload && null != other.payload) || (null != payload && null == other.payload))
-    //      return false;
-    //    if (null != payload && !payload.equals(other.payload))
-    //      return false;
-    int[] otherHashes = other.getHashes();
-    //    if (null == otherHashes)
-    //      this.hashCode();
-    int[] myHashes = this.getHashes();
-    //    if (null == hashes)
-    //      this.hashCode();
-    if (hashes == otherHashes)
-      return true;
-    lpi = 
-    for(int i = 0; i < myHashes.length; i++) {
-      long myVal = ((long) myHashes[i]) & ~lodMask;
-      long otherval = ((long) otherHashes[i]) & ~lodMask;
-      if (myVal != otherval)
-        return false;
-    };
-    return true;
-  }
-   */
-  
   
   @Override
   public String toString() {
@@ -304,27 +164,6 @@ public class SparseHash extends Hash {
     Integer value = sparseHashKeys.get(index);
     return value;
   }
-
-//  @Override
-//  public void setBits(Hash other, BitSet bs) {
-//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//    while (it.hasNext()) {
-//      int index = (int) it.nextLong();
-//      bs.set(index);
-//    }
-//  }
-
-//  @Override
-//  public void setBits(Hash other, FastIDSet fs) {
-//    LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
-//    while (it.hasNext()) {
-//      int index = (int) it.nextLong();
-//      Integer value = other.getValue(index);
-//      if (null == value || ((value & ~lodMask) != (getValue(index) & ~lodMask)))
-//          continue;
-//      fs.add(index);
-//    }
-//  }
   
 }
 

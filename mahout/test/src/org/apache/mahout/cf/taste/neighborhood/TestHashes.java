@@ -13,6 +13,7 @@ import lsh.core.Hasher;
 import lsh.core.OrthonormalHasher;
 
 public class TestHashes extends TestCase {
+  int DIMENSIONS = 5;
   
   protected void setUp() throws Exception {
     super.setUp();
@@ -24,16 +25,15 @@ public class TestHashes extends TestCase {
   
   @Test
   public void testEquals() {
-    int dimensions = 2;
     int limit = 100;
-    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
+    Hasher hasher = new OrthonormalHasher(DIMENSIONS, 0.1d);
     // starting at LOD=9, the two hashes are equal- both are zero
     for(int i = 0; i <32; i++) {
 System.out.println("#" + i);
-      SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+      SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMENSIONS, null, false, true);
       space.setLOD(i);
-      Vector d = new DenseVector(dimensions);
-      Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+      Vector d = new DenseVector(DIMENSIONS);
+      Vector s = new RandomAccessSparseVector(DIMENSIONS, DIMENSIONS);
       checkEquals(space, d, d);
 //      checkEquals(space, d, s);
 //      checkEquals(space, s, d);
@@ -46,8 +46,10 @@ System.out.println("#" + i);
   private void checkEquals(SimplexSpace<String> space, Vector v1, Vector v2) {
     v1.set(0, 1.1);
     v1.set(1, 2.2);
+    v1.set(4, 4.4);
     v2.set(0, 1.1);
     v2.set(1, 2.2);
+    v1.set(4, 4.4);
     Hash h1 = space.getHashLOD(v1);
     Hash h2 = space.getHashLOD(v2);
     assertTrue(h1.equals(h1));
@@ -60,7 +62,7 @@ System.out.println("#" + i);
     v1.set(0, 1.1);
     v1.set(1, 2.2);
     v2.set(0, 50);
-    v2.set(1, 30);
+    v2.set(2, 30);
     Hash h1 = space.getHashLOD(v1);
     Hash h2 = space.getHashLOD(v2);
     assertTrue(null != h1);
@@ -76,13 +78,13 @@ System.out.println("#" + i);
   
   @Test
   public void testCollections() {
-    int dimensions = 2;
-    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
-    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-    Vector d1 = new DenseVector(dimensions);
-    Vector d2 = new DenseVector(dimensions);
-    Vector s1 = new RandomAccessSparseVector(dimensions, dimensions);
-    Vector s2 = new RandomAccessSparseVector(dimensions, dimensions);
+    int DIMENSIONS = 5;
+    Hasher hasher = new OrthonormalHasher(DIMENSIONS, 0.01d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMENSIONS, null, false, true);
+    Vector d1 = new DenseVector(DIMENSIONS);
+    Vector d2 = new DenseVector(DIMENSIONS);
+    Vector s1 = new RandomAccessSparseVector(DIMENSIONS, DIMENSIONS);
+    Vector s2 = new RandomAccessSparseVector(DIMENSIONS, DIMENSIONS);
     checkCollection(space, d1, d2);
     checkCollection(space, d1, s1);
     checkCollection(space, s1, d1);
@@ -116,10 +118,10 @@ System.out.println("#" + i);
   }
   
   public void testDenseCount() {
-    int dimensions = 2;
-    Hasher hasher = new OrthonormalHasher(dimensions, 0.1d);
-    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-    Vector v = new DenseVector(dimensions);
+    int DIMENSIONS = 2;
+    Hasher hasher = new OrthonormalHasher(DIMENSIONS, 0.1d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, DIMENSIONS, null, false, true);
+    Vector v = new DenseVector(DIMENSIONS);
   }
   
   @Test
@@ -135,6 +137,24 @@ System.out.println("#" + i);
     s2.set(6, 2.2);
     Hash h1 = space.getHashLOD(s1);
     Hash h2 = space.getHashLOD(s2);
+    assertFalse(h1.hashCode() == h2.hashCode());
+    assertFalse(h1.equals(h2));
+  }
+  
+  @Test
+  public void testCopyConstructor() {
+    int dimensions = 20;
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+    Vector s1 = new DenseVector(dimensions);
+    Vector s2 = new RandomAccessSparseVector(dimensions, dimensions);
+    s1.set(0, 1.1);
+    s1.set(3, 2.2);
+    s2.set(0, 1.1);
+    s2.set(6, 2.2);
+    Hash h1 = space.getHashLOD(s1);
+    SparseHash h2 = (SparseHash) space.getHashLOD(s2);
+    h2 = new SparseHash(h2, 0);
     assertFalse(h1.hashCode() == h2.hashCode());
     assertFalse(h1.equals(h2));
   }

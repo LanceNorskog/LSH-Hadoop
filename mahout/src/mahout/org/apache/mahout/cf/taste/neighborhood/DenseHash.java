@@ -22,7 +22,7 @@ public class DenseHash extends Hash {
   public DenseHash(int[] hashes, int lod) {
     this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
-    setValues(hashes);
+    setIndexes(hashes);
   }
   
   public int getLOD() {
@@ -45,12 +45,12 @@ public class DenseHash extends Hash {
 //    return hashes;
 //  }
   
-  private void setValues(int[] hashes) {
+  private void setIndexes(int[] hashes) {
     long sum = 0;
     for(int i = 0; i < hashes.length; i++) {
       long val = ((long) hashes[i]) & ~lodMask;
       if (hashes[i] != 0) 
-        sum += (1 + val) * (i + 1) * getDimensions();
+        sum += val * (i + 1) * getDimensions();
     }
     super.indexes = sum;
   }

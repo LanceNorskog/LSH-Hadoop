@@ -105,8 +105,8 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        int start = 5;
-        int end = 15;
+        int start = 0;
+        int end = 32;
         SimplexSpace<String>[] spaces = makeSpaces(start, end, doCount);
         try {
           int sub = Integer.MAX_VALUE;
@@ -126,7 +126,7 @@ public final class VectorScan {
             count++;
             if (count % 100 == 0)
               System.out.print(".");
-            if (count == 5000)
+            if (count == 500000)
               break;
           }
           printSpaces(spaces, start);
@@ -167,8 +167,8 @@ public final class VectorScan {
   }
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n, boolean doCount) {
-    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
-//    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
+//    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {
