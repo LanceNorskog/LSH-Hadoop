@@ -1,7 +1,9 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.BitSet;
+import java.util.Iterator;
 
+import org.apache.commons.collections.iterators.ArrayIterator;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 
 /*
@@ -135,13 +137,28 @@ public class DenseHash extends Hash {
 
   @Override
   public boolean contains(int index) {
-    throw new UnsupportedOperationException();
+    return (index >= 0 && index < getDimensions());
   }
 
   @Override
   public Integer getValue(int index) {
-    throw new UnsupportedOperationException();
+    return hashes[index];
 
+  }
+
+  @Override
+  public Integer next(int index) {
+    if (index < getDimensions() - 1)
+      return index + 1;
+    else
+      return null;
+  }
+
+  @Override
+  public Iterator<Integer> iterator() {
+    ArrayIterator ait = new ArrayIterator(hashes);
+    // magic!
+    return ait;
   }
 
 //  @Override

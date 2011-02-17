@@ -162,7 +162,7 @@ public class SimplexSpace<T> {
    * Enumerate other co-resident hashes.
    * Do not add input hash.
    */
-  /*
+  
     public FastIDSet findNeighborsIDSet(T payload) {
       Hash hash = id2hashMap.get(payload);
       if (null == hash)
@@ -232,13 +232,12 @@ public class SimplexSpace<T> {
 //        d2[i] = hashes2[i];
 //      }
 //    }
-//    Vector v1 = new DenseVector(d1);
-//    Vector v2 = new DenseVector(d2);
-//    double distance = measure.distance(v1, v2);
-//    return distance;
-    return 0;
+    Vector v1 = new HashVector(h1, hasher);
+    Vector v2 = new HashVector(h2, hasher);
+    double distance = measure.distance(v1, v2);
+    return distance;
   }
-  */
+  
   
   public int getDimensions() {
     return dimensions;

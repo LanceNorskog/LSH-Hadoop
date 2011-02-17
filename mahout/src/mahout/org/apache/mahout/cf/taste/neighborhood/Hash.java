@@ -1,5 +1,7 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
+import java.util.Iterator;
+
 /*
  * Simplex box, keyed by "lower-left" corner
  * Includes Level Of Detail
@@ -22,6 +24,8 @@ public abstract class Hash {
 //  public abstract void setBits(Hash other, FastIDSet fs);
   public abstract Integer getValue(int index);
   public abstract boolean contains(int index);
+  public abstract Integer next(int index);
+  public abstract Iterator<Integer> iterator();
   
   public final boolean equals(Object obj) {
     Hash other = (Hash) obj;

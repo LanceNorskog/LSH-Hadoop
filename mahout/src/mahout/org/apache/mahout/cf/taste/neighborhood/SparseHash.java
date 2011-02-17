@@ -164,6 +164,49 @@ public class SparseHash extends Hash {
     Integer value = sparseHashKeys.get(index);
     return value;
   }
+
+  @Override
+  public Integer next(int index) {
+   return null;
+  }
+
+  @Override
+  public Iterator<Integer> iterator() {
+    // TODO Auto-generated method stub
+    return new SparseHashIterator(this);
+  }
   
 }
+
+ class SparseHashIterator implements Iterator<Integer> {
+   final LongPrimitiveIterator it;
+   final int[] sparseHashes;
+  
+  public SparseHashIterator(SparseHash sparseHash) {
+    it = sparseHash.sparseHashKeys.keySetIterator();
+    sparseHashes = sparseHash.sparseHashes;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return it.hasNext();
+  }
+  
+  @Override
+  public Integer next() {
+    long index = it.next();
+    return (int) index;
+  }
+  
+  @Override
+  public void remove() {
+  
+  }
+  
+//  public double value(int index) {
+//    return sparseHashes[index];
+//  }
+  
+}
+
 
