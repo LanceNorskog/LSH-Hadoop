@@ -124,9 +124,9 @@ public final class VectorScan {
 //            System.out.println(size + "," + density);
             addSpaces(spaces, start, text, v);
             count++;
-            if (count % 100 == 0)
+            if (count % 1000 == 0)
               System.out.print(".");
-            if (count == 500000)
+            if (count == 1000000)
               break;
           }
           printSpaces(spaces, start);
@@ -167,8 +167,8 @@ public final class VectorScan {
   }
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n, boolean doCount) {
-//    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
-    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
+    Hasher hasher = new OrthonormalHasher(DIMS, 0.01d);
+//    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.01d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {

@@ -131,16 +131,78 @@ System.out.println("#" + i);
     SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
     Vector s1 = new RandomAccessSparseVector(dimensions, dimensions);
     Vector s2 = new RandomAccessSparseVector(dimensions, dimensions);
-    s1.set(0, 1.1);
-    s1.set(3, 2.2);
-    s2.set(0, 1.1);
-    s2.set(6, 2.2);
+    s1.set(1, 1.1);
+    s1.set(3, 3.3);
+    s2.set(1, 1.1);
+    s2.set(6, 6.6);
     Hash h1 = space.getHashLOD(s1);
     Hash h2 = space.getHashLOD(s2);
     assertFalse(h1.hashCode() == h2.hashCode());
     assertFalse(h1.equals(h2));
+    s1.set(6, 6.6);
+    s2.set(3, 3.3);
+    h1 = space.getHashLOD(s1);
+    h2 = space.getHashLOD(s2);
+    assertTrue(h1.hashCode() == h2.hashCode());
+    assertTrue(h1.equals(h2));
+
   }
   
+  @Test
+  public void testSetValue() {
+    int dimensions = 20;
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+    Vector d = new DenseVector(dimensions);
+    Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+    d.set(0, 0.00001);
+    d.set(2, 2.2);
+    d.set(5, 5.5);
+    s.set(0, 0.00001);
+    s.set(3, 3.3);
+    s.set(6, 6.6);
+    
+    Hash hd = space.getHashLOD(d);
+    Hash hs = space.getHashLOD(s);
+    assertFalse(hd.hashCode() == hs.hashCode());
+    assertFalse(hd.equals(hs));
+    Integer zeroD = hd.getValue(0);
+    Integer zeroS = hs.getValue(0);
+    assertEquals(0, (int) zeroD);
+    assertNull(zeroS);
+    System.out.println("Dense:  " + hd.toString());
+    System.out.println("Sparse: " + hs.toString());
+    Integer three = hs.getValue(3);
+    hd.setValue(3, three);
+    Integer six = hs.getValue(6);
+    hd.setValue(6, six);
+    Integer two = hd.getValue(2);
+    hs.setValue(2, two);
+    Integer five = hd.getValue(5);
+    hs.setValue(5, five);
+    System.out.println("Dense:  " + hd.toString());
+    System.out.println("Sparse: " + hs.toString());
+    assertTrue(hd.hashCode() == hs.hashCode());
+    assertTrue(hd.equals(hs));
+}
+  
+//  @Test
+//  public void testSetValueFail() {
+//    int dimensions = 20;
+//    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
+//    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+//    Vector d = new DenseVector(dimensions);
+//    Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+//    d.set(0, 1.1);
+//    d.set(3, 2.2);
+//    s.set(0, 1.1);
+//    s.set(6, 2.2);
+//    Hash hd = space.getHashLOD(d);
+//    Hash hs = space.getHashLOD(s);
+//    assertFalse(hd.hashCode() == hs.hashCode());
+//    assertFalse(hd.equals(hs));
+//  }
+//  
   @Test
   public void testCopyConstructor() {
     int dimensions = 20;

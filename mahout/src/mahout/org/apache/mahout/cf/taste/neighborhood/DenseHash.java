@@ -12,10 +12,6 @@ import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 
 public class DenseHash extends Hash {
   final int[] hashes;
-  int lod;
-  
-  private long lodMask;
-  int code = 0;
   
   public DenseHash(int[] hashes) { 
     this(hashes, 0);
@@ -24,105 +20,26 @@ public class DenseHash extends Hash {
   public DenseHash(int[] hashes, int lod) {
     this.hashes = hashes; // duplicate(hashes);
     setLOD(lod);
-    setIndexes(hashes);
+    populateHashes();
   }
   
-  public int getLOD() {
-    return lod;
-  }
-  
-  public void setLOD(int lod) {
-    this.lod = lod;
-    long mask = 0;
-    long x = 0;
-    while(x < lod) {
-      mask |= (1L << x);
-      x++;
-    }
-    this.lodMask = mask;
-  }
-  
-//  @Override
-//  public int[] getHashes() {
-//    return hashes;
-//  }
-  
-  private void setIndexes(int[] hashes) {
+  protected void populateHashes() {
     long sum = 0;
     for(int i = 0; i < hashes.length; i++) {
-      long val = ((long) hashes[i]) & ~lodMask;
-      if (hashes[i] != 0) 
-        sum += val * (i + 1) * getDimensions();
+      int hash = hashes[i];
+      long singleHash = getSingleHash(i, hash);
+      sum += singleHash;
     }
-    super.indexes = sum;
+    super.setIndexes(sum);
   }
-  
-//  // Has to match SparseHash formula
-//  @Override
-//  public int hashCode() {
-//    if (this.code == 0) {
-//      long bits = 0;
-//      for(int i = 0; i < hashes.length; i++) {
-//        long val = ((long) hashes[i]) & ~lodMask;
-//        bits += val + val * i;
-//      }
-//      bits += (lod + 1) * 13 * getDimensions();
-//      this.code = (int) ( bits ^ (bits >> 32));
-//    }
-//    return code;
-//  }
-//  
-//  @SuppressWarnings("unchecked")
-//  @Override
-//  public boolean equals(Object obj) {
-//    if (this == obj)
-//      return true;
-//    if (obj.getClass() == SparseHash.class) 
-//      return ((SparseHash) obj).equalsDense(this);
-//    Hash otherH = (Hash) obj;
-//    if (lod != otherH.getLOD())
-//      return false;
-//    if (getDimensions() != otherH.getDimensions())
-//      return false;
-//    if (hashCode() != otherH.hashCode())
-//      return false;
-//    DenseHash other = (DenseHash) obj;
-//    int[] myHashes = hashes;
-//    int[] otherHashes = other.hashes;
-//    for(int i = 0; i < myHashes.length; i++) {
-//      long myVal = ((long) myHashes[i]) & ~lodMask;
-//      long otherval = ((long) otherHashes[i]) & ~lodMask;
-//      if (myVal != otherval)
-//        return false;
-//    };
-//     
-//    return true;
-//  }
-  
-  //  // sort by coordinates in order
-  //  @Override
-  //  public int compareTo(Hash<T> other) {
-  //    for(int i = 0; i < hashes.length; i++) {
-  //      if ((hashes[i] & ~lodMask) > (other.hashes[i] & ~lodMask))
-  //        return 1;
-  //      else if ((hashes[i] & ~lodMask) < (other.hashes[i] & ~lodMask))
-  //        return -1;
-  //    };
-  //    if (lod > other.lod)
-  //      return 1;
-  //    else if (lod < other.lod)
-  //      return -1;
-  //    else
-  //      return 0;
-  //  }
-  //  
+
   @Override
   public String toString() {
-    String x = "{";
-    for(int i = 0; i < hashes.length; i++) {
-      x = x + (hashes[i] & ~lodMask) + ",";
+    String x = "{{";
+    for(int i = 0; i < hashes.length - 1; i++) {
+      x = x + hashes[i] + ",";
     }
-    return x + "}";
+    return x + hashes[hashes.length - 1] + "}, LOD:" + getLOD() + ",code=" + indexes +"}";
   }
   
   @Override
@@ -136,7 +53,7 @@ public class DenseHash extends Hash {
   }
 
   @Override
-  public boolean contains(int index) {
+  public boolean containsValue(int index) {
     return (index >= 0 && index < getDimensions());
   }
 
@@ -145,14 +62,22 @@ public class DenseHash extends Hash {
     return hashes[index];
 
   }
-
+  
   @Override
-  public Integer next(int index) {
-    if (index < getDimensions() - 1)
-      return index + 1;
-    else
-      return null;
+  public void setValue(int index, int hash) {
+    int oldValue = hashes[index];
+    int newValue = hash;
+    super.changeIndexes(index, oldValue, newValue);
+    hashes[index] = hash;
   }
+
+//  @Override
+//  public Integer next(int index) {
+//    if (index < getDimensions() - 1)
+//      return index + 1;
+//    else
+//      return null;
+//  }
 
   @Override
   public Iterator<Integer> iterator() {

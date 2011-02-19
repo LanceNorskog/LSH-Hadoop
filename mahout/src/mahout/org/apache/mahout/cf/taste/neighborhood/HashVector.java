@@ -46,7 +46,7 @@ public  class HashVector extends AbstractVector implements Vector {
   
   @Override
   public double getQuick(int index) {
-    if (! hash.contains(index))
+    if (! hash.containsValue(index))
       return 0;
     int[] ha = new int[1];
     ha[0] = hash.getValue(index);

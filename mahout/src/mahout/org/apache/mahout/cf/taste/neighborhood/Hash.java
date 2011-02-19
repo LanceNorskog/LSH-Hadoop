@@ -13,20 +13,50 @@ import java.util.Iterator;
 public abstract class Hash { 
   // sum of all (index * value@index);
   // unique per hash
-  long indexes;
+  protected long indexes;
+  private int lod;
+  private long lodMask;
   
-//  abstract public int[] getHashes();  // ewwwwww - only for equals(). and distance
-  public abstract void setLOD(int lod);
-  public abstract int getLOD();
+  protected void copy(Hash other) {
+    other.indexes = indexes;
+    other.lod = lod;
+    other.lodMask = lodMask;
+  }
   public abstract int getDimensions();
   public abstract int getNumEntries();
 //  public abstract void setBits(Hash other, BitSet bs);
 //  public abstract void setBits(Hash other, FastIDSet fs);
+  /*
+   * return null if index does not exist
+   */
   public abstract Integer getValue(int index);
-  public abstract boolean contains(int index);
-  public abstract Integer next(int index);
+  public abstract void setValue(int index, int hash);
+  public abstract boolean containsValue(int index);
+//  public abstract Integer next(int index);
   public abstract Iterator<Integer> iterator();
   
+  /*
+   * Level Of Detail and individual hash values are mutable
+   */
+  public final int getLOD() {
+    return lod;
+  }
+  
+  public final void setLOD(int lod) {
+    this.lod = lod;
+    long mask = 0;
+    long x = 0;
+    while(x < lod) {
+      mask |= (1L << x);
+      x++;
+    }
+    this.lodMask = mask;
+  }
+  
+  /*
+   * Common Hash value management: sum all ints into a long.
+   * TODO: Figure out maximum dimensions. May have to limit range of hashes to shorts?
+   */
   public final boolean equals(Object obj) {
     Hash other = (Hash) obj;
     if (indexes != other.indexes)
@@ -37,25 +67,23 @@ public abstract class Hash {
   public final int hashCode() {
     return (int) (indexes ^ (indexes >> 32));
   }
+  
+  protected final long getSingleHash(int index, int hash) {
+    if (hash == 0)
+      return 0;
+    long val = ((long) hash);
+    long value =  val * (index + 1) * getDimensions();
+    return value;
+  }
+  
+  protected final void setIndexes(long indexes) {
+    this.indexes = indexes;
+  }
+  
+  protected final void changeIndexes(int index, int oldHash, int newHash) {
+    long oldSingle = getSingleHash(index, oldHash);  
+    long newSingle = getSingleHash(index, newHash);  
+    this.indexes -= oldSingle;
+    this.indexes += newSingle;
+  }
 }
-
-/* only compare values at index */
-//class HashSingleComparator implements Comparator<Hash>{
-//  final int index;
-//
-//  public HashSingleComparator(int index) {
-//    this.index = index;
-//  }
-//
-//  @Override
-//  public int compare(Hash o1, Hash o2) {
-//    if (o1.hashes[index] < o2.hashes[index])
-//      return 1;
-//    else if (o1.hashes[index] > o2.hashes[index])
-//      return -1;
-//    else
-//      return 0;
-//  }
-//
-//
-//}

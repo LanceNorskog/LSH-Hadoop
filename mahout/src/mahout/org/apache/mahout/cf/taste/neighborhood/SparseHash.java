@@ -1,6 +1,7 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,14 +20,10 @@ import org.apache.mahout.math.Vector.Element;
  */
 
 public class SparseHash extends Hash {
-  
-  static Map<Hash,int[]> hashCache = new HashMap<Hash, int[]>();
-  //  final int[] hashes;
+  // (external index -> local nonZero array)
   FastByIDMap<Integer> sparseHashKeys;
+  // local array - THIS IS NOT SORTED!
   int[] sparseHashes;
-  int lod = -1;
-  private long lodMask;
-  int code = 0;
   int dimensions;
   
   public SparseHash(int[] hashes) { 
@@ -36,7 +33,6 @@ public class SparseHash extends Hash {
   public SparseHash(int[] hashes, int lod) {
     setHashes(hashes);
     setLOD(lod);
-//    this.hashes = hashes;
   }
   
   public SparseHash(SparseHash sp, int lod) {
@@ -44,38 +40,41 @@ public class SparseHash extends Hash {
     this.sparseHashKeys = sp.sparseHashKeys;
     setLOD(lod);
     this.dimensions = sp.dimensions;
-    setIndexes();
-//    if (null != sp.hashes)
-//      hashes = sp.hashes;
+    populateHashes();
   }
   
   public SparseHash(Hasher hasher, Iterator<Element> el, int dimensions, int lod) {
     setValues(hasher, el);
     this.dimensions = dimensions;
-    this.lod = lod;
     setLOD(lod);
-    setIndexes();
+//    populateHashes();
   }
   
   private void setValues(Hasher hasher, Iterator<Element> el) {
     sparseHashKeys = new FastByIDMap<Integer>();
+    List<Integer> keys = new ArrayList<Integer>(dimensions);
     List<Integer> values = new ArrayList<Integer>(dimensions);
-    int index = 0;
+    int nonZero = 0;
     double[] d = new double[1];
     int[] h = null;
     
     while(el.hasNext()) {
       Element e = el.next();
-      sparseHashKeys.put(e.index(), new Integer(index));
+      sparseHashKeys.put(e.index(), new Integer(nonZero));
+      keys.add(e.index());
       d[0] = e.get();
       h = hasher.hash(d);  
       values.add(h[0]);
-      index++;
+      nonZero++;
     } 
-    sparseHashes = new int[index];
-    for(int i = 0; i < index; i++) {
-      sparseHashes[i] = values.get(i);
+    long sum = 0;
+    sparseHashes = new int[nonZero];
+    for(int index = 0; index < nonZero; index++) {
+      sparseHashes[index] = values.get(index);
+      long value = getSingleHash(keys.get(index), values.get(index));
+      sum += value;
     }
+    super.setIndexes(sum);
   }
   
   private void setHashes(int[] hashes) {
@@ -88,47 +87,31 @@ public class SparseHash extends Hash {
     sparseHashKeys = new FastByIDMap<Integer>();
     sparseHashes = new int[nonZero];
     int index = 0;
-    int skip = 0;
     long sum = 0;
     for(int i = 0; i < dimensions; i++) {
       if (hashes[i] != 0) {
         sparseHashKeys.put(i, new Integer(index));
         sparseHashes[index] = hashes[i];
-        sum += (((long) hashes[i]) & ~lodMask) * (i + 1) * getDimensions();
+        long value = getSingleHash(i, hashes[i]);
+        sum += value;
         index++;
-      } else
-        skip++;
+      } 
     }
-    super.indexes = sum;
+    super.setIndexes(sum);
   }
   
-  private void setIndexes() {
+  protected void populateHashes() {
     LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
     long sum = 0;
     int dim = getDimensions();
     while(it.hasNext()) {
       long index = it.nextLong();
-      Integer i = sparseHashKeys.get(index);
-      i.hashCode();
-      long value = (((long) sparseHashes[(int) i]) & ~lodMask) * (index + 1) * dim;
+      Integer nonZero = sparseHashKeys.get(index);
+      nonZero.hashCode();
+      long value = getSingleHash((int) index, sparseHashes[(int) nonZero]);
       sum += value;
     }
-    this.indexes = sum;
-  }
-
-  public int getLOD() {
-    return lod;
-  }
-  
-  public void setLOD(int lod) {
-    this.lod = lod;
-    long mask = 0;
-    long x = 0;
-    while(x < lod) {
-      mask |= (1L << x);
-      x++;
-    }
-    this.lodMask = mask;
+    super.setIndexes(sum);
   }
   
   @Override
@@ -136,11 +119,11 @@ public class SparseHash extends Hash {
     String x = "{";
     LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
     while(it.hasNext()) {
-      long key = it.nextLong();
-      int index = sparseHashKeys.get(key);
-      x += "(" + index + "," + sparseHashes[index] + "),";
+      long nonZero = it.nextLong();
+      int index = sparseHashKeys.get(nonZero);
+      x += "(" + nonZero + "," + sparseHashes[index] + "),";
     }
-    return x + ": LOD=" + lod + "}";
+    return x + ": LOD=" + getLOD() + ",code=" + indexes + "}";
   }
   
   @Override
@@ -152,24 +135,42 @@ public class SparseHash extends Hash {
   public int getDimensions() {
     return dimensions;
   }
-
+  
   @Override
-  public boolean contains(int index) {
+  public boolean containsValue(int index) {
     boolean found = sparseHashKeys.containsKey(index);
     return found;
   }
-
-   @Override
+  
+  @Override
   public Integer getValue(int index) {
-    Integer value = sparseHashKeys.get(index);
+    Integer nonZero = sparseHashKeys.get(index);
+    if (null == nonZero)
+      return null;
+    int value = sparseHashes[nonZero];
     return value;
   }
-
+  
+  // have to handle adding new entry to array
   @Override
-  public Integer next(int index) {
-   return null;
+  public void setValue(int index, int hash) {
+    int oldHash = 0;
+    if (sparseHashKeys.containsKey(index)) {
+      int nonZero = sparseHashKeys.get(index);
+      oldHash = sparseHashes[nonZero];
+      sparseHashes[nonZero] = hash;
+    } else {
+      int nonZero = sparseHashes.length;
+      int[] newHashes = Arrays.copyOf(sparseHashes, nonZero + 1);
+      newHashes[nonZero] = hash;
+      sparseHashes = newHashes;
+      sparseHashKeys.put(index, nonZero);
+    }
+    super.changeIndexes(index, oldHash, hash);
+    
   }
-
+  
+  
   @Override
   public Iterator<Integer> iterator() {
     // TODO Auto-generated method stub
@@ -178,15 +179,15 @@ public class SparseHash extends Hash {
   
 }
 
- class SparseHashIterator implements Iterator<Integer> {
-   final LongPrimitiveIterator it;
-   final int[] sparseHashes;
+class SparseHashIterator implements Iterator<Integer> {
+  final LongPrimitiveIterator it;
+  final int[] sparseHashes;
   
   public SparseHashIterator(SparseHash sparseHash) {
     it = sparseHash.sparseHashKeys.keySetIterator();
     sparseHashes = sparseHash.sparseHashes;
   }
-
+  
   @Override
   public boolean hasNext() {
     return it.hasNext();
@@ -200,12 +201,12 @@ public class SparseHash extends Hash {
   
   @Override
   public void remove() {
-  
+    
   }
   
-//  public double value(int index) {
-//    return sparseHashes[index];
-//  }
+  //  public double value(int index) {
+  //    return sparseHashes[index];
+  //  }
   
 }
 
