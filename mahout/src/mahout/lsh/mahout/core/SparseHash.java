@@ -1,4 +1,4 @@
-package org.apache.mahout.cf.taste.neighborhood;
+package lsh.mahout.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;

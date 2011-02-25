@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.apache.mahout.cf.taste.neighborhood;
+package lsh.mahout.core;
 
 import java.util.Collection;
 

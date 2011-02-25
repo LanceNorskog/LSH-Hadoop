@@ -1,4 +1,4 @@
-package org.apache.mahout.cf.taste.neighborhood;
+package lsh.mahout.core;
 
 /*
  * Store a bit for whether a particular hash exists,
