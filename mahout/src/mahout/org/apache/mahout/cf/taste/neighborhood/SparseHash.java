@@ -2,21 +2,18 @@ package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import lsh.core.Hasher;
 
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.math.Vector.Element;
 
 /*
  * Sparse implementation of N-dimensional hash.
+ * Supports mutability
  */
 
 public class SparseHash extends Hash {
@@ -47,7 +44,6 @@ public class SparseHash extends Hash {
     setValues(hasher, el);
     this.dimensions = dimensions;
     setLOD(lod);
-//    populateHashes();
   }
   
   private void setValues(Hasher hasher, Iterator<Element> el) {
@@ -69,6 +65,7 @@ public class SparseHash extends Hash {
     } 
     long sum = 0;
     sparseHashes = new int[nonZero];
+    // TODO: this could be in the above loops
     for(int index = 0; index < nonZero; index++) {
       sparseHashes[index] = values.get(index);
       long value = getSingleHash(keys.get(index), values.get(index));
@@ -103,7 +100,6 @@ public class SparseHash extends Hash {
   protected void populateHashes() {
     LongPrimitiveIterator it = sparseHashKeys.keySetIterator();
     long sum = 0;
-    int dim = getDimensions();
     while(it.hasNext()) {
       long index = it.nextLong();
       Integer nonZero = sparseHashKeys.get(index);
@@ -123,7 +119,7 @@ public class SparseHash extends Hash {
       int index = sparseHashKeys.get(nonZero);
       x += "(" + nonZero + "," + sparseHashes[index] + "),";
     }
-    return x + ": LOD=" + getLOD() + ",code=" + indexes + "}";
+    return x + ": LOD=" + getLOD() + ",code=" + uniqueSum + "}";
   }
   
   @Override
@@ -151,10 +147,12 @@ public class SparseHash extends Hash {
     return value;
   }
   
-  // have to handle adding new entry to array
   @Override
   public void setValue(int index, int hash) {
     int oldHash = 0;
+    // Change existing value, or add new value.
+    // Changing a value to 0 does not reclaim space
+    // This is not thread-safe with iterators.
     if (sparseHashKeys.containsKey(index)) {
       int nonZero = sparseHashKeys.get(index);
       oldHash = sparseHashes[nonZero];
@@ -166,8 +164,7 @@ public class SparseHash extends Hash {
       sparseHashes = newHashes;
       sparseHashKeys.put(index, nonZero);
     }
-    super.changeIndexes(index, oldHash, hash);
-    
+    super.changeIndexes(index, oldHash, hash);    
   }
   
   
@@ -203,10 +200,6 @@ class SparseHashIterator implements Iterator<Integer> {
   public void remove() {
     
   }
-  
-  //  public double value(int index) {
-  //    return sparseHashes[index];
-  //  }
   
 }
 

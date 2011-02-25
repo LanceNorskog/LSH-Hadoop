@@ -186,23 +186,23 @@ System.out.println("#" + i);
     assertTrue(hd.equals(hs));
 }
   
-//  @Test
-//  public void testSetValueFail() {
-//    int dimensions = 20;
-//    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
-//    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
-//    Vector d = new DenseVector(dimensions);
-//    Vector s = new RandomAccessSparseVector(dimensions, dimensions);
-//    d.set(0, 1.1);
-//    d.set(3, 2.2);
-//    s.set(0, 1.1);
-//    s.set(6, 2.2);
-//    Hash hd = space.getHashLOD(d);
-//    Hash hs = space.getHashLOD(s);
-//    assertFalse(hd.hashCode() == hs.hashCode());
-//    assertFalse(hd.equals(hs));
-//  }
-//  
+  @Test
+  public void testSetValueFail() {
+    int dimensions = 20;
+    Hasher hasher = new OrthonormalHasher(dimensions, 0.01d);
+    SimplexSpace<String> space = new SimplexSpace<String>(hasher, dimensions, null, false, true);
+    Vector d = new DenseVector(dimensions);
+    Vector s = new RandomAccessSparseVector(dimensions, dimensions);
+    d.set(0, 1.1);
+    d.set(3, 2.2);
+    s.set(0, 1.1);
+    s.set(6, 2.2);
+    Hash hd = space.getHashLOD(d);
+    Hash hs = space.getHashLOD(s);
+    assertFalse(hd.hashCode() == hs.hashCode());
+    assertFalse(hd.equals(hs));
+  }
+  
   @Test
   public void testCopyConstructor() {
     int dimensions = 20;
@@ -220,8 +220,5 @@ System.out.println("#" + i);
     assertFalse(h1.hashCode() == h2.hashCode());
     assertFalse(h1.equals(h2));
   }
-  
-  
-  
   
 }

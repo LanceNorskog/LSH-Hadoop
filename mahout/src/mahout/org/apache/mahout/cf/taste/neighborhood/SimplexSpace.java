@@ -53,6 +53,8 @@ public class SimplexSpace<T> {
   int lod = 0;
   final boolean doMapVectors;
   final boolean doCount;
+  int maxhash = -Integer.MAX_VALUE;
+  int minhash = Integer.MAX_VALUE;
   
   public SimplexSpace(Hasher hasher, int dimensions) {
     this.hasher = hasher;
@@ -87,6 +89,21 @@ public class SimplexSpace<T> {
   }
   
   public void addHash(Vector v, Hash hash, T payload) {
+    Iterator<Integer> it = hash.iterator();
+    int lod2 = (int) Math.pow(2.0,hash.getLOD());
+    while (it.hasNext()) {
+      Integer index = it.next();
+      if (null != index) {
+        int value = hash.getValue(index);
+        if (hash.getLOD() > 0) {
+          value /= lod2;
+        }
+        if (value > maxhash)
+          maxhash = value;
+        if (value < minhash)
+          minhash = value;
+      }
+    }
     if (doCount) {
       if (!countMap.containsKey(hash)) {
         countMap.put(hash, null);
@@ -144,9 +161,6 @@ public class SimplexSpace<T> {
         hashes[e.index()] = h[0];
       }
       return new SparseHash(hashes, lod);
-      
-      //      Iterator<Element> el = v.iterateNonZero();
-      //      return new SparseHash<T>(hasher, el, v.size(), lod, payload);
     }
   }
   
@@ -348,16 +362,16 @@ public class SimplexSpace<T> {
     return x;
   }
   
+  // all hashes with more than one item
   public int getNonSingleHashes() {
     if (doCount) {
       int multi = 0;
-      for(Integer i: countMap.values()) {
+      for(Hash h: countMap.keySet()) {
+        Integer i = countMap.get(h);
         if (null == i) {
-          //          nonZero++;
           continue;
         }
-        if (null != i)
-          multi++;
+        multi++;
       }
       return multi;
     } else {
@@ -373,20 +387,27 @@ public class SimplexSpace<T> {
   
   public int getCount() {
     if (doCount) {
-      int total = 0;
-      for(Integer i: countMap.values()) {
+      int count = 0;
+      for(Hash h: countMap.keySet()) {
+        Integer i = countMap.get(h);
         if (null == i) {
-          total++;
+          count++;
           continue;
         }
         if (null != i)
-          total += i;
+          count += i;
       }
-      return total;
-    } else
-      return vectorSetMap.keySet().size();
+      return count;
+    } else {
+      int count = 0;
+      for (Set<Vector> s: vectorSetMap.values()) {
+        count += s.size();
+      }
+      return count;
+    }
   }
   
+  // maximum number of items in a hash
   public int getMaxHashes() {
     if (doCount) {
       int max = 0;
@@ -398,28 +419,25 @@ public class SimplexSpace<T> {
         } 
       }
       return max;
-    } else
-      return -1;
-  }
-  
-  public int printSizes() {
-    if (doCount) {
-      int count = 0;
-      for(Hash h: countMap.keySet()) {
-        Integer i = countMap.get(h);
-        if (null == i)
-          count++;
-        else
-          count += i;
-      }
-      return count;
     } else {
-      int count = 0;
-      for(Hash x: vectorSetMap.keySet()) {
-        Set<Vector> value = vectorSetMap.get(x);
-        count += value.size();
+      int max = 0;
+      for(Set<Vector> s: vectorSetMap.values()) {
+        Integer i = s.size();
+        if (null != i) {
+          if (i > max)
+            max = i;
+        } 
       }
-      return count;
+      return max;
     }
   }
+  
+  public int getMinHash() {
+    return minhash;
+  }
+  
+  public int getMaxHash() {
+    return maxhash;
+  }
+
 }

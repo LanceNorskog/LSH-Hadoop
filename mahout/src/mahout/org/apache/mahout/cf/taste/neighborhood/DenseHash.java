@@ -1,13 +1,12 @@
 package org.apache.mahout.cf.taste.neighborhood;
 
-import java.util.BitSet;
 import java.util.Iterator;
 
 import org.apache.commons.collections.iterators.ArrayIterator;
-import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 
 /*
  * Dense implementation of N-dimensional hash
+ * Supports mutability
  */
 
 public class DenseHash extends Hash {
@@ -39,7 +38,7 @@ public class DenseHash extends Hash {
     for(int i = 0; i < hashes.length - 1; i++) {
       x = x + hashes[i] + ",";
     }
-    return x + hashes[hashes.length - 1] + "}, LOD:" + getLOD() + ",code=" + indexes +"}";
+    return x + hashes[hashes.length - 1] + "}, LOD:" + getLOD() + ",code=" + uniqueSum +"}";
   }
   
   @Override
@@ -60,7 +59,6 @@ public class DenseHash extends Hash {
   @Override
   public Integer getValue(int index) {
     return hashes[index];
-
   }
   
   @Override
@@ -71,58 +69,12 @@ public class DenseHash extends Hash {
     hashes[index] = hash;
   }
 
-//  @Override
-//  public Integer next(int index) {
-//    if (index < getDimensions() - 1)
-//      return index + 1;
-//    else
-//      return null;
-//  }
-
+  @SuppressWarnings("unchecked")
   @Override
   public Iterator<Integer> iterator() {
     ArrayIterator ait = new ArrayIterator(hashes);
     // magic!
-    return ait;
+    return (Iterator<Integer>) ait;
   }
 
-//  @Override
-//  public void setBits(Hash other, BitSet bs) {
-//    throw new UnsupportedOperationException();
-//    
-//  }
-//
-//  @Override
-//  public void setBits(Hash other, FastIDSet fs) {
-//    throw new UnsupportedOperationException();
-//    
-//  }
-  
-  //  @Override
-  //  public int compareTo(Object o) {
-  //    // TODO Auto-generated method stub
-  //    return 0;
-  //  }
-  
 }
-
-/* only compare values at index */
-//class HashSingleComparator implements Comparator<Hash>{
-//  final int index;
-//
-//  public HashSingleComparator(int index) {
-//    this.index = index;
-//  }
-//
-//  @Override
-//  public int compare(Hash o1, Hash o2) {
-//    if (o1.hashes[index] < o2.hashes[index])
-//      return 1;
-//    else if (o1.hashes[index] > o2.hashes[index])
-//      return -1;
-//    else
-//      return 0;
-//  }
-//
-//
-//}
