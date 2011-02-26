@@ -28,6 +28,9 @@ import java.nio.charset.Charset;
 import lsh.core.Hasher;
 import lsh.core.OrthonormalHasher;
 import lsh.core.VertexTransitiveHasher;
+import lsh.mahout.core.Hash;
+import lsh.mahout.core.SimplexSpace;
+import lsh.mahout.core.SparseHash;
 
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.Group;
@@ -44,10 +47,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.cf.taste.neighborhood.DenseHash;
-import org.apache.mahout.cf.taste.neighborhood.Hash;
-import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
-import org.apache.mahout.cf.taste.neighborhood.SparseHash;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
@@ -106,7 +105,7 @@ public final class VectorScan {
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
         int start = 0;
-        int end = 18;
+        int end = 5;
         SimplexSpace<String>[] spaces = makeSpaces(start, end, doCount);
         try {
           int sub = Integer.MAX_VALUE;
@@ -126,7 +125,9 @@ public final class VectorScan {
             count++;
             if (count % 1000 == 0)
               System.out.print(".");
-            if (count == 100000)
+            if (count == 28)
+              key.hashCode();
+            if (count == 29)
               break;
           }
           printSpaces(spaces, start);
@@ -144,20 +145,26 @@ public final class VectorScan {
   private static void printSpaces(SimplexSpace<String>[] spaces, int start) {
     for(int i = start; i < spaces.length; i++) {
       System.out.println("#" + i);
-      System.out.println("non-single: " + spaces[i].getNonSingleHashes());
-      System.out.println("max:        " + spaces[i].getMaxHashes());
-      System.out.println("count:      " + spaces[i].getCount());
-      System.out.println("range:      (" + spaces[i].getMinHash() + "," + spaces[i].getMaxHash() + ")");
+      System.out.println("Counts");
+      System.out.println("non-single: " + spaces[i].getNonSingleHashes(true));
+      System.out.println("max:        " + spaces[i].getMaxHashes(true));
+      System.out.println("count:      " + spaces[i].getCount(true));
+      System.out.println("range:      (" + spaces[i].getMinHash(true) + "," + spaces[i].getMaxHash(true) + ")");
+      System.out.println("Actual");
+      System.out.println("non-single: " + spaces[i].getNonSingleHashes(false));
+      System.out.println("max:        " + spaces[i].getMaxHashes(false));
+      System.out.println("count:      " + spaces[i].getCount(false));
+      System.out.println("range:      (" + spaces[i].getMinHash(false) + "," + spaces[i].getMaxHash(false) + ")");
 //      System.out.println("space:      " + spaces[i].toString());
     }   
   }
 
   private static void addSpaces(SimplexSpace<String>[] spaces, int start, String key, Vector v) {
-   SparseHash sh = (SparseHash) spaces[start].getHashLOD(v);
+   lsh.mahout.core.SparseHash sh = (SparseHash) spaces[start].getHashLOD(v);
     for(int lod = start; lod < spaces.length; lod++) {
       Hash spot = new SparseHash(sh, lod);
       if (null != spaces[lod]) {
-        spaces[lod].addHash(v, spot, key);
+        spaces[lod].addHash(v, spot, null);
         // set key as payload
       }
     }

@@ -26,6 +26,7 @@ import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
+import org.apache.tools.ant.taskdefs.Chmod;
 
 /**
  * @author lance
@@ -35,9 +36,19 @@ import org.apache.mahout.math.Vector.Element;
  * LOD - Level Of Detail
  * 
  * Does not know of User or Item - type T is long
+ * To create a dual space, use the 'distance to X in other SimplexSpace'
  * 
  * Have to store payloads at this level instead of in Hash objects.
  * Needed for 'findneighbors'.
+ * 
+ * Very important!!!
+ *  'count' counts ALL vectors added to each hash.
+ *  while vectors are only added when they are unique.
+ *  Thus, adding the same vector twice bumps the count but not
+ *  the size of the vectorSetMap entries.
+ *  Now! What does this do to payloads? If two same vectors are
+ *  added with different payloads, they should be tacked into the
+ *  hash regardless. Hmmm...
  */
 public class SimplexSpace<T> {
   final Hasher hasher;
@@ -45,7 +56,7 @@ public class SimplexSpace<T> {
   Map<T, Hash> id2hashMap = new HashMap<T, Hash>();
   Map<Hash, Set<T>> payloadSetMap = new HashMap<Hash, Set<T>>();
   Map<Hash, Set<Vector>> vectorSetMap = new HashMap<Hash, Set<Vector>>();
-  Map<Hash, Integer> countMap = new HashMap<Hash,Integer>();
+  Map<Hash, ChemicalInteger> countMap = new HashMap<Hash,ChemicalInteger>();
   final int dimensions;
   public double distance = 0.0001;
   public boolean doUnhash = true;
@@ -61,7 +72,7 @@ public class SimplexSpace<T> {
     this.dimensions = dimensions;
     this.measure = null;
     doMapVectors = false;
-    doCount = false;
+    doCount = true;
     allocate();
   }
   
@@ -70,7 +81,7 @@ public class SimplexSpace<T> {
     this.dimensions = dimensions;
     this.measure = measure;
     doMapVectors = mapVectors;
-    doCount = count;
+    doCount = true;
     allocate();
     }
   
@@ -79,7 +90,7 @@ public class SimplexSpace<T> {
     id2hashMap = new HashMap<T, Hash>(50000);
     payloadSetMap = new HashMap<Hash, Set<T>>(50000);
     vectorSetMap = new HashMap<Hash, Set<Vector>>(50000);
-    countMap = new HashMap<Hash,Integer>(50000);
+    countMap = new HashMap<Hash,ChemicalInteger>(50000);
 
   }
   // populate hashes
@@ -105,17 +116,13 @@ public class SimplexSpace<T> {
       }
     }
     if (doCount) {
-      if (!countMap.containsKey(hash)) {
-        countMap.put(hash, null);
-      } else {
-        Integer counter = countMap.get(hash);
-        if (null == counter) {
-          counter = 1;
-        }
-        else hashCode();
-        counter++;
-        countMap.put(hash, counter);
-      }
+      ChemicalInteger ci = countMap.get(hash);
+      if (null == ci) {
+        ci = new ChemicalInteger();
+        countMap.put(hash, ci);
+        ci.i = 1;
+      } else
+        ci.i++;
     } else {
       Set<Vector> vectorKeys = vectorSetMap.get(hash);
       Set<T> payloadKeys = null;
@@ -350,11 +357,8 @@ public class SimplexSpace<T> {
     if (doCount) {
       x += "COUNT{";
       for(Hash h: countMap.keySet()) {
-        Integer hs = countMap.get(h);
-        if (null == hs)
-          x += "1,";
-        else
-          x += hs + ",";
+        ChemicalInteger hs = countMap.get(h);    
+        x += hs.i + ",";
       }
       x += "}";
     } 
@@ -363,15 +367,12 @@ public class SimplexSpace<T> {
   }
   
   // all hashes with more than one item
-  public int getNonSingleHashes() {
+  public int getNonSingleHashes(boolean doCount) {
     if (doCount) {
       int multi = 0;
-      for(Hash h: countMap.keySet()) {
-        Integer i = countMap.get(h);
-        if (null == i) {
-          continue;
-        }
-        multi++;
+      for(ChemicalInteger ci: countMap.values()) {
+        if (ci.i > 1)
+          multi++;
       }
       return multi;
     } else {
@@ -385,17 +386,11 @@ public class SimplexSpace<T> {
     }
   }
   
-  public int getCount() {
+  public int getCount(boolean doCount) {
     if (doCount) {
       int count = 0;
-      for(Hash h: countMap.keySet()) {
-        Integer i = countMap.get(h);
-        if (null == i) {
-          count++;
-          continue;
-        }
-        if (null != i)
-          count += i;
+      for(ChemicalInteger ci: countMap.values()) {
+        count += ci.i;
       }
       return count;
     } else {
@@ -408,36 +403,40 @@ public class SimplexSpace<T> {
   }
   
   // maximum number of items in a hash
-  public int getMaxHashes() {
+  public int getMaxHashes(boolean doCount) {
     if (doCount) {
       int max = 0;
-      for(Hash h: countMap.keySet()) {
-        Integer i = countMap.get(h);
-        if (null != i) {
-          if (i > max)
-            max = i;
-        } 
+      for(ChemicalInteger ci: countMap.values()) {
+          if (ci.i > max)
+            max = ci.i;
       }
       return max;
     } else {
       int max = 0;
       for(Set<Vector> s: vectorSetMap.values()) {
         Integer i = s.size();
-        if (null != i) {
-          if (i > max)
-            max = i;
-        } 
+        if (i > max)
+          max = i;
       }
       return max;
     }
   }
   
-  public int getMinHash() {
+  public int getMinHash(boolean b) {
     return minhash;
   }
   
-  public int getMaxHash() {
+  public int getMaxHash(boolean b) {
     return maxhash;
   }
 
+}
+
+class ChemicalInteger {
+  int i;
+  
+  @Override
+  public String toString() {
+    return "" + i;
+  }
 }
