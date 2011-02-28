@@ -104,8 +104,9 @@ public final class VectorScan {
         Configuration conf = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), conf);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-        int start = 0;
+        int start = 4;
         int end = 5;
+        int samples = 1000;
         SimplexSpace<String>[] spaces = makeSpaces(start, end, doCount);
         try {
           int sub = Integer.MAX_VALUE;
@@ -125,12 +126,13 @@ public final class VectorScan {
             count++;
             if (count % 1000 == 0)
               System.out.print(".");
-            if (count == 28)
-              key.hashCode();
-            if (count == 29)
+            if (count == samples)
               break;
           }
-          printSpaces(spaces, start);
+          if (doCount)
+            printSpacesCounts(spaces, start, samples);
+          else
+            printSpacesFull(spaces, start, samples);
         } finally {
         }
       }
@@ -142,22 +144,28 @@ public final class VectorScan {
     
   }
   
-  private static void printSpaces(SimplexSpace<String>[] spaces, int start) {
+  private static void printSpacesCounts(SimplexSpace<String>[] spaces, int start, int samples) {
+//print differences between vectors and counts, if vectors are stored.
     for(int i = start; i < spaces.length; i++) {
       System.out.println("#" + i);
-      System.out.println("Counts");
       System.out.println("non-single: " + spaces[i].getNonSingleHashes(true));
       System.out.println("max:        " + spaces[i].getMaxHashes(true));
       System.out.println("count:      " + spaces[i].getCount(true));
       System.out.println("range:      (" + spaces[i].getMinHash(true) + "," + spaces[i].getMaxHash(true) + ")");
-      System.out.println("Actual");
-      System.out.println("non-single: " + spaces[i].getNonSingleHashes(false));
-      System.out.println("max:        " + spaces[i].getMaxHashes(false));
-      System.out.println("count:      " + spaces[i].getCount(false));
-      System.out.println("range:      (" + spaces[i].getMinHash(false) + "," + spaces[i].getMaxHash(false) + ")");
-//      System.out.println("space:      " + spaces[i].toString());
     }   
   }
+
+  private static void printSpacesFull(SimplexSpace<String>[] spaces, int start, int samples) {
+  //print differences between vectors and counts, if vectors are stored.
+      for(int i = start; i < spaces.length; i++) {
+        System.out.println("#" + i);
+        System.out.println("non-single: " + spaces[i].getNonSingleHashes(false));
+        System.out.println("max:        " + spaces[i].getMaxHashes(false));
+        System.out.println("count:      " + spaces[i].getCount(false));
+        System.out.println("range:      (" + spaces[i].getMinHash(false) + "," + spaces[i].getMaxHash(false) + ")");
+        System.out.println("dups:       " + (samples - spaces[i].getCount(false)));
+      }   
+    }
 
   private static void addSpaces(SimplexSpace<String>[] spaces, int start, String key, Vector v) {
    lsh.mahout.core.SparseHash sh = (SparseHash) spaces[start].getHashLOD(v);

@@ -1,20 +1,21 @@
 package lsh;
 
 import lsh.core.Hasher;
+import lsh.core.OrthonormalHasher;
 import lsh.core.VertexTransitiveHasher;
 
 public class PrintPairs {
 	static double[] STRETCH = {0.999, 0.9999};
 
 	static public void main(String args[]) {
-		Hasher hasher = new VertexTransitiveHasher();
+		Hasher hasher = new OrthonormalHasher();
 		hasher.setStretch(STRETCH);
 		for(int i = 0; i < 5; i++)
 			for(int j = 0; j < 5; j++) {
 //				for(int k = 0; k < 5; k++) {
 					double[] d2 = new double[2];
-					d2[0] = i;
-					d2[1] = j;
+					d2[0] = i*0.27;
+					d2[1] = j*0.67;
 //					d2[2] = k;
 					printcsv(hasher, d2);
 //				}

@@ -1,0 +1,55 @@
+.#0
+Counts
+non-single: 62
+max:        38
+count:      1000
+range:      (788,17350)
+Actual
+non-single: 1
+max:        2
+count:      748
+range:      (788,17350)
+#1
+Counts
+non-single: 62
+max:        38
+count:      1000
+range:      (394,8675)
+Actual
+non-single: 1
+max:        2
+count:      748
+range:      (394,8675)
+#2
+Counts
+non-single: 62
+max:        38
+count:      1000
+range:      (197,4337)
+Actual
+non-single: 1
+max:        2
+count:      748
+range:      (197,4337)
+#3
+Counts
+non-single: 62
+max:        38
+count:      1000
+range:      (98,2168)
+Actual
+non-single: 1
+max:        2
+count:      748
+range:      (98,2168)
+#4
+Counts
+non-single: 62
+max:        38
+count:      1000
+range:      (49,1084)
+Actual
+non-single: 1
+max:        2
+count:      748
+range:      (49,1084)

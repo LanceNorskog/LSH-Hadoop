@@ -9,7 +9,7 @@ package lsh.mahout.core;
  *  * NO! Given the unique long value trick, just have a map of Long->Long[+-n, long hash, ...]
 
  */
-
+// dense first
 public class HashNeighbors {
   
 }

@@ -72,16 +72,16 @@ public class SimplexSpace<T> {
     this.dimensions = dimensions;
     this.measure = null;
     doMapVectors = false;
-    doCount = true;
+    doCount = false;
     allocate();
   }
   
-  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean mapVectors, boolean count) {
+  public SimplexSpace(Hasher hasher, int dimensions, DistanceMeasure measure, boolean mapVectors, boolean doCount) {
     this.hasher = hasher;
     this.dimensions = dimensions;
     this.measure = measure;
     doMapVectors = mapVectors;
-    doCount = true;
+    this.doCount = doCount;
     allocate();
     }
   
