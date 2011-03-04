@@ -6,6 +6,7 @@ import java.util.Random;
 
 import lsh.core.OrthonormalHasher;
 import lsh.core.VertexTransitiveHasher;
+import lsh.mahout.core.SimplexSpace;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
@@ -30,9 +31,6 @@ import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.LogLikelihoodSimilarity;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.cf.taste.neighborhood.SimplexSimilarity;
-import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
-import org.apache.mahout.cf.taste.neighborhood.SimplexUserNeighborhood;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
@@ -61,7 +59,7 @@ import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
  */
 
 public class SimplexSpaceUtils {
-  static SimplexUserNeighborhood sun = null;
+  static lsh.mahout.core.SimplexUserNeighborhood sun = null;
   static int DIMS = 200;
   static double SIZE = 0.008;
   
@@ -96,7 +94,7 @@ public class SimplexSpaceUtils {
   
   private static int loadSpace(DataModel model, SimplexSpace<Long> space) throws TasteException {
     addSimplices(space, model);
-    return space.getNonSingleHashes();
+    return space.getNonSingleHashes(false);
   }
   
   private static SimplexSpace<Long> getSpaceOrthonormal(int DIMS) {

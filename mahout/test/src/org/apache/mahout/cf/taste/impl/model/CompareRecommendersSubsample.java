@@ -8,6 +8,9 @@ import java.util.Random;
 
 import lsh.core.OrthonormalHasher;
 import lsh.core.VertexTransitiveHasher;
+import lsh.mahout.core.SimplexSimilarity;
+import lsh.mahout.core.SimplexSpace;
+import lsh.mahout.core.SimplexUserNeighborhood;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
@@ -33,9 +36,6 @@ import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.cf.taste.neighborhood.SimplexSimilarity;
-import org.apache.mahout.cf.taste.neighborhood.SimplexSpace;
-import org.apache.mahout.cf.taste.neighborhood.SimplexUserNeighborhood;
 import org.apache.mahout.cf.taste.neighborhood.UserNeighborhood;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;

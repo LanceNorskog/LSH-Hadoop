@@ -69,4 +69,9 @@ public class GeoHasher implements Hasher {
 	return sb.toString();
     }
 
+    @Override
+    public int getNeighbors() {
+	return 8;
+    }
+
 }

@@ -13,4 +13,6 @@ public interface Hasher {
 	public void project(double[] values, double[] gp);
 	// project from corner to point
 	public void unhash(int[] hash, double[] p);
+	// number of neighbors
+	public int getNeighbors();
 }

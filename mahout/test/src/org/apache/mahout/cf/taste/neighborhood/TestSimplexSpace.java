@@ -15,7 +15,7 @@ import lsh.mahout.core.Hash;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.SparseHash;
 
-public class TestHashes extends TestCase {
+public class TestSimplexSpace extends TestCase {
   int DIMENSIONS = 5;
   
   protected void setUp() throws Exception {

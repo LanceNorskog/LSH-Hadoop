@@ -24,7 +24,7 @@ import java.util.Iterator;
 public abstract class Hash { 
   // sum of all (index * value@index);
   // unique per hash
-  protected long uniqueSum;
+  private long uniqueSum;
   private int lod;
   private long lodMask;
   private int lodShift;
@@ -42,6 +42,8 @@ public abstract class Hash {
   public abstract Integer getValue(int index);
   public abstract void setValue(int index, int hash);
   public abstract boolean containsValue(int index);
+//  public abstract boolean isNeighbor(Hash h);
+//  public abstract boolean isNeighbor(long uniqueSum);
   // iterate index of active values
   public abstract Iterator<Integer> iterator();
   
@@ -84,6 +86,10 @@ public abstract class Hash {
     return value;
   }
   
+  protected final boolean contains(long sum, int index) {
+    return false;
+  }
+  
   protected final void setIndexes(long indexes) {
     this.uniqueSum = indexes;
   }
@@ -93,5 +99,9 @@ public abstract class Hash {
     long newSingle = getSingleHash(index, newHash);  
     this.uniqueSum -= oldSingle;
     this.uniqueSum += newSingle;
+  }
+  
+  public long getUniqueSum() {
+    return uniqueSum;
   }
 }

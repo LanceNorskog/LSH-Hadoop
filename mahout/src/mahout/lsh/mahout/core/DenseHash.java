@@ -38,7 +38,7 @@ public class DenseHash extends Hash {
     for(int i = 0; i < hashes.length - 1; i++) {
       x = x + hashes[i] + ",";
     }
-    return x + hashes[hashes.length - 1] + "}, LOD:" + getLOD() + ",code=" + uniqueSum +"}";
+    return x + hashes[hashes.length - 1] + "}, LOD:" + getLOD() + ",code=" + getUniqueSum() +"}";
   }
   
   @Override

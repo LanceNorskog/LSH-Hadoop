@@ -114,4 +114,9 @@ public class VertexTransitiveHasher implements Hasher {
 	return values;
     }
 
+    @Override
+    public int getNeighbors() {
+	return 6;
+    }
+
 }

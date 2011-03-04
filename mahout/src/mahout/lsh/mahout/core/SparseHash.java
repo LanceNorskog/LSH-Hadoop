@@ -119,7 +119,7 @@ public class SparseHash extends Hash {
       int index = sparseHashKeys.get(nonZero);
       x += "(" + nonZero + "," + sparseHashes[index] + "),";
     }
-    return x + ": LOD=" + getLOD() + ",code=" + uniqueSum + "}";
+    return x + ": LOD=" + getLOD() + ",code=" + getUniqueSum() + "}";
   }
   
   @Override
