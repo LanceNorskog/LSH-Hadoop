@@ -52,13 +52,15 @@ public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluato
       long userID = users.nextLong();
       List<RecommendedItem> recs1 = recommender1.recommend(userID, samples);
       List<RecommendedItem> recs2 = recommender2.recommend(userID, samples);
+      if (recs1.size() == 0 || recs2.size() == 0)
+        continue;
       FastIDSet commonSet = new FastIDSet();
       long maxItemID = setBits(commonSet, recs1, samples);
       FastIDSet otherSet = new FastIDSet();
       maxItemID = Math.max(maxItemID, setBits(otherSet, recs2, samples));
       int max = mask(commonSet, otherSet, maxItemID);
       max = Math.min(max, samples);
-      if (max < 2) {
+      if (max < 1) {
         continue;
       }
       Long[] items1 = getCommonItems(commonSet, recs1, max);
@@ -119,7 +121,7 @@ public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluato
       maxItemID = Math.max(maxItemID, setBits(otherSet, prefs2, samples));
       int max = mask(commonSet, otherSet, maxItemID);
       max = Math.min(max, samples);
-      if (max < 2) {
+      if (max < 1) {
         continue;
       }
       Long[] items1 = getCommonItems(commonSet, prefs1, max);
@@ -179,11 +181,11 @@ public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluato
    }
 
    private static long setBits(FastIDSet modelSet, List<RecommendedItem> items, int max) {
-     long maxItem = -1;
+     Long maxItem = null;
      for (int i = 0; i < items.size() && i < max; i++) {
        long itemID = items.get(i).getItemID();
        modelSet.add(itemID);
-       if (itemID > maxItem) {
+       if (null == maxItem || itemID > maxItem) {
          maxItem = itemID;
        }
      }
