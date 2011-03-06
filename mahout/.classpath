@@ -7,7 +7,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/lsh"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-examples"/>
@@ -21,5 +20,6 @@
 	<classpathentry kind="lib" path="lib/commons-collections-3.2.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/extras"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/lsh"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
