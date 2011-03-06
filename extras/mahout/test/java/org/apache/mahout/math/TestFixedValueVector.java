@@ -19,7 +19,7 @@ package org.apache.mahout.math;
 
 import org.junit.Test;
 
-public class TestFixedValueVector extends TestReadOnlyVector {
+public class TestFixedValueVector extends TestReadOnlyVectorBase {
   static double VALUE = 2.5d;
 
   @Override

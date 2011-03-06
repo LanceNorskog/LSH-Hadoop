@@ -29,7 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-public abstract class TestFabricatedMatrix extends MahoutTestCase {
+public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
 
   protected static final int ROW = AbstractMatrix.ROW;
 
@@ -106,6 +106,7 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     Matrix like = test.like(4, 4);
     assertEquals("rows", 4, like.size()[ROW]);
     assertEquals("columns", 4, like.size()[COL]);
+    like.set(0,0,0.0d);
   }
 
   @Test(expected = UnsupportedOperationException.class)
@@ -538,6 +539,46 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
       }
     }
   }
+  
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings1() {
+    Matrix m = matrixFactory(3,3);
+    m.set("Fee", "Foo", 1, 2, 9);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings2() {
+    Matrix m = matrixFactory(3,3);
+    double[] row = new double[3];
+    m.set("Fee", row);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings3() {
+    Matrix m = matrixFactory(3,3);
+    double[] row = new double[3];
+    m.set("Fee", 2, row);
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings4() {
+    Matrix m = matrixFactory(3,3);
+    assertNull("row bindings", m.getRowLabelBindings());
+    assertNull("col bindings", m.getColumnLabelBindings());
+    m.set("Fee", "Foo", 2);
+  }
+
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testSettingLabelBindings5() {
+    Matrix m = matrixFactory(3,3);
+    assertNull("row bindings", m.getRowLabelBindings());
+    assertNull("col bindings", m.getColumnLabelBindings());
+    m.set("Fee", "Foo", 1, 2, 9);
+  }
+
 
   @Test
   public void testLabelBindings() {
@@ -558,6 +599,24 @@ public abstract class TestFabricatedMatrix extends MahoutTestCase {
     assertEquals("column", colBindings, m.getColumnLabelBindings());
     assertEquals("row", rowBindings, m.getRowLabelBindings());
     assertEquals("Fee", m.get(0, 1), m.get("Fee", "Bar"), EPSILON);
+  }
+
+  @Test
+  public void testGettingLabelBindings() {
+    Matrix m = matrixFactory(3,3);
+    Map<String, Integer> rowBindings = new HashMap<String, Integer>();
+    rowBindings.put("Fee", 0);
+    rowBindings.put("Fie", 1);
+    rowBindings.put("Foe", 2);
+    m.setRowLabelBindings(rowBindings);
+    assertEquals("row", rowBindings, m.getRowLabelBindings());
+    Map<String, Integer> colBindings = new HashMap<String, Integer>();
+    colBindings.put("Foo", 0);
+    colBindings.put("Bar", 1);
+    colBindings.put("Baz", 2);
+    m.setColumnLabelBindings(colBindings);
+
+    assertTrue("get value from label", m.get("Fee", "Foo") == m.get(0, 0));
   }
 
   @Test(expected = UnsupportedOperationException.class)

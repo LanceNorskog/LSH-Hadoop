@@ -21,10 +21,10 @@ import java.util.Random;
 
 import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.ReadOnlyVector;
-import org.apache.mahout.math.TestReadOnlyVector;
+import org.apache.mahout.math.TestReadOnlyVectorBase;
 import org.junit.Test;
 
-public class TestRandomVector extends TestReadOnlyVector {
+public class TestRandomVector extends TestReadOnlyVectorBase {
 
 //  static private RandomVector testLinear = new RandomVector(2);
 //  static private RandomVector testBig = new RandomVector(500);

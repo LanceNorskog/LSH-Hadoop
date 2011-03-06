@@ -26,7 +26,7 @@ import java.util.Iterator;
  * AbstractTestVector assumes all vectors are writable.
  */
 
-public abstract class TestReadOnlyVector extends MahoutTestCase {
+public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
   
   protected ReadOnlyVector four;
   protected ReadOnlyVector twoK;
@@ -39,15 +39,14 @@ public abstract class TestReadOnlyVector extends MahoutTestCase {
   
   abstract public ReadOnlyVector generateTestVector(int cardinality);
 
-  /* TODO: why doesn't this work? some library problem? 
+  /* TODO: why doesn't this work? some library problem? */
   @Test
   public void testAsFormatString() {
     String formatString = twoK.asFormatString();
     Vector vec = AbstractVector.decodeVector(formatString);
     assertEquals(vec, twoK);
   }
-  */
-
+  
   @Test
   public void testCardinality() {
     assertEquals("size", 2000, twoK.size());
@@ -61,15 +60,13 @@ public abstract class TestReadOnlyVector extends MahoutTestCase {
       gold[i] = copy.getQuick(i);
     Iterator<Vector.Element> iterator = four.iterateNonZero();
     checkIterator(iterator, gold);
-
-
   }
 
   private static void checkIterator(Iterator<Vector.Element> nzIter, double[] values) {
     while (nzIter.hasNext()) {
       Vector.Element elt = nzIter.next();
       assertEquals((elt.index()) + " Value: " + values[elt.index()]
-                                                       + " does not equal: " + elt.get(), values[elt.index()], elt.get(), 0.0);
+        + " does not equal: " + elt.get(), values[elt.index()], elt.get(), 0.0);
     }
   }
 
@@ -115,7 +112,7 @@ public abstract class TestReadOnlyVector extends MahoutTestCase {
     four.viewPart(1, 8);
   }
 
-  /*
+  
   @Test
   public void testDecodeVector() throws Exception {
     Vector val = AbstractVector.decodeVector(four.asFormatString());
@@ -123,7 +120,7 @@ public abstract class TestReadOnlyVector extends MahoutTestCase {
       assertEquals("get [" + i + ']', four.get(i), val.get(i), EPSILON);
     }
   }
-  */
+  
 
   //	@Test
   //	public void testSparseDoubleVectorInt() throws Exception {

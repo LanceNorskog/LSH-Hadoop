@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
  * This allows a RandomVector to take seed + (row * #columns) as its seed
  * and be reproducible from this matrix.
  **/
-public class RandomMatrix extends FabricatedMatrix {
+public class RandomMatrix extends ReadOnlyMatrix {
 
   final long startSeed;
   final private Random rnd = new Random();

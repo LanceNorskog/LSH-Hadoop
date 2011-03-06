@@ -21,10 +21,17 @@ public class RandomVector extends ReadOnlyVector {
   final private Random rnd;
   final private int seed;
   
+  // required for serialization
+  public RandomVector() {
+    super(0);
+    rnd = new Random(0);
+    seed = 0;
+  }
+  
   /*
-  * @param size
-  * @param rnd
-  */
+   * @param size
+   * @param rnd
+   */
   public RandomVector(int size, Random rnd) {
     super(size);
     this.rnd = rnd;
@@ -34,7 +41,7 @@ public class RandomVector extends ReadOnlyVector {
   public int getNumNondefaultElements() {
     return size();
   }
-
+  
   public double getQuick(int index) {
     rnd.setSeed(getSeed(index));
     return rnd.nextDouble();
@@ -43,13 +50,13 @@ public class RandomVector extends ReadOnlyVector {
   private long getSeed(int index) {
     return seed + index;
   }
-
+  
   public Iterator<Element> iterateNonZero() {
     return new AllIterator(this);
- }
-
- public Iterator<Element> iterator() {
-   return new AllIterator(this);
- }
-
+  }
+  
+  public Iterator<Element> iterator() {
+    return new AllIterator(this);
+  }
+  
 }
