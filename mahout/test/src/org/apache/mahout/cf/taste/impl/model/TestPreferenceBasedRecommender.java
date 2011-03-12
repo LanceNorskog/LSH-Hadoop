@@ -21,7 +21,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
-import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Mode;
+import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Distribution;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
@@ -69,8 +69,8 @@ public class TestPreferenceBasedRecommender {
   // give two ratings.dat files, training and test
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, Mode.USER); 
-    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0, Mode.USER); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, Distribution.USER); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0, Distribution.USER); 
     RecommenderEvaluator pbre = new PreferenceBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 

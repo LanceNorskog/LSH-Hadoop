@@ -21,8 +21,6 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.common.RandomUtils;
 
 /**
- * @author lance
- * 
  * Subsample entries in data model.
  * Two sampling modes: 
  *  holographic decimates by preference,
@@ -45,7 +43,7 @@ public class SamplingDataModel implements DataModel {
   final DataModel delegate;
   final double lower;
   final double higher;
-  final Mode samplingMode;
+  final Distribution samplingMode;
   Float defaultPref = 0.0f;
   final FastByIDMap<BitSet> userIDMap = new FastByIDMap<BitSet>();
   final FastByIDMap<Integer> itemIDMap = new FastByIDMap<Integer>();
@@ -61,13 +59,13 @@ public class SamplingDataModel implements DataModel {
    * HOLOGRAPHIC: decimate preferences
    * LINEAR: decimate users, then decimate items
    */
-  public enum Mode {HOLOGRAPHIC, USER};
+  public enum Distribution {HOLOGRAPHIC, USER};
 
   public SamplingDataModel(DataModel delegate, double higher) throws TasteException {
-    this(delegate, 0.0, higher, Mode.USER);
+    this(delegate, 0.0, higher, Distribution.USER);
   }
 
-  public SamplingDataModel(DataModel delegate, double lower, double higher, Mode samplingMode) throws TasteException {
+  public SamplingDataModel(DataModel delegate, double lower, double higher, Distribution samplingMode) throws TasteException {
     this.delegate = delegate;
     this.lower = lower;
     this.higher = higher;
@@ -219,7 +217,7 @@ public class SamplingDataModel implements DataModel {
     long startTime = System.currentTimeMillis();
     if (! userIDMap.containsKey(userID))
       throw new NoSuchUserException();
-    if (samplingMode == Mode.USER && !isSampledUserID(userID))
+    if (samplingMode == Distribution.USER && !isSampledUserID(userID))
       return NOUSERPREFS;
     BitSet itemSet = userIDMap.get(userID);
     PreferenceArray prefs = delegate.getPreferencesFromUser(userID);
@@ -288,12 +286,12 @@ public class SamplingDataModel implements DataModel {
    * itemIDMap: item ID -> index into above bitset
    */
   private void fillBitCache() throws TasteException {
-    final Random rnd = RandomUtils.getRandom(17);
+    final Random rnd = RandomUtils.getRandom(0);
     LongPrimitiveIterator it = delegate.getUserIDs();
     int numItems = delegate.getNumItems();
     while(it.hasNext()) {
       long userID = it.next();
-      if (samplingMode == Mode.HOLOGRAPHIC || isSampled(rnd)) {
+      if (samplingMode == Distribution.HOLOGRAPHIC || isSampled(rnd)) {
         userIDMap.put(userID, new BitSet(numItems));
       } else {
         userIDMap.put(userID, NOBITSET);
@@ -328,7 +326,6 @@ public class SamplingDataModel implements DataModel {
 
   private boolean isSampledUserID(long userID) {
     BitSet userBits = userIDMap.get(userID);
-    int cardinality = userBits.cardinality();
     return userBits != NOBITSET;
   }
 
@@ -338,7 +335,7 @@ public class SamplingDataModel implements DataModel {
 
     BitSet itemBits = userIDMap.get(userID);
     Integer itemIndex = itemIDMap.get(itemID);
-    if (samplingMode == Mode.USER && NOBITSET == itemBits)
+    if (samplingMode == Distribution.USER && NOBITSET == itemBits)
       return false;
     if (null == itemIndex)
       throw new NoSuchItemException();
