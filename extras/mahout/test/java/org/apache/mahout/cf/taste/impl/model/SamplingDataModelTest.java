@@ -17,18 +17,12 @@
 
 package org.apache.mahout.cf.taste.impl.model;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Iterator;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Distribution;
-import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
@@ -39,64 +33,93 @@ import org.junit.Test;
  */
 public final class SamplingDataModelTest extends TasteTestCase {
   
+  static DataModel smallFull;
+  static DataModel largeSparse;
+  
+  @Override
+  public void setUp() throws Exception {
+    smallFull = getDataModel();
+    largeSparse = getDataModelLarge();
+    System.err.println("Finished");
+  };
+  
   protected static DataModel getDataModelLarge() {
-    int USERS = 1000;
-    int ITEMS = 10000;
-    double DEFAULT = 0;
+    int USERS = 100;
+    int ITEMS = 1000;
+    double maxSample = 0.9;
+    long FACTOR = 5;
+    
     long[] userIDs = new long[USERS];
-    double[][] itemValues = new double[USERS][];
+    Double[][] itemValues = new Double[USERS][];
     for(int i = 0; i < USERS; i++) {
-      itemValues[i] = new double[ITEMS];
+      userIDs[i] = i;
+    }
+    for(int i = 0; i < USERS; i++) {
+      itemValues[i] = new Double[ITEMS];
     }
     Random rnd = new Random(0);
-    return getDataModel(
-            userIDs,
-            new Double[][] {
-                    {0.1, 0.3},
-                    {0.2, 0.3, 0.3},
-                    {0.4, 0.3, 0.5},
-                    {0.7, 0.3, 0.8},
-            });
-  }
-
- 
-  @Test
-  public void testHolographicSampling() throws Exception {
-    DataModel baseModel = (DataModel) getDataModel();
-    DataModel sampledModel = new SamplingDataModel(getDataModelLarge(), 0.0, 0.1, Distribution.HOLOGRAPHIC);
-    
-    assertEquals(baseModel.getNumUsers(), sampledModel.getNumUsers());
-    assertEquals(baseModel.getNumItems(), sampledModel.getNumItems());
-    
-    comparePrefs(baseModel, sampledModel);
-  }
-
-  @Test
-  public void testUserSampling() throws Exception {
-    DataModel baseModel = (DataModel) getDataModel();
-    DataModel sampledModel = new SamplingDataModel(getDataModelLarge(), 0.0, 0.1, Distribution.USER);
-    
-    // number of users is the same, but nuked ones have 0 prefs
-    LongPrimitiveIterator users = baseModel.getUserIDs();
-    int nuked = 0;
-    while(users.hasNext()) {
-      Long userID = users.nextLong();
-      PreferenceArray prefs = sampledModel.getPreferencesFromUser(userID);
-      if (prefs.length() == 0)
-        nuked++;
+    for(int userID = 0; userID < USERS; userID++) {
+      for(int itemID = 0; itemID < ITEMS; itemID++) {
+        double sample = rnd.nextDouble();
+        if (sample < maxSample) {
+          double value = rnd.nextDouble();
+          itemValues[userID][itemID] = value * FACTOR;
+        } else {
+          itemValues[userID][itemID] = 0.0;
+        }
+      }
     }
-    assertTrue(nuked > 0);
+    return getDataModel(userIDs, itemValues);
+    }
     
-    assertTrue(baseModel.getNumUsers() == sampledModel.getNumUsers());
-    assertTrue(baseModel.getNumItems() == sampledModel.getNumItems());
-    comparePrefs(baseModel, sampledModel);
-  }
-
-  private void comparePrefs(DataModel baseModel, DataModel sampledModel) throws TasteException {
-    LongPrimitiveIterator itemIter = baseModel.getItemIDs();
-    int counter = 0;
-    while(itemIter.hasNext()) 
-    {
+    
+    @Test
+    public void testHolographicSampling() throws Exception {
+      DataModel baseModel = smallFull;
+      DataModel sampledModel = new SamplingDataModel(smallFull, 0.0, 0.8, Distribution.HOLOGRAPHIC);
+      
+      assertEquals(baseModel.getNumUsers(), sampledModel.getNumUsers());
+      assertEquals(baseModel.getNumItems(), sampledModel.getNumItems());
+      
+      comparePrefs(baseModel, sampledModel);
+    }
+    
+    @Test
+    public void testUserSampling() throws Exception {
+      DataModel baseModel = largeSparse;
+      DataModel sampledModel = new SamplingDataModel(largeSparse, 0.0, 0.8, Distribution.USER);
+      
+      // number of users is the same, but nuked ones have 0 prefs
+      LongPrimitiveIterator users = baseModel.getUserIDs();
+      int nuked = 0;
+      while(users.hasNext()) {
+        Long userID = users.nextLong();
+        PreferenceArray prefs = sampledModel.getPreferencesFromUser(userID);
+        int l = prefs.length();
+        if (prefs.length() == 0) {
+          nuked++;
+        } else {
+          assertTrue(prefs.length() > 650 && prefs.length() < 850);
+        }
+        int count = 0;
+        for(int item = 0; item < prefs.length(); item++) {
+          if (prefs.getValue(item) != 0) {
+            count++;
+          }   
+        }
+      }
+      assertTrue(nuked > 0);
+      
+      assertTrue(baseModel.getNumUsers() == sampledModel.getNumUsers());
+      assertTrue(baseModel.getNumItems() == sampledModel.getNumItems());
+      comparePrefs(baseModel, sampledModel);
+    }
+    
+    private void comparePrefs(DataModel baseModel, DataModel sampledModel) throws TasteException {
+      LongPrimitiveIterator itemIter = baseModel.getItemIDs();
+      int counter = 0;
+      while(itemIter.hasNext()) 
+      {
         Long itemID = itemIter.nextLong();
         itemID.hashCode();
         PreferenceArray prefs = baseModel.getPreferencesForItem(itemID);
@@ -110,8 +133,8 @@ public final class SamplingDataModelTest extends TasteTestCase {
           if (null == sampledValue)
             counter++;
         }
+      }
+      assertTrue(counter > 0);
     }
-    assertTrue(counter > 0);
+    
   }
-
-}
