@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
@@ -49,10 +50,12 @@ import org.apache.mahout.common.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
+
 /**
  * Abstract superclass of a couple implementations, providing shared functionality.
  */
-abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEvaluator {
+public abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEvaluator {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractDifferenceRecommenderEvaluator.class);
 
@@ -60,7 +63,7 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
   private float maxPreference;
   private float minPreference;
 
-  AbstractDifferenceRecommenderEvaluator() {
+  protected AbstractDifferenceRecommenderEvaluator() {
     random = RandomUtils.getRandom();
     maxPreference = Float.NaN;
     minPreference = Float.NaN;
@@ -87,26 +90,19 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
   }
 
   @Override
-  public final double evaluate(RecommenderBuilder recommenderBuilder,
+  public double evaluate(RecommenderBuilder recommenderBuilder,
       DataModelBuilder dataModelBuilder,
       DataModel dataModel,
       double trainingPercentage,
       double evaluationPercentage) throws TasteException {
-    if (recommenderBuilder == null) {
-      throw new IllegalArgumentException("recommenderBuilder is null");
-    }
-    if (dataModel == null) {
-      throw new IllegalArgumentException("dataModel is null");
-    }
-    if (Double.isNaN(trainingPercentage) || (trainingPercentage <= 0.0) || (trainingPercentage >= 1.0)) {
-      throw new IllegalArgumentException("Invalid trainingPercentage: " + trainingPercentage);
-    }
-    if (Double.isNaN(evaluationPercentage) || (evaluationPercentage <= 0.0) || (evaluationPercentage > 1.0)) {
-      throw new IllegalArgumentException("Invalid evaluationPercentage: " + evaluationPercentage);
-    }
+    Preconditions.checkArgument(recommenderBuilder != null, "recommenderBuilder is null");
+    Preconditions.checkArgument(dataModel != null, "dataModel is null");
+    Preconditions.checkArgument(trainingPercentage >= 0.0 && trainingPercentage <= 1.0,
+      "Invalid trainingPercentage: " + trainingPercentage);
+    Preconditions.checkArgument(evaluationPercentage >= 0.0 && evaluationPercentage <= 1.0,
+      "Invalid evaluationPercentage: " + evaluationPercentage);
 
-    log.info("Beginning evaluation using {} of {}",
-        trainingPercentage, dataModel);
+    log.info("Beginning evaluation using {} of {}", trainingPercentage, dataModel);
 
     int numUsers = dataModel.getNumUsers();
     FastByIDMap<PreferenceArray> trainingUsers = new FastByIDMap<PreferenceArray>(
@@ -213,29 +209,29 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
   throws TasteException {
     reset();
     Collection<Callable<Void>> estimateCallables = new ArrayList<Callable<Void>>();
+    AtomicInteger noEstimateCounter = new AtomicInteger();
     for (Map.Entry<Long,PreferenceArray> entry : testUserPrefs.entrySet()) {
-      estimateCallables.add(new PreferenceEstimateCallable(recommender, entry.getKey(), entry.getValue()));
+      estimateCallables.add(
+          new PreferenceEstimateCallable(recommender, entry.getKey(), entry.getValue(), noEstimateCounter));
     }
-    log.info("Beginning evaluation of {} users", estimateCallables
-        .size());
-    execute(estimateCallables);
+    log.info("Beginning evaluation of {} users", estimateCallables.size());
+    execute(estimateCallables, noEstimateCounter);
     return computeFinalEvaluation();
   }
 
-  static void execute(Collection<Callable<Void>> callables) throws TasteException {
-    callables = wrapWithStatsCallables(callables);
+  protected static void execute(Collection<Callable<Void>> callables, AtomicInteger noEstimateCounter)
+    throws TasteException {
+
+    callables = wrapWithStatsCallables(callables, noEstimateCounter);
     int numProcessors = Runtime.getRuntime().availableProcessors();
     ExecutorService executor = Executors.newFixedThreadPool(numProcessors);
-    log.info("Starting timing of {} tasks in {} threads", callables
-        .size(), numProcessors);
+    log.info("Starting timing of {} tasks in {} threads", callables.size(), numProcessors);
     try {
       List<Future<Void>> futures = executor.invokeAll(callables);
       // Go look for exceptions here, really
       for (Future<Void> future : futures) {
-        if (!future.isDone()) {
           future.get();
         }
-      }
     } catch (InterruptedException ie) {
       throw new TasteException(ie);
     } catch (ExecutionException ee) {
@@ -244,34 +240,40 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
     executor.shutdown();
   }
 
-  private static Collection<Callable<Void>> wrapWithStatsCallables(Collection<Callable<Void>> callables) {
+  private static Collection<Callable<Void>> wrapWithStatsCallables(Collection<Callable<Void>> callables,
+                                                                   AtomicInteger noEstimateCounter) {
     int size = callables.size();
     Collection<Callable<Void>> wrapped = new ArrayList<Callable<Void>>(size);
     int count = 0;
     RunningAverageAndStdDev timing = new FullRunningAverageAndStdDev();
     for (Callable<Void> callable : callables) {
       boolean logStats = count++ % 1000 == 0; // log every 100 or so iterations
-      wrapped.add(new StatsCallable(callable, logStats, timing));
+      wrapped.add(new StatsCallable(callable, logStats, timing, noEstimateCounter));
     }
     return wrapped;
   }
 
-  abstract void reset();
+  protected abstract void reset();
 
-  abstract void processOneEstimate(float estimatedPreference, Preference realPref);
+  protected abstract void processOneEstimate(float estimatedPreference, Preference realPref);
 
-  abstract double computeFinalEvaluation();
+  protected abstract double computeFinalEvaluation();
 
-  private final class PreferenceEstimateCallable implements Callable<Void> {
+  public final class PreferenceEstimateCallable implements Callable<Void> {
 
     private final Recommender recommender;
     private final long testUserID;
     private final PreferenceArray prefs;
+    private final AtomicInteger noEstimateCounter;
 
-    private PreferenceEstimateCallable(Recommender recommender, long testUserID, PreferenceArray prefs) {
+    public PreferenceEstimateCallable(Recommender recommender,
+                                      long testUserID,
+                                      PreferenceArray prefs,
+                                      AtomicInteger noEstimateCounter) {
       this.recommender = recommender;
       this.testUserID = testUserID;
       this.prefs = prefs;
+      this.noEstimateCounter = noEstimateCounter;
     }
 
     @Override
@@ -283,13 +285,13 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
         } catch (NoSuchUserException nsue) {
           // It's possible that an item exists in the test data but not training data in which case
           // NSEE will be thrown. Just ignore it and move on.
-          log.info(
-              "User exists in test data but not training data: {}", testUserID);
+          log.info("User exists in test data but not training data: {}", testUserID);
         } catch (NoSuchItemException nsie) {
-          log.info(
-              "Item exists in test data but not training data: {}", realPref.getItemID());
+          log.info("Item exists in test data but not training data: {}", realPref.getItemID());
         }
-        if (!Float.isNaN(estimatedPreference)) {
+        if (Float.isNaN(estimatedPreference)) {
+          noEstimateCounter.incrementAndGet();
+        } else {
           estimatedPreference = capEstimatedPreference(estimatedPreference);
           processOneEstimate(estimatedPreference, realPref);
         }
@@ -304,11 +306,16 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
     private final Callable<Void> delegate;
     private final boolean logStats;
     private final RunningAverageAndStdDev timing;
+    private final AtomicInteger noEstimateCounter;
 
-    private StatsCallable(Callable<Void> delegate, boolean logStats, RunningAverageAndStdDev timing) {
+    private StatsCallable(Callable<Void> delegate,
+                          boolean logStats,
+                          RunningAverageAndStdDev timing,
+                          AtomicInteger noEstimateCounter) {
       this.delegate = delegate;
       this.logStats = logStats;
       this.timing = timing;
+      this.noEstimateCounter = noEstimateCounter;
     }
 
     @Override
@@ -323,8 +330,8 @@ abstract class AbstractDifferenceRecommenderEvaluator implements RecommenderEval
         log.info("Average time per recommendation: {}ms", average);
         long totalMemory = runtime.totalMemory();
         long memory = totalMemory - runtime.freeMemory();
-        log.info("Approximate memory used: {}MB / {}MB",
-            memory / 1000000L, totalMemory / 1000000L);
+        log.info("Approximate memory used: {}MB / {}MB", memory / 1000000L, totalMemory / 1000000L);
+        log.info("Unable to recommend in {} cases", noEstimateCounter.get());
       }
       return null;
     }

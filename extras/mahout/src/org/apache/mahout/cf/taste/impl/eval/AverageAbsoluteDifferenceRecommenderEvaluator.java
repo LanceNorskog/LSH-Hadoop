@@ -41,43 +41,51 @@ public final class AverageAbsoluteDifferenceRecommenderEvaluator extends
   private RunningAverage average;
   
   @Override
-  void reset() {
+  protected void reset() {
     average = new FullRunningAverage();
   }
   
   @Override
-  void processOneEstimate(float estimatedPreference, Preference realPref) {
+  protected void processOneEstimate(float estimatedPreference, Preference realPref) {
     average.addDatum(Math.abs(realPref.getValue() - estimatedPreference));
   }
   
   @Override
-  double computeFinalEvaluation() {
+  protected double computeFinalEvaluation() {
     return average.getAverage();
   }
   
   @Override
   public String toString() {
-    return "AverageAbsoluteDifferenceRecommenderEvaluatorDual";
+    return "AverageAbsoluteDifferenceRecommenderEvaluator";
   }
 
   @Override
-  public void evaluate(Recommender recommender1, Recommender recommender2,
-      int samples, RunningAverage tracker, Formula formula)
-      throws TasteException {
+  public void evaluate(Recommender recommender1,
+                       Recommender recommender2,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void evaluate(Recommender recommender, DataModel model, int samples,
-      RunningAverage tracker, Formula formula) throws TasteException {
+  public void evaluate(Recommender recommender,
+                       DataModel model,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     // TODO Auto-generated method stub
     
   }
 
   @Override
-  public void evaluate(DataModel model1, DataModel model2, int samples,
-      RunningAverage tracker, Formula formula) throws TasteException {
+  public void evaluate(DataModel model1,
+                       DataModel model2,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     // TODO Auto-generated method stub
     
   }
