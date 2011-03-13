@@ -36,12 +36,12 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
  * Can also compare data models.
  */
 public final class PreferenceBasedRecommenderEvaluator implements RecommenderEvaluator {
-
+  
   public void evaluate(Recommender recco1,
-      Recommender recco2,
-      int samples,
-      RunningAverage tracker,
-      Formula formula) throws TasteException {
+                       Recommender recco2,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     DataModel model1 = recco1.getDataModel();
     
     LongPrimitiveIterator users = model1.getUserIDs();   
@@ -53,18 +53,18 @@ public final class PreferenceBasedRecommenderEvaluator implements RecommenderEva
         if (null == value || value.equals(Float.NaN))
           continue;
         float variance = Math.abs(value - pref.getValue());
-//        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
+        //        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
         tracker.addDatum(variance);
       }
     }
   }
-
-
+  
+  
   public void evaluate(Recommender recco,
-      DataModel model,
-      int samples,
-      RunningAverage tracker,
-      Formula formula) throws TasteException {
+                       DataModel model,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     
     LongPrimitiveIterator users = model.getUserIDs();   
     while (users.hasNext()) {
@@ -75,18 +75,18 @@ public final class PreferenceBasedRecommenderEvaluator implements RecommenderEva
         if (null == value || value.equals(Float.NaN))
           continue;
         float variance = Math.abs(value - pref.getValue());
-//        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
+        //        System.out.println("userID: " + userID + ", itemID: " + pref.getItemID() + ", value: " + value + ", pref Value: " + pref.getValue());
         tracker.addDatum(variance);
       }
     }
   }
-
-
+  
+  
   public void evaluate(DataModel model1,
-      DataModel model2,
-      int samples,
-      RunningAverage tracker,
-      Formula formula) throws TasteException {
+                       DataModel model2,
+                       int samples,
+                       RunningAverage tracker,
+                       Formula formula) throws TasteException {
     LongPrimitiveIterator users = model1.getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();
@@ -100,52 +100,52 @@ public final class PreferenceBasedRecommenderEvaluator implements RecommenderEva
       }
     }
   }
-
-
+  
+  
   @Override
   public double evaluate(RecommenderBuilder recommenderBuilder,
-      DataModelBuilder dataModelBuilder, DataModel dataModel,
-      double trainingPercentage, double evaluationPercentage)
-      throws TasteException {
+                         DataModelBuilder dataModelBuilder, DataModel dataModel,
+                         double trainingPercentage, double evaluationPercentage)
+  throws TasteException {
     // TODO Auto-generated method stub
     return 0;
   }
-
-
+  
+  
   @Override
   public double evaluate(RecommenderBuilder recommenderBuilder,
-      DataModel trainingModel, DataModel testModel) throws TasteException {
+                         DataModel trainingModel, DataModel testModel) throws TasteException {
     // TODO Auto-generated method stub
     return 0;
   }
-
-
+  
+  
   @Override
   public float getMaxPreference() {
     // TODO Auto-generated method stub
     return 0;
   }
-
-
+  
+  
   @Override
   public float getMinPreference() {
     // TODO Auto-generated method stub
     return 0;
   }
-
-
+  
+  
   @Override
   public void setMaxPreference(float maxPreference) {
     // TODO Auto-generated method stub
     
   }
-
-
+  
+  
   @Override
   public void setMinPreference(float minPreference) {
     // TODO Auto-generated method stub
     
   }
-
+  
 }
 

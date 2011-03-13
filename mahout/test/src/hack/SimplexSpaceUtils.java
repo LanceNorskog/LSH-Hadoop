@@ -22,7 +22,7 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.model.SamplingDataModel;
-import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Mode;
+import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Distribution;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.knn.NonNegativeQuadraticOptimizer;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;

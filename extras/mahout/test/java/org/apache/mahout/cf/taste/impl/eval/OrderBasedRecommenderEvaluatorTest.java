@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.cf.taste.impl.model;
+package org.apache.mahout.cf.taste.impl.eval;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;

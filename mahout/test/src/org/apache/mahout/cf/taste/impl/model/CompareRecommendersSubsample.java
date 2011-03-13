@@ -74,8 +74,8 @@ public class CompareRecommendersSubsample {
 
   private static void compareSampledIndividual(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[1])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.5, SamplingDataModel.Mode.HOLOGRAPHIC); 
-    DataModel glModelTest = new SamplingDataModel(glModel, 0.5, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.5, SamplingDataModel.Distribution.HOLOGRAPHIC); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.5, 1.0, SamplingDataModel.Distribution.HOLOGRAPHIC); 
     LongPrimitiveIterator users = glModelTraining.getUserIDs();
     int all = 0;
     int delta = 0;
@@ -99,7 +99,7 @@ public class CompareRecommendersSubsample {
   private static void compareSampledFromUser(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
     DataModel glModelTraining = glModel; // new SamplingDataModel(glModel, 0.0, 0.9, SamplingDataModel.Mode.USER); 
-    DataModel glModelTest = new SamplingDataModel(glModel, 0.0, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.0, 1.0, SamplingDataModel.Distribution.HOLOGRAPHIC); 
     LongPrimitiveIterator users = glModel.getUserIDs();
     int all = 0;
     int delta = 0;
@@ -138,8 +138,8 @@ public class CompareRecommendersSubsample {
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
     GroupLensDataModel glModel2 = new GroupLensDataModel(new File(args[1])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.USER); 
-    DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Mode.USER); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Distribution.USER); 
+    DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Distribution.USER); 
     RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = new CompactRunningAverage();
 
@@ -156,7 +156,7 @@ public class CompareRecommendersSubsample {
   // give two ratings.dat files, training and test
   private static void trainingTestComparePrefs(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.9, SamplingDataModel.Mode.USER); 
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.9, SamplingDataModel.Distribution.USER); 
     DataModel glModelTest = glModel; // new SamplingDataModel(glModel, 0.0, 1.1, SamplingDataModel.Mode.USER); 
 //    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.HOLOGRAPHIC); 
 //    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 

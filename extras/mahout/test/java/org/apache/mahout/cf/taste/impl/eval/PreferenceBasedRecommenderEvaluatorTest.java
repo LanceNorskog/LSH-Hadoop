@@ -15,18 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.cf.taste.impl.model;
+package org.apache.mahout.cf.taste.impl.eval;
 
-import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.eval.RecommenderBuilder;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
-import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.recommender.ItemAverageRecommender;
-import org.apache.mahout.cf.taste.impl.recommender.knn.KnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.slopeone.SlopeOneRecommender;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
@@ -34,19 +30,18 @@ import org.junit.Test;
 import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula;
 
 public final class PreferenceBasedRecommenderEvaluatorTest extends TasteTestCase {
-
+  
   @Test
   public void testEvaluate() throws Exception {
     DataModel model = getDataModel();
     Recommender recommender1 = new SlopeOneRecommender(model);
     Recommender recommender2 = new ItemAverageRecommender(model);
-    RecommenderEvaluator evaluator =
-        new PreferenceBasedRecommenderEvaluator();
+    RecommenderEvaluator evaluator = new PreferenceBasedRecommenderEvaluator();
     
     RunningAverage tracker = new CompactRunningAverage();
     evaluator.evaluate(recommender1, recommender2, 100, tracker, Formula.MEANRANK);
     double eval = tracker.getAverage();
     assertEquals(0.185294508934021, eval, EPSILON);
   }
-
+  
 }

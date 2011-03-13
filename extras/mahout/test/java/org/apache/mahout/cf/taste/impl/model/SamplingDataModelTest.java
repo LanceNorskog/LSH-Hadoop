@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Iterator;
+import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
@@ -38,9 +39,18 @@ import org.junit.Test;
  */
 public final class SamplingDataModelTest extends TasteTestCase {
   
-  protected static DataModel getDataModelOriginal() {
+  protected static DataModel getDataModelLarge() {
+    int USERS = 1000;
+    int ITEMS = 10000;
+    double DEFAULT = 0;
+    long[] userIDs = new long[USERS];
+    double[][] itemValues = new double[USERS][];
+    for(int i = 0; i < USERS; i++) {
+      itemValues[i] = new double[ITEMS];
+    }
+    Random rnd = new Random(0);
     return getDataModel(
-            new long[] {1, 2, 3, 4},
+            userIDs,
             new Double[][] {
                     {0.1, 0.3},
                     {0.2, 0.3, 0.3},
@@ -49,21 +59,11 @@ public final class SamplingDataModelTest extends TasteTestCase {
             });
   }
 
-  protected static DataModel getDataModelSampled() {
-    return getDataModel(
-            new long[] {1, 2, 3, 4},
-            new Double[][] {
-                    {0.1, 0.3},
-                    {0.2, 0.3, 0.3},
-                    {0.4, 0.3, 0.5},
-                    {0.7, 0.3, 0.8},
-            });
-  }
-  
+ 
   @Test
   public void testHolographicSampling() throws Exception {
     DataModel baseModel = (DataModel) getDataModel();
-    DataModel sampledModel = new SamplingDataModel(getDataModel(), 0.0, 0.1, Distribution.HOLOGRAPHIC);
+    DataModel sampledModel = new SamplingDataModel(getDataModelLarge(), 0.0, 0.1, Distribution.HOLOGRAPHIC);
     
     assertEquals(baseModel.getNumUsers(), sampledModel.getNumUsers());
     assertEquals(baseModel.getNumItems(), sampledModel.getNumItems());
@@ -74,7 +74,7 @@ public final class SamplingDataModelTest extends TasteTestCase {
   @Test
   public void testUserSampling() throws Exception {
     DataModel baseModel = (DataModel) getDataModel();
-    DataModel sampledModel = new SamplingDataModel(getDataModel(), 0.0, 0.1, Distribution.USER);
+    DataModel sampledModel = new SamplingDataModel(getDataModelLarge(), 0.0, 0.1, Distribution.USER);
     
     // number of users is the same, but nuked ones have 0 prefs
     LongPrimitiveIterator users = baseModel.getUserIDs();
