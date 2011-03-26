@@ -26,7 +26,6 @@ import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
-import org.apache.tools.ant.taskdefs.Chmod;
 
 /**
  * @author lance
