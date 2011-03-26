@@ -6,7 +6,6 @@
 	<classpathentry kind="src" path="src/mahout"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-20.0.2"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-examples"/>
