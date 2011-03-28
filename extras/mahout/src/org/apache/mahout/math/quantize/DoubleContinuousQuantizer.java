@@ -1,16 +1,14 @@
 package org.apache.mahout.math.quantize;
 
 /*
- * Quantize floating-point numbers to a 
+ * Quantize floating-point numbers to a given band
  * Also to float range.
- * 
- * Do not implement iterators
  */
 
-public class FloatingDiscreteQuantizer extends Quantizer<Double> {
+public class DoubleContinuousQuantizer extends Quantizer<Double> {
   final double cut;
   
-  public FloatingDiscreteQuantizer(double cut) {
+  public DoubleContinuousQuantizer(double cut) {
     this.cut = cut; 
   }
   
@@ -21,9 +19,18 @@ public class FloatingDiscreteQuantizer extends Quantizer<Double> {
     Double d;
     d = Math.min(value, Float.MAX_VALUE);
     d = Math.max(value, -Float.MAX_VALUE);
+    if (cut == 1.0) {
+      return d;
+    } else if (cut < 1.0) {
+      d = d * 1/cut;
+      d = Math.floor(d);
+      return Math.floor(d*cut);
+
+    } else {
     d = d * cut;
     d = Math.floor(d);
-    return d/cut;
+    return Math.floor(d/cut);
+    }
   }
-  
+
 }

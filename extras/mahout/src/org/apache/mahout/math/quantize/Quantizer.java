@@ -11,28 +11,77 @@ import java.util.Iterator;
  * Unless otherwise specified, values will be replaced by the 
  * lowest-valued matching quantization.
  * 
- * Quantizers with fixed sets should implement iterators and itemIDs.
+ * Quantizers must implement "T quantize(T value)", nothing more
+ * For a fixed set, iterators should walk the entire set.
+ * For "infinite" sets, iterator is up to the implementor
+ * 
+ * All values returned are immutable- do not change them.
  */
 public abstract class Quantizer<T> {
   
   /*
-   * Required
+   * Return quantized value
+   * This is the only required method
    */
-  // Return quantized value
   public abstract T quantize(T value);
   
-  // Return ID of quantized value
+  /*
+   * Quantize and copy
+   * Not required.
+   */
+  public void quantize(T value, T target) {
+    throw new UnsupportedOperationException();
+  }
+  
+ /*
+  * Return Iterators of all members of discrete set
+   * Not required.
+  */
+  public Iterator<T> getMatches() {
+    throw new UnsupportedOperationException();
+  }
+  
+  /*
+   * Return Iterator<T> of "nearest" matches to given value.
+   * Where "nearest" can mean anything.
+   * Factor can be a count, a maximum distance, whatever is appropriate
+   * Not required.
+   */
+  public Iterator<T> getNearest(T value, Double factor) {
+    throw new UnsupportedOperationException();
+  }
+
+  /*
+   * Return ID of quantized value
+   * Not required.
+   */
   public long toID(T value) {
     throw new UnsupportedOperationException();
   }
 
-  // Iterable list of all members of discrete set
+  /*
+   * Return Iterable list of Long-valued IDs for discrete set
+   * Not required.
+   */
   public Iterator<Long> getIDs() {
     throw new UnsupportedOperationException();
   }
 
-  // Return value for ID
+  /*
+   * Return matcher for ID
+   * Not required.
+   */
   T toValue(long value) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public boolean equals(Object obj) {
+    throw new UnsupportedOperationException();
+  }
+  
+  @Override
+  public int hashCode() {
     throw new UnsupportedOperationException();
   }
 }
