@@ -23,15 +23,18 @@ import org.junit.runner.manipulation.Sorter;
 /**
  * Tyler Neylon's LSH quantizer and neighbor iteration algorithm.
  * http://www.siam.org/proceedings/soda/2010/SODA10_094_neylont.pdf
+ * If you understand it, you're a better man than I, Gunga Din.
  *
- * Iteration algorithm slices N-dimensions space into hyper-tetrahedra
- * in of hypercubes. 
+ * Iteration algorithm slices N-dimensions space into simplexes
+ * in of hypercubes. A simplex can be N-dimensional tetrahedra,
+ * or N-dimensional cubes which are "N-sected" into right-triangular
+ * shapes.
  * 
  * Each hypercube has N ^ D neighboring points, 
  * where N is the length of one side of the enclosing grid. 
  * Iterating  * (N + 1)
  *
- * Each simplex has D * (N + 1) neighbors.
+ * Each simplex has D * (N + 1) neighbors, even in 
  * 
  * Only implements DenseVector
  */
@@ -80,7 +83,7 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     int[] this_hash = getHash(v);
     List<int[]> hashes = new ArrayList<int[]>();
     add_hash(hashes, this_hash);
-    List<Integer> sorted_coords = sort_as_perm(subtract(this_hash, v));
+    List<Integer> sorted_coords = sort_as_perm(subtract(v, this_hash));
     int dimensions = v.size();
     for(int index = 0; index < dimensions; index++) {
       Integer inner = sorted_coords.get(index);
@@ -91,10 +94,10 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     return hashes;
   }
 
-  private Vector subtract(int[] this_hash, Vector v) {
+  private Vector subtract(Vector v, int[] this_hash) {
     Vector out = v.like();
     for(int i = 0; i < this_hash.length; i++) {
-      out.set(i, this_hash[i] - v.get(i));
+      out.set(i, v.get(i) - this_hash[i]);
     }
     return out;
   }
