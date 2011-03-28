@@ -4,6 +4,7 @@
 package org.apache.mahout.math.quantize;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -42,48 +43,60 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
 
   Hasher hasher = new OrthonormalHasher(); // until fully debugged!
 
-
-  
   public VectorLSHQuantizer() {
     ;
   }
 
   @Override
   public Vector quantize(Vector v) {
-//    Vector q = new DenseVector(v.size());
     double[] values = new double[v.size()];
     int[] hashed = new int[v.size()];
     for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
     hashed = hasher.hash(values);
-    Vector out = new DenseVector(hashed.length);
-    for(int i = 0; i < out.size(); i++) {
-      out.set(i, hashed[i] + EPSILON);
+    hasher.unhash(hashed, values);
+    Vector quantized = new DenseVector(values);
+    return quantized;
+  }  
+  
+  public int[] getHash(Vector v) {
+    double[] values = new double[v.size()];
+    int[] hashed = new int[v.size()];
+    for(int index = 0; index < v.size(); index++) {
+      values[index] = v.get(index);
     }
-    return out;
+    hashed = hasher.hash(values);
+    return hashed;
   }  
   
   @Override 
   public Iterator<Vector> getNearest(Vector v, Double factor) {
-    List<Vector> nabes = proximity_hashes(v);
-    
-    return nabes.iterator();
+    List<int[]> nabes = proximity_hashes(v);
+    return new UnhashIterator(hasher, nabes);
   }
 
-  private List<Vector> proximity_hashes(Vector v) {
-    Vector this_hash = quantize(v);
-    List<Vector> hashes = new ArrayList<Vector>();
+  private List<int[]> proximity_hashes(Vector v) {
+    int[] this_hash = getHash(v);
+    List<int[]> hashes = new ArrayList<int[]>();
     add_hash(hashes, this_hash);
-    List<Integer> sorted_coords = sort_as_perm(this_hash.minus(v));
+    List<Integer> sorted_coords = sort_as_perm(subtract(this_hash, v));
     int dimensions = v.size();
     for(int index = 0; index < dimensions; index++) {
       Integer inner = sorted_coords.get(index);
-      double q = this_hash.get(inner);
-      this_hash.set(inner, q + 1.0 + EPSILON);
+      int q = this_hash[inner];
+      this_hash[inner] = q + 1;
       add_hash(hashes, this_hash);
     }
     return hashes;
+  }
+
+  private Vector subtract(int[] this_hash, Vector v) {
+    Vector out = v.like();
+    for(int i = 0; i < this_hash.length; i++) {
+      out.set(i, this_hash[i] - v.get(i));
+    }
+    return out;
   }
 
   // return indexes of values sorted in reverse
@@ -106,9 +119,8 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     return indexes;
   }
 
-  private void add_hash(List<Vector> hashes, Vector hash) {
-    Vector copy = hash.like();
-    copy.assign(hash);
+  private void add_hash(List<int[]> hashes, int[] this_hash) {
+    int[] copy = Arrays.copyOf(this_hash, this_hash.length);
     hashes.add(copy);
   }
 
@@ -116,18 +128,27 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     VectorLSHQuantizer vlq = new VectorLSHQuantizer();
     double[] v1data = {1.2, 2.9};
     Vector v1 = new DenseVector(v1data);
-    
-    Vector vq1 = vlq.quantize(v1);
+    Vector q1 = vlq.quantize(v1);
+
+    double[] v2data = {0.9, 2.2};
+    Vector v2 = new DenseVector(v2data);
+    Vector q2 = vlq.quantize(v2);
   
     Iterator<Vector> nabes = vlq.getNearest(v1, null);
   
+    printVectors(v1, nabes);
+    nabes = vlq.getNearest(v2, null);
+    printVectors(v2, nabes);
+  
+  }
+
+  private static void printVectors(Vector v1, Iterator<Vector> nabes) {
     System.out.println("Neighbors of: " + v1.toString());
     
     while(nabes.hasNext()) {
       Vector nabe = nabes.next();
       printVector(nabe);
     }
-  
   }
   
   static void printVector(Vector v) {
@@ -166,3 +187,42 @@ class PairComparator implements Comparator<Pair> {
   }
 }
 
+class UnhashIterator implements Iterator<Vector> {
+  final Hasher hasher;
+  final List<int[]> nabes;
+  final int dimensions;
+  final int length;
+  int index;
+  
+  UnhashIterator(Hasher hasher, List<int[]> nabes) {
+    this.hasher = hasher;
+    this.nabes = nabes;
+    this.dimensions = nabes.get(0).length;
+    this.length = nabes.size();
+    index = 0;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return index < length;
+  }
+
+  @Override
+  public Vector next() {
+    if (index >= length)
+      throw new IllegalStateException("No next vector");
+    int[] hash = nabes.get(index);
+    double unhashed[] = new double[dimensions];
+    this.hasher.unhash(hash, unhashed);
+    Vector v = new DenseVector(unhashed);
+    index++;
+    return v;
+  }
+
+  @Override
+  public void remove() {
+    // TODO Auto-generated method stub
+    
+  }
+  
+}
