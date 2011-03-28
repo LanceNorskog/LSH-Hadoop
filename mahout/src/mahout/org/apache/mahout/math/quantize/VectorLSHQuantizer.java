@@ -50,14 +50,17 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
 
   @Override
   public Vector quantize(Vector v) {
-    Vector q = new DenseVector(v.size());
+//    Vector q = new DenseVector(v.size());
     double[] values = new double[v.size()];
-    double[] hashed = new double[v.size()];
-    for(int index = 0; index < q.size(); index++) {
+    int[] hashed = new int[v.size()];
+    for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
-    hasher.project(values, hashed);
-    Vector out = new DenseVector(hashed);
+    hashed = hasher.hash(values);
+    Vector out = new DenseVector(hashed.length);
+    for(int i = 0; i < out.size(); i++) {
+      out.set(i, hashed[i] + EPSILON);
+    }
     return out;
   }  
   
@@ -75,8 +78,9 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     List<Integer> sorted_coords = sort_as_perm(this_hash.minus(v));
     int dimensions = v.size();
     for(int index = 0; index < dimensions; index++) {
-      double q = this_hash.get(sorted_coords.get(index));
-      this_hash.set(sorted_coords.get(index), q + 1.0);
+      Integer inner = sorted_coords.get(index);
+      double q = this_hash.get(inner);
+      this_hash.set(inner, q + 1.0 + EPSILON);
       add_hash(hashes, this_hash);
     }
     return hashes;
@@ -104,6 +108,7 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
 
   private void add_hash(List<Vector> hashes, Vector hash) {
     Vector copy = hash.like();
+    copy.assign(hash);
     hashes.add(copy);
   }
 
@@ -120,10 +125,18 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     
     while(nabes.hasNext()) {
       Vector nabe = nabes.next();
-      System.out.println("\t" + nabe);
-      
+      printVector(nabe);
     }
   
+  }
+  
+  static void printVector(Vector v) {
+    System.out.print("\t{" + v.size() + ":");
+    for(int i = 0; i < v.size(); i++) {
+      Double d = v.get(i);
+      System.out.print(d.toString() + ",");
+    }
+    System.out.println("}");
   }
 
 }
