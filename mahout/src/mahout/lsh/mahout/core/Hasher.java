@@ -4,13 +4,11 @@ package lsh.mahout.core;
  * Quantize an N-dimensional vector using either rectangles or triangles
  */
 
-public interface Hasher {
+public abstract class Hasher {
 	// set grid size with precision
-	public void setStretch(double[] stretch);
+	public abstract void setStretch(double[] stretch);
 	// project point to lower corner
-	public int[] hash(double[] values);
-	// project point to grid space
-	public void project(double[] values, double[] gp);
+	public abstract void hash(double[] values, int[] hashed);
 	// project from corner to point
-	public void unhash(int[] hash, double[] p);
+	public abstract void unhash(int[] hash, double[] p);
 }

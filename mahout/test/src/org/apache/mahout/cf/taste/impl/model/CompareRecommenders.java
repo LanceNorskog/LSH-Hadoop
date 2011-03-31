@@ -4,11 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import lsh.core.OrthonormalHasher;
-import lsh.core.VertexTransitiveHasher;
 import lsh.mahout.core.SimplexSimilarity;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.SimplexUserNeighborhood;
+import lsh.mahout.core.VertexTransitiveHasher;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;

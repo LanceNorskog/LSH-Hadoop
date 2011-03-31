@@ -73,7 +73,7 @@ public class DenseHash extends Hash {
   @Override
   public Iterator<Integer> iterator() {
     ArrayIterator ait = new ArrayIterator(hashes);
-    // magic!
+    // magic! I did not know this was possible!
     return (Iterator<Integer>) ait;
   }
 

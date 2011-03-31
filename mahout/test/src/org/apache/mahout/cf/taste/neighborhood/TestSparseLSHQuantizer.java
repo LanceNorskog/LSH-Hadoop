@@ -1,16 +1,19 @@
-package org.apache.mahout.math.quantize;
+package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.Iterator;
 
+import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.quantize.Quantizer;
+import org.apache.mahout.math.quantize.SparseLSHQuantizer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import lsh.mahout.core.Hasher;
 import lsh.mahout.core.OrthonormalHasher;
 
-public final class TestDenseLSHQuantizer extends Assert {
+public final class TestSparseLSHQuantizer extends Assert {
   static double EPSILON = 0.0000001;
   
   double[] lowerData = {1.2, 2.9};
@@ -35,7 +38,7 @@ public final class TestDenseLSHQuantizer extends Assert {
     int dim = 2;
     
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
-    DenseLSHQuantizer vlq = new DenseLSHQuantizer(hasher);
+    SparseLSHQuantizer vlq = new SparseLSHQuantizer(hasher);
     Vector lower = new DenseVector(lowerData);
     Vector q = vlq.quantize(lower);
     verify(dim, lowerQuantized, lowerHashed, vlq, lower, q);
@@ -47,14 +50,14 @@ public final class TestDenseLSHQuantizer extends Assert {
     int dim = 2;
     
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
-    DenseLSHQuantizer vlq = new DenseLSHQuantizer(hasher);
+    SparseLSHQuantizer vlq = new SparseLSHQuantizer(hasher);
     Vector upper = new DenseVector(v2Data);
     Vector q = vlq.quantize(upper);
     verify(dim, v2Quantized, v2Hashed, vlq, upper, q);
   }
   
   private void verify(int dim, double[] lowerQuantized, double[][] lowerHashed,
-      DenseLSHQuantizer vlq, Vector lower, Vector q1) {
+      SparseLSHQuantizer vlq, Vector lower, Vector q1) {
     for(int i = 0; i < dim; i++) {
       assertTrue(q1.get(i) < lower.get(i));
     }

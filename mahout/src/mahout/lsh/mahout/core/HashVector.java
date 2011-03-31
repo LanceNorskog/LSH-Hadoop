@@ -3,16 +3,11 @@ package lsh.mahout.core;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import lsh.core.Hasher;
-
 import org.apache.mahout.math.AbstractVector;
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.Vector.Element;
-import org.apache.mahout.math.function.DoubleDoubleFunction;
-import org.apache.mahout.math.function.DoubleFunction;
 
 /*
  * Wrap N-dimensional Hash as a vector. 

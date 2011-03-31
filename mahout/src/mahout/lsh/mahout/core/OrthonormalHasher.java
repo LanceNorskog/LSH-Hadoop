@@ -10,17 +10,15 @@ package lsh.mahout.core;
  * TODO: make stretch sparse with a default value
  */
 
-public class OrthonormalHasher implements Hasher {
+public class OrthonormalHasher extends Hasher {
   double[] stretch;
-  final int dimensions;
+  int dimensions;
   
   public OrthonormalHasher(int dim, Double stretch) {
     dimensions = dim;
-    if (null != stretch) {
-      this.stretch = new double[dim];
-      for(int i = 0; i < dim; i++) {
-        this.stretch[i] = stretch;
-      }
+    this.stretch = new double[dim];
+    for(int i = 0; i < dim; i++) {
+      this.stretch[i] = stretch;
     }
   }
   
@@ -36,28 +34,18 @@ public class OrthonormalHasher implements Hasher {
   @Override
   public void setStretch(double[] stretch) {
     this.stretch = stretch;
+    this.dimensions = stretch.length;
   }
   
   @Override
-  public int[] hash(double[] values) {
-    int[] hashed = new int[values.length];
-    for(int i = 0; i < hashed.length; i++) {
+  public void hash(double[] values, int[] hashed) {
+    for(int i = 0; i < values.length; i++) {
       if (null != stretch) {
         hashed[i] = (int) Math.floor(values[i] / stretch[i]);
       } else {
         hashed[i] = (int) Math.floor(values[i]);
       } 
     }
-    return hashed;
-  }
-  
-  @Override
-  public void project(double[] values, double[] gp) {
-    for(int i = 0; i < values.length; i++)
-      if (null != stretch)
-        gp[i] = values[i] / stretch[i];
-      else
-        gp[i] = values[i];
   }
   
   @Override

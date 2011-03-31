@@ -6,8 +6,6 @@ package lsh.mahout.core;
 import java.util.HashMap;
 import java.util.Map;
 
-import lsh.core.Hasher;
-
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.math.Vector;
 

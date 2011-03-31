@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import lsh.core.Hasher;
-
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.math.Vector.Element;
@@ -46,20 +44,21 @@ public class SparseHash extends Hash {
     setLOD(lod);
   }
   
+  // is bullshit- VertexTransitive needs all of the hashed grid at once
   private void setValues(Hasher hasher, Iterator<Element> el) {
     sparseHashKeys = new FastByIDMap<Integer>();
     List<Integer> keys = new ArrayList<Integer>(dimensions);
     List<Integer> values = new ArrayList<Integer>(dimensions);
     int nonZero = 0;
     double[] d = new double[1];
-    int[] h = null;
+    int[] h = new int[1];
     
     while(el.hasNext()) {
       Element e = el.next();
       sparseHashKeys.put(e.index(), new Integer(nonZero));
       keys.add(e.index());
       d[0] = e.get();
-      h = hasher.hash(d);  
+      hasher.hash(d, h);  
       values.add(h[0]);
       nonZero++;
     } 
@@ -176,6 +175,7 @@ public class SparseHash extends Hash {
   
 }
 
+// on second thought... this don't really do anythin
 class SparseHashIterator implements Iterator<Integer> {
   final LongPrimitiveIterator it;
   final int[] sparseHashes;

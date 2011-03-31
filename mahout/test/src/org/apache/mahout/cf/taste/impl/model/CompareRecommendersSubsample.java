@@ -6,8 +6,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Random;
 
-import lsh.core.OrthonormalHasher;
-import lsh.core.VertexTransitiveHasher;
+import lsh.mahout.core.OrthonormalHasher;
 import lsh.mahout.core.SimplexSimilarity;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.SimplexUserNeighborhood;

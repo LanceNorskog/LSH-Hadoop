@@ -2,8 +2,6 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.util.Iterator;
 
-import lsh.core.Lookup;
-
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 
 public class LPIL implements LongPrimitiveIterator {

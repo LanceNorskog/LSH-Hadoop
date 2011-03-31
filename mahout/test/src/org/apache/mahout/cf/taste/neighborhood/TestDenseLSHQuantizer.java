@@ -1,7 +1,8 @@
-package org.apache.mahout.math.quantize;
+package org.apache.mahout.cf.taste.neighborhood;
 
 import java.util.Iterator;
 
+import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.junit.Assert;

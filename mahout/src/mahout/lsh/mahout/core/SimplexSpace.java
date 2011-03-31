@@ -3,24 +3,16 @@
  */
 package lsh.mahout.core;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lsh.core.Hasher;
-
-import org.apache.hadoop.io.IntWritable;
 import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.DenseVector;
@@ -90,7 +82,6 @@ public class SimplexSpace<T> {
     payloadSetMap = new HashMap<Hash, Set<T>>(50000);
     vectorSetMap = new HashMap<Hash, Set<Vector>>(50000);
     countMap = new HashMap<Hash,ChemicalInteger>(50000);
-
   }
   // populate hashes
   public void addVector(Vector v, T payload) {
@@ -149,21 +140,21 @@ public class SimplexSpace<T> {
    * Mask hash value to the current level of detail
    */
   public Hash getHashLOD(Vector v) {
-    int[] hashes;
+    int[] hashes = new int[dimensions];
     if (v.isDense()) {
       double[] values = new double[dimensions];
       getValues(v, values);
-      hashes = hasher.hash(values);
+      hasher.hash(values, hashes);
       return new DenseHash(hashes, lod);
     } else {
-      hashes = new int[dimensions];
+      // this only works with Orthonormal
       double[] d = new double[1];
       int[] h = new int[1];
       Iterator<Element> el = v.iterateNonZero();
       while(el.hasNext()) {
         Element e = el.next();
         d[0] = e.get();
-        h = hasher.hash(d);
+        hasher.hash(d, h);
         hashes[e.index()] = h[0];
       }
       return new SparseHash(hashes, lod);

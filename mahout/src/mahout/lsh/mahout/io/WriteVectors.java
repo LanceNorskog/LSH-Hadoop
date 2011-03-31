@@ -24,8 +24,6 @@ import org.apache.mahout.math.VectorWritable;
 import org.apache.mahout.utils.vectors.io.SequenceFileVectorWriter;
 import org.apache.mahout.utils.vectors.io.VectorWriter;
 
-import org.apache.mahout.utils.vectors.io.VectorWriter;
-
 import lsh.core.Corner;
 import lsh.core.Hasher;
 import lsh.core.Lookup;

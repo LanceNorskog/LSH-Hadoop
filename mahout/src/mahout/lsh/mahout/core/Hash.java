@@ -35,6 +35,10 @@ public abstract class Hash {
     other.lodMask = lodMask;
   }
   public abstract int getDimensions();
+  
+  /*
+   * number of actual entries in this Hash
+   */
   public abstract int getNumEntries();
   /*
    * return null if index does not exist

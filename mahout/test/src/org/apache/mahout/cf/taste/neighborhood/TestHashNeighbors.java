@@ -9,11 +9,12 @@ import org.apache.mahout.math.Vector;
 import org.junit.Test;
 
 import junit.framework.TestCase;
-import lsh.core.Hasher;
-import lsh.core.OrthonormalHasher;
+
 import lsh.mahout.core.DenseHash;
 import lsh.mahout.core.DenseHashNeighbors;
 import lsh.mahout.core.Hash;
+import lsh.mahout.core.Hasher;
+import lsh.mahout.core.OrthonormalHasher;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.SparseHash;
 
