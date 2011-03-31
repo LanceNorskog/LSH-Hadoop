@@ -31,22 +31,18 @@ import org.junit.runner.manipulation.Sorter;
  * shapes.
  * 
  * Each hypercube has N ^ D neighboring points, 
- * where N is the length of one side of the enclosing grid. 
- * Iterating  * (N + 1)
+ * where N is the number of grid points of one side of the enclosing grid. 
  *
- * Each simplex has D * (N + 1) neighbors, even in 
- * 
- * Only implements DenseVector
+ * Each simplex has D * (N + 1) neighbors.
  */
 
 
-public class VectorLSHQuantizer extends Quantizer<Vector> {
+public class DenseLSHQuantizer extends Quantizer<Vector> {
   static PairComparator sorter = new PairComparator();
-  static double EPSILON = 0.0000001;
 
   Hasher hasher = new OrthonormalHasher(); // until fully debugged!
 
-  public VectorLSHQuantizer() {
+  public DenseLSHQuantizer() {
     ;
   }
 
@@ -62,7 +58,10 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     Vector quantized = new DenseVector(values);
     return quantized;
   }  
-  
+
+  /*
+   * Return points in integer grid space.
+   */
   public int[] getHash(Vector v) {
     double[] values = new double[v.size()];
     int[] hashed = new int[v.size()];
@@ -128,7 +127,7 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
   }
 
   static public void main(String[] args) {
-    VectorLSHQuantizer vlq = new VectorLSHQuantizer();
+    DenseLSHQuantizer vlq = new DenseLSHQuantizer();
     double[] v1data = {1.2, 2.9};
     Vector v1 = new DenseVector(v1data);
     Vector q1 = vlq.quantize(v1);
@@ -142,7 +141,12 @@ public class VectorLSHQuantizer extends Quantizer<Vector> {
     printVectors(v1, nabes);
     nabes = vlq.getNearest(v2, null);
     printVectors(v2, nabes);
-  
+    
+    double[] v3data = {0.9, 2.2, 3.9};
+    Vector v3d = new DenseVector(v3data);
+    nabes = vlq.getNearest(v3d, null);
+    printVectors(v3d, nabes);
+
   }
 
   private static void printVectors(Vector v1, Iterator<Vector> nabes) {
