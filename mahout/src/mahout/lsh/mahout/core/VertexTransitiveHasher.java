@@ -44,7 +44,6 @@ public class VertexTransitiveHasher extends Hasher {
       hashed[i] = (int) (projected[i]);
     }
   }
-  
 
   
   // input space to hashed space

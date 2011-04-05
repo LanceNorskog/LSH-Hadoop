@@ -19,7 +19,7 @@ package org.apache.mahout.cf.taste.impl.eval;
 
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.recommender.ItemAverageRecommender;
@@ -38,7 +38,7 @@ public final class PreferenceBasedRecommenderEvaluatorTest extends TasteTestCase
     Recommender recommender2 = new ItemAverageRecommender(model);
     RecommenderEvaluator evaluator = new PreferenceBasedRecommenderEvaluator();
     
-    RunningAverage tracker = new CompactRunningAverage();
+    RunningAverage tracker = new FullRunningAverage();
     evaluator.evaluate(recommender1, recommender2, 100, tracker, Formula.MEANRANK);
     double eval = tracker.getAverage();
     assertEquals(0.185294508934021, eval, EPSILON);

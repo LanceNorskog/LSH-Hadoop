@@ -13,7 +13,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.clustering.canopy.Canopy;
 import org.apache.mahout.clustering.canopy.CanopyClusterer;
@@ -69,7 +69,7 @@ public class CanopyTest {
 
   public static void summarizeVector(Vector v) {
     int dimensions = v.size();
-    RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
+    RunningAverageAndStdDev stdev = new FullRunningAverageAndStdDev();
     double[] values = new double[v.size()];
     for(int i = 0; i < v.size(); i++) {
       values[i] = v.getQuick(i);

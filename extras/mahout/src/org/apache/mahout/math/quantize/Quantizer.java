@@ -44,10 +44,10 @@ public abstract class Quantizer<T> {
   /*
    * Return Iterator<T> of "nearest" matches to given value.
    * Where "nearest" can mean anything.
-   * Factor can be a count, a maximum distance, whatever is appropriate
+   * Possibly this needs an argument to control iteration.
    * Not required.
    */
-  public Iterator<T> getNearest(T value, Double factor) {
+  public Iterator<T> getNearest(T value) {
     throw new UnsupportedOperationException();
   }
 

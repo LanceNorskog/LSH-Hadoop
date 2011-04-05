@@ -10,7 +10,9 @@ import org.apache.mahout.math.Vector;
  * Use cases: 
  *    assign a vector to the centroid of the nearest cluster.
  * 
- * Slow N-ary implementation.  
+ * Slow N-ary implementation. 
+ * 
+ *  Would be useful for finding outliers.
  */
 
 public class VectorDiscreteQuantizer extends Quantizer<Vector> {

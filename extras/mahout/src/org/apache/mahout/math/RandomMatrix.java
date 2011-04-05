@@ -27,7 +27,7 @@ import org.apache.mahout.math.function.DoubleFunction;
 import com.google.common.collect.Maps;
 
 /** 
- * Matrix of random but consistent doubles. 
+ * Matrix of random but repeatable doubles. 
  * -Double.MAX_Value -> Double.MAX_VALUE 
  * Whatever the given generator provides
  * 
@@ -37,9 +37,9 @@ import com.google.common.collect.Maps;
  **/
 public class RandomMatrix extends ReadOnlyMatrix {
 
-  final long startSeed;
-  final private Random rnd = new Random();
-  final private long seed;
+  private long baseSeed;
+  final private Random rnd;
+  final boolean gaussian;
   
   /**
    * Constructs a zero-size matrix.
@@ -49,27 +49,31 @@ public class RandomMatrix extends ReadOnlyMatrix {
   public RandomMatrix() {
     cardinality[ROW] = 0;
     cardinality[COL] = 0;
-    startSeed = 0;
-    seed = 0;
+    baseSeed = 0;
+    gaussian = false;
+    rnd = null;
   }
 
   /**
    * Constructs random matrix of the given size.
    * @param rows  The number of rows in the result.
    * @param columns The number of columns in the result.
-   * @param rnd Random number generator.
+   * @param baseSeed The starting seed
+   * @param .
    */
-  public RandomMatrix(int rows, int columns, long startSeed) {
+  public RandomMatrix(int rows, int columns, Random rnd, boolean gaussian) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
-    this.startSeed = startSeed;
-    seed = startSeed;
+    this.rnd = rnd;
+    this.baseSeed = rnd.nextLong();
+    this.gaussian = gaussian;
   }
 
   @Override
   public Matrix clone() {
-    // it would thread-safe to pass the cache object itself.
-    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), startSeed);
+    // The matrix is immutable, but the bindings are mutable.
+    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), RandomUtils.getRandom(), gaussian);
+    clone.baseSeed = this.baseSeed;
     super.cloneBindings(clone);
     return clone;
   }
@@ -81,14 +85,14 @@ public class RandomMatrix extends ReadOnlyMatrix {
     if (column < 0 || column >= columnSize())
       throw new CardinalityException(column, columnSize());
     rnd.setSeed(getSeed(row, column));
-    double value = rnd.nextDouble();
+    double value = gaussian ? rnd.nextGaussian() : rnd.nextDouble();
     if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
       throw new Error("RandomVector: getQuick created NaN");
     return value;
   }
 
   private long getSeed(int row, int column) {
-    return seed + (row * columnSize()) + column;
+    return baseSeed + (row * columnSize()) + column;
   }
 
   @Override
@@ -234,14 +238,14 @@ public class RandomMatrix extends ReadOnlyMatrix {
   public boolean equals(Object o) {
     if (o.getClass() == RandomMatrix.class) {
       RandomMatrix r = (RandomMatrix) o;
-      return rowSize() == r.rowSize() && columnSize() == r.columnSize() && this.seed == r.seed;
+      return rowSize() == r.rowSize() && columnSize() == r.columnSize() && this.baseSeed == r.baseSeed;
     }
     return false;
   }
   
   @Override
   public int hashCode() {
-    return RandomUtils.hashLong(seed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize());
+    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize());
   }
 
 

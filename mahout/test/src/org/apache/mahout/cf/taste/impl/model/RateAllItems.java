@@ -17,7 +17,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommender;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensRecommenderBuilder;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.recommender.GenericItemBasedRecommender;
@@ -190,8 +190,8 @@ public class RateAllItems {
           prefsU.hashCode();
         int uprefs = uIDs.length;
         LongPrimitiveIterator items = model.getItemIDs();
-        RunningAverageAndStdDev stdR = new CompactRunningAverageAndStdDev();
-        RunningAverageAndStdDev stdM = new CompactRunningAverageAndStdDev();
+        RunningAverageAndStdDev stdR = new FullRunningAverageAndStdDev();
+        RunningAverageAndStdDev stdM = new FullRunningAverageAndStdDev();
 
         int count = 0;
         while (items.hasNext()) {
@@ -222,7 +222,7 @@ public class RateAllItems {
     LongPrimitiveIterator items = model.getItemIDs();
     Random rnd = new Random();
     while (items.hasNext()) {
-      RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
+      RunningAverageAndStdDev stdev = new FullRunningAverageAndStdDev();
       long itemID = items.nextLong();
       double sum = 0;
       int count = 0;
@@ -271,7 +271,7 @@ public class RateAllItems {
     LongPrimitiveIterator items = model.getItemIDs();
     Random rnd = new Random();
     while (items.hasNext()) {
-      RunningAverageAndStdDev stdev = new CompactRunningAverageAndStdDev();
+      RunningAverageAndStdDev stdev = new FullRunningAverageAndStdDev();
       long itemID = items.nextLong();
       double sum = 0;
       int count = 0;

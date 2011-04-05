@@ -36,7 +36,6 @@ import org.apache.mahout.math.Vector.Element;
 
 public class DenseLSHQuantizer extends Quantizer<Vector> {
   static PairComparator sorter = new PairComparator();
-
   final Hasher hasher;
   
   public DenseLSHQuantizer(Hasher hasher) {

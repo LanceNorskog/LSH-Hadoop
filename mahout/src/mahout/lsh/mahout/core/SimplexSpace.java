@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
@@ -263,7 +263,7 @@ public class SimplexSpace<T> {
   }
   
   public void stDevCounts() {
-    CompactRunningAverageAndStdDev std = new CompactRunningAverageAndStdDev();
+    FullRunningAverageAndStdDev std = new FullRunningAverageAndStdDev();
     for(Hash h: vectorSetMap.keySet()) {
       std.addDatum(vectorSetMap.get(h).size());
     }

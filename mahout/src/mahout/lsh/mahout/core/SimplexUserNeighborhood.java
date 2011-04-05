@@ -20,6 +20,8 @@ import org.apache.mahout.math.Vector;
  * different Levels Of Detail (LOD). Neighbors are users in the outer
  * outer space but not in the local space. (All users in the same
  * hash are distance 0, so they're not very useful.)
+ * 
+ * what is this about?
  */
 public class SimplexUserNeighborhood implements UserNeighborhood {
   public final SimplexSpace<Long> space;

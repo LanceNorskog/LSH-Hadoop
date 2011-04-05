@@ -15,8 +15,8 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
@@ -140,7 +140,7 @@ public class CompareRecommendersSubsample {
     DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Distribution.USER); 
     DataModel glModelTest = new SamplingDataModel(glModel2, 0.7, 1.0, SamplingDataModel.Distribution.USER); 
     RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
-    RunningAverage tracker = new CompactRunningAverage();
+    RunningAverage tracker = new FullRunningAverage();
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
@@ -160,7 +160,7 @@ public class CompareRecommendersSubsample {
 //    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.7, SamplingDataModel.Mode.HOLOGRAPHIC); 
 //    DataModel glModelTest = new SamplingDataModel(glModel, 0.7, 1.0, SamplingDataModel.Mode.HOLOGRAPHIC); 
     RecommenderEvaluator pbre = new PreferenceBasedRecommenderEvaluator();
-    RunningAverage tracker = new CompactRunningAverage();
+    RunningAverage tracker = new FullRunningAverage();
 
 //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
 //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
@@ -182,7 +182,7 @@ public class CompareRecommendersSubsample {
     RecommenderEvaluator bsrv = new OrderBasedRecommenderEvaluator();
     RunningAverage tracker = null;
 
-    tracker = new CompactRunningAverage();
+    tracker = new FullRunningAverage();
     bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, MEANRANK);
     System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
@@ -192,19 +192,19 @@ public class CompareRecommendersSubsample {
       System.out.println("LOD space");
       sun.spaceLOD.stDevCounts();
     }
-    //    tracker = new CompactRunningAverage();
+    //    tracker = new FullRunningAverage();
     //    bsrv.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, "estimating_pearson");
 //    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
-//    tracker = new CompactRunningAverage();
+//    tracker = new FullRunningAverage();
 //    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, "slope1_pearson");
 //    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
-//    tracker = new CompactRunningAverage();
+//    tracker = new FullRunningAverage();
 //    bsrv.evaluate(slope1Recco, estimatingRecco, SAMPLES, tracker, "slope1_estimating");
 //    System.err.println("Slope1 v.s. Estimating score: " + tracker.getAverage());
 
     // this is really slow.
     //    Recommender knnLLRecco = doKNN_LL_NegQO_Recco(glModel);
-    //    tracker = new CompactRunningAverage();
+    //    tracker = new FullRunningAverage();
     //    bsrv.evaluate(slope1Recco, knnLLRecco, SAMPLES, tracker, "slope1_knn_ll");
     //    System.err.println("Slope1 v.s. KNN Log Likelihood score: " + tracker.getAverage());
   }

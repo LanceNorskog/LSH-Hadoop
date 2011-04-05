@@ -25,7 +25,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.example.TasteOptionParser;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverageAndStdDev;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.model.SamplingDataModel;
 import org.apache.mahout.cf.taste.impl.model.SamplingDataModel.Distribution;
@@ -55,7 +55,7 @@ public final class GroupLensRecommenderEvaluatorRunner {
     DataModel testModel = new SamplingDataModel(model, 0.3, 1.0, Distribution.USER);
     Recommender trainingRecommender = recommenderBuilder.buildRecommender(trainingModel);
     Recommender testRecommender = recommenderBuilder.buildRecommender(testModel);
-    CompactRunningAverageAndStdDev tracker = new CompactRunningAverageAndStdDev();
+    FullRunningAverageAndStdDev tracker = new FullRunningAverageAndStdDev();
     int samples = 100;
     evaluator.evaluate(trainingRecommender, testRecommender, samples, tracker, RecommenderEvaluator.Formula.NONE);
     double average = tracker.getAverage();

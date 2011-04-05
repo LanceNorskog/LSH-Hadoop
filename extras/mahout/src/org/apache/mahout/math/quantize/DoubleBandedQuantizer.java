@@ -1,14 +1,18 @@
 package org.apache.mahout.math.quantize;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 /*
  * Quantize floating-point numbers to a given band
  * Also to float range.
  */
 
-public class DoubleContinuousQuantizer extends Quantizer<Double> {
+public class DoubleBandedQuantizer extends Quantizer<Double> {
   final double cut;
   
-  public DoubleContinuousQuantizer(double cut) {
+  public DoubleBandedQuantizer(double cut) {
     this.cut = cut; 
   }
   
@@ -31,6 +35,17 @@ public class DoubleContinuousQuantizer extends Quantizer<Double> {
     d = Math.floor(d);
     return Math.floor(d/cut);
     }
+  }
+  
+  // return bracketing values of quantized value
+  
+  @Override
+  public Iterator<Double> getNearest(Double value) {
+    Double q = quantize(value);
+    List<Double> nabes = new ArrayList<Double>(2);
+    nabes.add(q - cut);
+    nabes.add(q + cut);
+    return nabes.iterator();
   }
 
 }

@@ -21,7 +21,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
-import org.apache.mahout.cf.taste.impl.common.CompactRunningAverage;
+import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.recommender.ItemAverageRecommender;
@@ -59,7 +59,7 @@ public final class OrderBasedRecommenderEvaluatorTest extends TasteTestCase {
                             RecommenderEvaluator evaluator,
                             double expected,
                             Formula formula) throws TasteException {
-    RunningAverage tracker = new CompactRunningAverage();
+    RunningAverage tracker = new FullRunningAverage();
     evaluator.evaluate(recommender1, recommender2, 100, tracker, formula);
     double eval = tracker.getAverage();
     assertEquals(expected, eval, EPSILON);

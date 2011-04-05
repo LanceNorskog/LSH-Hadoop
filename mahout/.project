@@ -3,6 +3,7 @@
 	<name>lsh-mahout</name>
 	<comment></comment>
 	<projects>
+		<project>extras</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
