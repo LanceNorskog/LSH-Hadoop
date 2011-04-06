@@ -17,8 +17,6 @@
 
 package org.apache.mahout.math;
 
-import java.util.Random;
-
 import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.ReadOnlyVector;
 import org.apache.mahout.math.TestReadOnlyVectorBase;
@@ -32,7 +30,17 @@ public class TestRandomVector extends TestReadOnlyVectorBase {
 
   @Override
   public ReadOnlyVector generateTestVector(int cardinality) {
-    return new RandomVector(cardinality, new Random());
+    return new RandomVector(cardinality, 0, false);
+  }
+  
+  @Test
+  public void testRepeatability() {
+    double[] twok = new double[2000];
+    Vector big = generateTestVector(2000);
+    for(int i = 0; i < 2000; i++)
+      twok[i] = big.get(i);
+    for(int i = 1999; i >= 0; i--)
+      assertTrue(twok[i] == big.get(i));
   }
 
   @Test

@@ -17,15 +17,10 @@
 
 package org.apache.mahout.math;
 
-import org.apache.mahout.math.function.Functions;
-import org.apache.mahout.math.function.VectorFunction;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
 
 public class TestRandomMatrix extends TestReadOnlyMatrixBase {
 
@@ -51,7 +46,25 @@ public class TestRandomMatrix extends TestReadOnlyMatrixBase {
   @Override
   public
    ReadOnlyMatrix matrixFactory(int rows, int columns) {
-    return new RandomMatrix(rows, columns, 0);
+    return new RandomMatrix(rows, columns, 0, false, null, null);
+  }
+
+  @Override
+  public
+   ReadOnlyMatrix matrixFactory(int rows, int columns, Map<String,Integer> rowLabelBindings, Map<String,Integer> columnLabelBindings) {
+    return new RandomMatrix(rows, columns, 0, false, rowLabelBindings, columnLabelBindings);
+  }
+  
+  @Test
+  public void testRepeatability() {
+    double[] samples = new double[400 * 600];
+    Matrix big = matrixFactory(400, 600);
+    for(int row = 0; row < 400; row++)
+      for(int column = 0; column < 600; column++)
+        samples[row * 600 + column] = big.get(row, column);
+    for(int row = 399; row >= 0; row--)
+      for(int column = 599; column >= 0; column--)
+        assertTrue(samples[row * 600 + column] == big.get(row, column));
   }
 
   @Test
@@ -77,7 +90,6 @@ public class TestRandomMatrix extends TestReadOnlyMatrixBase {
   @Override
   public void testDeterminant() {
     Matrix m = matrixFactory(5, 5);
-    double d = m.determinant();
     assertEquals("determinant", -1.4178246803400959E-16, m.determinant(), EPSILON);
   }
 

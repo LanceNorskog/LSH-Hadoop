@@ -1,6 +1,20 @@
 /**
- * 
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package org.apache.mahout.math;
 
 import java.util.Iterator;
@@ -8,26 +22,23 @@ import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.ReadOnlyVector;
-import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.ReadOnlyVector.AllIterator;
-import org.apache.mahout.math.Vector.Element;
 
 /**
  * 
  * Vector with repeatable random values.
  *
+ * Can only use java.util.Random as generator from RandomUtils does not honor setSeed()
  */
 public class RandomVector extends ReadOnlyVector {
   
-  final private Random rnd;
-  final private int seed;
+  final private Random rnd = new Random(0);
+  final private int baseSeed;
   final boolean gaussian;
   
   // required for serialization
   public RandomVector() {
     super(0);
-    rnd = RandomUtils.getRandom();
-    seed = 0;
+    baseSeed = 0;
     gaussian = false;
   }
   
@@ -35,24 +46,12 @@ public class RandomVector extends ReadOnlyVector {
    * @param size
    * @param rnd
    */
-  public RandomVector(int size, Random rnd) {
+  public RandomVector(int size, int seed, boolean gaussian) {
     super(size);
-    this.rnd = rnd;
-    seed = rnd.nextInt();
-    gaussian = false;
-  }
-  
-  /*
-   * @param size
-   * @param gaussian
-   */
-  public RandomVector(int size, boolean gaussian) {
-    super(size);
-    this.rnd = RandomUtils.getRandom();
-    seed = rnd.nextInt();
+    baseSeed = seed;
     this.gaussian = gaussian;
   }
-
+  
   public int getNumNondefaultElements() {
     return size();
   }
@@ -63,7 +62,7 @@ public class RandomVector extends ReadOnlyVector {
   }
   
   private long getSeed(int index) {
-    return seed + index;
+    return baseSeed + index;
   }
   
   public Iterator<Element> iterateNonZero() {
@@ -73,5 +72,20 @@ public class RandomVector extends ReadOnlyVector {
   public Iterator<Element> iterator() {
     return new AllIterator(this);
   }
+  
+  @Override
+  public boolean equals(Object o) {
+    if (o.getClass() == RandomVector.class) {
+      RandomVector r = (RandomVector) o;
+      return size() == r.size() && baseSeed == r.baseSeed && gaussian == r.gaussian;
+    }
+    return false;
+  }
+  
+  @Override
+  public int hashCode() {
+    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(size() ^ (gaussian ? 7 : 11));
+  }
+
   
 }

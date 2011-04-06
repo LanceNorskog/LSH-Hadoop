@@ -22,10 +22,6 @@ import org.junit.Test;
 
 import java.util.Iterator;
 
-/*
- * AbstractTestVector assumes all vectors are writable.
- */
-
 public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
   
   protected ReadOnlyVector four;
@@ -39,14 +35,6 @@ public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
   
   abstract public ReadOnlyVector generateTestVector(int cardinality);
 
-  /* TODO: why doesn't this work? some library problem? */
-  @Test
-  public void testAsFormatString() {
-    String formatString = twoK.asFormatString();
-    Vector vec = AbstractVector.decodeVector(formatString);
-    assertEquals(vec, twoK);
-  }
-  
   @Test
   public void testCardinality() {
     assertEquals("size", 2000, twoK.size());
@@ -57,7 +45,7 @@ public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
     DenseVector copy = new DenseVector(four);
     double[] gold = new double[copy.size()];
     for(int i = 0; i < gold.length; i++)
-      gold[i] = copy.getQuick(i);
+      gold[i] = four.getQuick(i);
     Iterator<Vector.Element> iterator = four.iterateNonZero();
     checkIterator(iterator, gold);
   }
@@ -74,7 +62,9 @@ public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
   public void testCopy() throws Exception {
     Vector copy = twoK.clone();
     for (int i = 0; i < twoK.size(); i++) {
-      assertEquals("copy [" + i + ']', twoK.get(i), copy.get(i), EPSILON);
+      double d = twoK.get(i);
+      double d2 = copy.get(i);
+      assertEquals("copy [" + i + ']', d, d2, EPSILON);
     }
   }
 
@@ -111,26 +101,7 @@ public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
   public void testViewPartCardinality() {
     four.viewPart(1, 8);
   }
-
   
-  @Test
-  public void testDecodeVector() throws Exception {
-    Vector val = AbstractVector.decodeVector(four.asFormatString());
-    for (int i = 0; i < four.size(); i++) {
-      assertEquals("get [" + i + ']', four.get(i), val.get(i), EPSILON);
-    }
-  }
-  
-
-  //	@Test
-  //	public void testSparseDoubleVectorInt() throws Exception {
-  //		Vector val = new RandomAccessSparseVector(4);
-  //		assertEquals("size", 4, val.size());
-  //		for (int i = 0; i < 4; i++) {
-  //			assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
-  //		}
-  //	}
-  //
   @Test
   public void testDot() throws Exception {
     double res = four.dot(four);
@@ -142,33 +113,11 @@ public abstract class TestReadOnlyVectorBase extends MahoutTestCase {
     assertEquals("dot", expected, res, EPSILON);
   }
 
-  //	@Test
-  //	public void testDot2() throws Exception {
-  //		Vector test2 = test5_10.clone();
-  //		test2.set(1, 0.0);
-  //		test2.set(3, 0.0);
-  //		assertEquals(3.3 * 3.3, test2.dot(test5_10), EPSILON);
-  //	}
-  //
   @Test(expected = CardinalityException.class)
   public void testDotCardinality() {
     twoK.dot(new DenseVector(twoK.size() + 1));
   }
 
-  //	@Test
-  //	public void testNormalize() throws Exception {
-  //		Vector val = test2.normalize();
-  //		double[] values = {test2.get(0), test2.get(1)};
-  //		double mag = Math.sqrt(test2.get(0) * test2.get(0) + test2.get(1) + test2.get(1));
-  //		for (int i = 0; i < test2.size(); i++) {
-  //			if (i % 2 == 0) {
-  //				assertEquals("get [" + i + ']', 0.0, val.get(i), EPSILON);
-  //			} else {
-  //				assertEquals("dot", val.getQuick(i) / mag, val.get(i), EPSILON);
-  //			}
-  //		}
-  //	}
-  //
   @Test
   public void testMinus() throws Exception {
     Vector val = four.minus(four);

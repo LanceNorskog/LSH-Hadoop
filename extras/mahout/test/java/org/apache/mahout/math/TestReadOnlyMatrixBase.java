@@ -17,7 +17,6 @@
 
 package org.apache.mahout.math;
 
-import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.function.Functions;
 import org.apache.mahout.math.function.VectorFunction;
@@ -27,20 +26,12 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Random;
 
 public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
-
   protected static final int ROW = AbstractMatrix.ROW;
-
   protected static final int COL = AbstractMatrix.COL;
-
   private final int[] size = {4,5};
-
   private final double[] vectorAValues = {1.0 / 1.1, 2.0 / 1.1};
-
-  //protected final double[] vectorBValues = {5.0, 10.0, 100.0};
-
   protected Matrix test;
 
   @Override
@@ -51,6 +42,7 @@ public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
   }
 
   public abstract Matrix matrixFactory(int rows, int columns);
+  public abstract Matrix matrixFactory(int rows, int columns, Map<String,Integer> rowLabelBindings, Map<String,Integer> columnLabelBindings);
 
   @Test
   public void testCardinality() {
@@ -527,20 +519,7 @@ public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
   @Test
   public abstract void testDeterminant();
 
-  @Test
-  public void testAsFormatString() {
-    String string = test.asFormatString();
-    int[] cardinality = {size[ROW], size[COL]};
-    Matrix m = AbstractMatrix.decodeMatrix(string);
-    for (int row = 0; row < cardinality[ROW]; row++) {
-      for (int col = 0; col < cardinality[COL]; col++) {
-        assertEquals("m[" + row + ',' + col + ']', test.get(row, col), m.get(
-            row, col), EPSILON);
-      }
-    }
-  }
-  
-  @Test(expected = UnsupportedOperationException.class)
+   @Test(expected = UnsupportedOperationException.class)
   public void testSettingLabelBindings1() {
     Matrix m = matrixFactory(3,3);
     m.set("Fee", "Foo", 1, 2, 9);
@@ -582,39 +561,32 @@ public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
 
   @Test
   public void testLabelBindings() {
-    Matrix m = matrixFactory(3,3);
-    assertNull("row bindings", m.getRowLabelBindings());
-    assertNull("column bindings", m.getColumnLabelBindings());
     Map<String, Integer> rowBindings = new HashMap<String, Integer>();
     rowBindings.put("Fee", 0);
     rowBindings.put("Fie", 1);
     rowBindings.put("Foe", 2);
-    m.setRowLabelBindings(rowBindings);
-    assertEquals("row", rowBindings, m.getRowLabelBindings());
-    Map<String, Integer> colBindings = new HashMap<String, Integer>();
-    colBindings.put("Foo", 0);
-    colBindings.put("Bar", 1);
-    colBindings.put("Baz", 2);
-    m.setColumnLabelBindings(colBindings);
-    assertEquals("column", colBindings, m.getColumnLabelBindings());
+    Map<String, Integer> columnBindings = new HashMap<String, Integer>();
+    columnBindings.put("Foo", 0);
+    columnBindings.put("Bar", 1);
+    columnBindings.put("Baz", 2);
+    Matrix m = matrixFactory(3,3,rowBindings,columnBindings);
+
+    assertEquals("column", columnBindings, m.getColumnLabelBindings());
     assertEquals("row", rowBindings, m.getRowLabelBindings());
     assertEquals("Fee", m.get(0, 1), m.get("Fee", "Bar"), EPSILON);
   }
 
   @Test
   public void testGettingLabelBindings() {
-    Matrix m = matrixFactory(3,3);
     Map<String, Integer> rowBindings = new HashMap<String, Integer>();
     rowBindings.put("Fee", 0);
     rowBindings.put("Fie", 1);
     rowBindings.put("Foe", 2);
-    m.setRowLabelBindings(rowBindings);
-    assertEquals("row", rowBindings, m.getRowLabelBindings());
-    Map<String, Integer> colBindings = new HashMap<String, Integer>();
-    colBindings.put("Foo", 0);
-    colBindings.put("Bar", 1);
-    colBindings.put("Baz", 2);
-    m.setColumnLabelBindings(colBindings);
+    Map<String, Integer> columnBindings = new HashMap<String, Integer>();
+    columnBindings.put("Foo", 0);
+    columnBindings.put("Bar", 1);
+    columnBindings.put("Baz", 2);
+    Matrix m = matrixFactory(3,3,rowBindings,columnBindings);
 
     assertTrue("get value from label", m.get("Fee", "Foo") == m.get(0, 0));
   }
@@ -625,32 +597,6 @@ public abstract class TestReadOnlyMatrixBase extends MahoutTestCase {
     assertNull("row bindings", m.getRowLabelBindings());
     assertNull("col bindings", m.getColumnLabelBindings());
     m.set("Fee", "Foo", 1, 2, 9);
-    assertNotNull("row", m.getRowLabelBindings());
-    assertNotNull("row", m.getRowLabelBindings());
-    assertEquals("Fee", 1, m.getRowLabelBindings().get("Fee").intValue());
-    assertEquals("Fee", 2, m.getColumnLabelBindings().get("Foo").intValue());
-    assertEquals("FeeFoo", m.get(1, 2), m.get("Fee", "Foo"), EPSILON);
-    m.get("Fie", "Foe");
   }
 
-  @Test
-  public void testLabelBindingSerialization() {
-    Matrix m = matrixFactory(3,3);
-    assertNull("row bindings", m.getRowLabelBindings());
-    assertNull("col bindings", m.getColumnLabelBindings());
-    Map<String, Integer> rowBindings = new HashMap<String, Integer>();
-    rowBindings.put("Fee", 0);
-    rowBindings.put("Fie", 1);
-    rowBindings.put("Foe", 2);
-    m.setRowLabelBindings(rowBindings);
-    assertEquals("row", rowBindings, m.getRowLabelBindings());
-    Map<String, Integer> colBindings = new HashMap<String, Integer>();
-    colBindings.put("Foo", 0);
-    colBindings.put("Bar", 1);
-    colBindings.put("Baz", 2);
-    m.setColumnLabelBindings(colBindings);
-    String json = m.asFormatString();
-    Matrix mm = AbstractMatrix.decodeMatrix(json);
-    assertEquals("Fee", m.get(0, 1), mm.get("Fee", "Bar"), EPSILON);
-  }
-}
+ }

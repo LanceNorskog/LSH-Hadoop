@@ -17,28 +17,21 @@
 
 package org.apache.mahout.math;
 
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
-import org.apache.mahout.math.AbstractMatrix.TransposeViewVector;
-import org.apache.mahout.math.function.DoubleDoubleFunction;
-import org.apache.mahout.math.function.DoubleFunction;
-
-import com.google.common.collect.Maps;
 
 /** 
  * Matrix of random but repeatable doubles. 
  * -Double.MAX_Value -> Double.MAX_VALUE 
- * Whatever the given generator provides
  * 
- * Seed for [row][col] is this.seed + (row * #columns) + column.
- * This allows a RandomVector to take seed + (row * #columns) as its seed
- * and be reproducible from this matrix.
- **/
+ * Can only use java.util.Random as generator from RandomUtils does not honor setSeed()
+ */
 public class RandomMatrix extends ReadOnlyMatrix {
 
   private long baseSeed;
-  final private Random rnd;
+  final private Random rnd = new Random(0);
   final boolean gaussian;
   
   /**
@@ -51,7 +44,6 @@ public class RandomMatrix extends ReadOnlyMatrix {
     cardinality[COL] = 0;
     baseSeed = 0;
     gaussian = false;
-    rnd = null;
   }
 
   /**
@@ -60,23 +52,17 @@ public class RandomMatrix extends ReadOnlyMatrix {
    * @param columns The number of columns in the result.
    * @param baseSeed The starting seed
    * @param .
+   * @throws Exception 
    */
-  public RandomMatrix(int rows, int columns, Random rnd, boolean gaussian) {
+  public RandomMatrix(int rows, int columns, long seed, boolean gaussian, Map<String,Integer> rowBindings, Map<String,Integer> columnBindings) {
     cardinality[ROW] = rows;
     cardinality[COL] = columns;
-    this.rnd = rnd;
-    this.baseSeed = rnd.nextLong();
+    this.baseSeed = seed;
     this.gaussian = gaussian;
+    this.rowLabelBindings = rowBindings;
+    this.columnLabelBindings = columnBindings;
   }
 
-  @Override
-  public Matrix clone() {
-    // The matrix is immutable, but the bindings are mutable.
-    RandomMatrix clone = new RandomMatrix(rowSize(), columnSize(), RandomUtils.getRandom(), gaussian);
-    clone.baseSeed = this.baseSeed;
-    super.cloneBindings(clone);
-    return clone;
-  }
 
   @Override
   public double getQuick(int row, int column) {
@@ -86,168 +72,26 @@ public class RandomMatrix extends ReadOnlyMatrix {
       throw new CardinalityException(column, columnSize());
     rnd.setSeed(getSeed(row, column));
     double value = gaussian ? rnd.nextGaussian() : rnd.nextDouble();
-    if (!(value > Double.MIN_VALUE && value < Double.MAX_VALUE))
-      throw new Error("RandomVector: getQuick created NaN");
     return value;
   }
 
   private long getSeed(int row, int column) {
     return baseSeed + (row * columnSize()) + column;
   }
-
-  @Override
-  public Matrix like() {
-    return new DenseMatrix(rowSize(), columnSize());
-  }
-
-  @Override
- public Matrix like(int rows, int columns) {
-    return new DenseMatrix(rows, columns);
-  }
-
-  @Override
-  public void setQuick(int row, int column, double value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public int[] getNumNondefaultElements() {
-    return size();
-  }
-
-  @Override
-  public Matrix viewPart(int[] offset, int[] size) {
-    int rowOffset = offset[ROW];
-    int rowsRequested = size[ROW];
-    int columnOffset = offset[COL];
-    int columnsRequested = size[COL];
-
-    return viewPart(rowOffset, rowsRequested, columnOffset, columnsRequested);
-  }
-
-  @Override
-  public Matrix viewPart(int rowOffset, int rowsRequested, int columnOffset, int columnsRequested) {
-    if (rowOffset < 0) {
-      throw new IndexException(rowOffset, rowSize());
-    }
-    if (rowOffset + rowsRequested > rowSize()) {
-      throw new IndexException(rowOffset + rowsRequested, rowSize());
-    }
-    if (columnOffset < 0) {
-      throw new IndexException(columnOffset, columnSize());
-    }
-    if (columnOffset + columnsRequested > columnSize()) {
-      throw new IndexException(columnOffset + columnsRequested, columnSize());
-    }
-    return new MatrixView(this, new int[]{rowOffset, columnOffset}, new int[]{rowsRequested, columnsRequested});
-  }
-
-  @Override
-  public Matrix assign(double value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Matrix assignColumn(int column, Vector other) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Matrix assignRow(int row, Vector other) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public Matrix assign(double[][] values) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public Matrix assign(DoubleFunction function) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public Matrix assign(Matrix other, DoubleDoubleFunction function) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public void set(int row, double[] data) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public void set(int row, int column, double value) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public Matrix assign(Matrix other) {
-    throw new UnsupportedOperationException();    
-  }
-  
-  public Vector getColumn(int column) {
-    if (column < 0 || column >= columnSize()) {
-      throw new IndexException(column, columnSize());
-    }
-    return new TransposeViewVector(this, column);
-  }
-  
-  public Vector getRow(int row) {
-    if (row < 0 || row >= rowSize()) {
-      throw new IndexException(row, rowSize());
-    }
-    Vector wrap = new MatrixVectorView(this, row, 0, 0, 1);
-    return wrap;
-  }
-  
-  /*
-   * Can set bindings for all rows and columns.
-   * Can fetch values for bindings.
-   * Cannot set values with bindings.
-   */
-  
-  @Override
-  public
-  void set(String rowLabel, String columnLabel, double value) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public
-  void set(String rowLabel, String columnLabel, int row, int column, double value) {
-    throw new UnsupportedOperationException();
-
-  }
-
-  @Override
-  public
-  void set(String rowLabel, double[] rowData) {
-    throw new UnsupportedOperationException();
-
-  }
-
-  @Override
-  public
-  void set(String rowLabel, int row, double[] rowData) {		
-    throw new UnsupportedOperationException();
-  }
   
   @Override
   public boolean equals(Object o) {
     if (o.getClass() == RandomMatrix.class) {
       RandomMatrix r = (RandomMatrix) o;
-      return rowSize() == r.rowSize() && columnSize() == r.columnSize() && this.baseSeed == r.baseSeed;
+      return rowSize() == r.rowSize() && columnSize() == r.columnSize() &&
+        baseSeed == r.baseSeed && gaussian == r.gaussian;
     }
     return false;
   }
   
   @Override
   public int hashCode() {
-    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize());
+    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize() ^ (gaussian ? 7 : 11));
   }
-
-
 
 }
