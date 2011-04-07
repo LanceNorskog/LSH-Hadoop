@@ -1,6 +1,10 @@
 package org.apache.mahout.math.quantize;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.Vector;
 
@@ -45,4 +49,38 @@ public class VectorDiscreteQuantizer extends Quantizer<Vector> {
     target.assign(closest);
   }   
     
+  @Override
+  public Iterator<Vector> getNearest(Vector value) {
+    return new NaborIterator(value);
+  }
+}
+
+class NaborIterator implements Iterator<Vector> {
+  final Vector v;
+  int dim = 0;
+  boolean sign = false;
+  
+  NaborIterator(Vector v) {
+    this.v = v;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return dim < v.size();
+  }
+
+  @Override
+  public Vector next() {
+    Vector nabe = v.like();
+    
+    
+    return nabe;
+  }
+
+  @Override
+  public void remove() {
+    // TODO Auto-generated method stub
+    
+  }
+  
 }
