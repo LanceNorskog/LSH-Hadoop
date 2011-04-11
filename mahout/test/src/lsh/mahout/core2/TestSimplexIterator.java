@@ -2,6 +2,7 @@ package lsh.mahout.core2;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.mahout.math.DenseVector;
@@ -61,21 +62,57 @@ public final class TestSimplexIterator extends Assert {
       SimplexIterator sit) {
     Set<Simplex> saved = new HashSet<Simplex>();
     int count = 0;
+    int ones = 0;
     while (sit.hasNext()) {
       Simplex s = sit.next();
       int[] hash = s.getValues();
       int[] orig = hashed[count];
       saved.add(s);
+      Simplex base = new Simplex(orig);
+      assert(base.equals(s) && s.equals(base));
+      count++;
+    }
+    assertTrue(saved.size() == (dim + 1));
+   
+  }
+
+  @Test
+  public void testLarge() {
+    Random rnd = new Random(0);
+    int dim = 500;
+    double[] big = new double[dim];
+    for(int i = 0; i < dim; i++ ) {
+      big[i] = rnd.nextInt() + rnd.nextGaussian();
+    }
+    Hasher hasher = new OrthonormalHasher(dim, 1.0);
+    int[] orig = new int[dim];
+    hasher.hash(big, orig);
+    SimplexIterator<?> sit = new SimplexIterator(hasher, new DenseVector(big));
+    distances(dim, sit, orig);
+  }
+  
+  private void distances(int dim, SimplexIterator sit, int[] orig) {
+    Set<Simplex> saved = new HashSet<Simplex>();
+    int count = 0;
+    int ones = 0;
+    
+    while (sit.hasNext()) {
+      Simplex s = sit.next();
+      int[] hash = s.getValues();
+      saved.add(s);
       for(int i = 0; i < dim; i++) {
-        int delta = Math.abs(hash[i] - orig[i]);
+        int delta = hash[i] - orig[i];
         assertTrue(delta == 0 | delta == 1);
+        if (delta == 1)
+          ones++;
       }
       count++;
     }
     assertTrue(saved.size() == (dim + 1));
    
   }
-//    for(int i = 0; i < dim; i++) {
+
+  //    for(int i = 0; i < dim; i++) {
 //      assertTrue(q1.get(i) < lower.get(i));
 //    }
 //    
