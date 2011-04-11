@@ -225,8 +225,7 @@ class UnhashIterator implements Iterator<Vector> {
 
   @Override
   public void remove() {
-    // TODO Auto-generated method stub
-    
+    throw new UnsupportedOperationException();
   }
   
 }
