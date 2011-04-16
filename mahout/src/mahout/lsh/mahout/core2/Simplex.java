@@ -17,25 +17,17 @@ import org.apache.commons.collections.iterators.ArrayIterator;
  * Why is this mutable?
  */
 
-public class Simplex<T> {
+public class Simplex {
   public int[] base;
-  T payload;
   int dimensions;
   
   public Simplex(int size) {
     dimensions = size;
-    payload = null;
-  }
-  
-  public Simplex(int size, T payload) {
-    base = new int[size];
-    this.payload = payload;
   }
   
   public Simplex(int[] hash) {
     this.base = hash;
     dimensions = hash.length;
-    payload = null;
   }
 
   public void setValues(int[] values) {
@@ -55,14 +47,6 @@ public class Simplex<T> {
     if (null == base)
       base = new int[dimensions];
     base[index] = value;
-  }
-  
-  public T getPayload() {
-    return payload;
-  }
-  
-  public void setPayload(T payload) {
-    this.payload = payload;
   }
   
   public int getDimensions() {
@@ -93,7 +77,7 @@ public class Simplex<T> {
   
   @Override
   public boolean equals(Object obj) {
-    Simplex<T> other = (Simplex<T>) obj;
+    Simplex other = (Simplex) obj;
     boolean same = Arrays.equals(base, other.base);
     return dimensions == other.dimensions && same;
   }

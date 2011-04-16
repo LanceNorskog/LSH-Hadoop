@@ -45,8 +45,8 @@ import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 //import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 
-import working.SemanticVectorFactory;
 
 /*
  * Compare contents and order of recommendation returned by Recommenders and DataModels.

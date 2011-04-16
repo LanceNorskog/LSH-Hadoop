@@ -8,7 +8,7 @@ import java.util.List;
  */
 
 public class SimplexSpace<T> {
-  final List<Simplex<T>> simplexes = new ArrayList<Simplex<T>>();
+  final List<Simplex> simplexes = new ArrayList<Simplex>();
   
   public SimplexSpace() {
     

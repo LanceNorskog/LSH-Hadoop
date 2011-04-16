@@ -25,7 +25,7 @@ import org.apache.mahout.math.Vector.Element;
  */
 
 
-public class SimplexIterator<T> implements Iterator<Simplex<T>> {
+public class SimplexIterator implements Iterator<Simplex> {
   static PairComparator sorter = new PairComparator();
   final Hasher hasher;
   final int dimensions;
@@ -50,12 +50,12 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
   }
 
   @Override
-  public Simplex<T> next() {
+  public Simplex next() {
     if (! hasNext())
       throw new IllegalStateException("No next vector");
     int[] hash = nabes.get(index);
     index++;
-   return new Simplex<T>(hash);
+   return new Simplex(hash);
   }
 
   @Override

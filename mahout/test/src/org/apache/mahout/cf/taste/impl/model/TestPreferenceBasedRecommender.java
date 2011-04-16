@@ -40,8 +40,8 @@ import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 //import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 
-import working.SemanticVectorFactory;
 
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula;

@@ -19,8 +19,8 @@ import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 //import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 
-import working.SemanticVectorFactory;
 
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
 import org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula;
@@ -74,15 +74,15 @@ public class SimplexSpaceUtils {
   }
   
   private static SimplexSpace<Long> getSpaceOrthonormal(int DIMS) {
-  DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
-//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+//  DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
+    DistanceMeasure measure = new EuclideanDistanceMeasure();
     return new SimplexSpace<Long>(new OrthonormalHasher(DIMS, SIZE), DIMS, measure, false, false);
   }
   
   private static SimplexSpace<Long> getSpaceVT(int DIMS) {
-    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
+//    DistanceMeasure measure = new MinkowskiDistanceMeasure(2.5);
 //    DistanceMeasure measure = new ChebyshevDistanceMeasure();
-//    DistanceMeasure measure = new ManhattanDistanceMeasure();
+    DistanceMeasure measure = new ManhattanDistanceMeasure();
 //    DistanceMeasure measure = new EuclideanDistanceMeasure();
     return new SimplexSpace<Long>(new VertexTransitiveHasher(DIMS, SIZE), DIMS, measure, false, false);
   }

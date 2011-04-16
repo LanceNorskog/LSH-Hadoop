@@ -87,7 +87,7 @@ public final class TestSimplexIterator extends Assert {
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     int[] orig = new int[dim];
     hasher.hash(big, orig);
-    SimplexIterator<?> sit = new SimplexIterator(hasher, new DenseVector(big));
+    SimplexIterator sit = new SimplexIterator(hasher, new DenseVector(big));
     distances(dim, sit, orig);
   }
   

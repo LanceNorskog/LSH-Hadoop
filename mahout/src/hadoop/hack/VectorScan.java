@@ -17,17 +17,6 @@
 
 package hack;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
-
-import lsh.core.Hasher;
-import lsh.core.OrthonormalHasher;
-import lsh.core.VertexTransitiveHasher;
 import lsh.mahout.core.Hash;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.SparseHash;
@@ -180,7 +169,7 @@ public final class VectorScan {
 
   private static SimplexSpace<String>[] makeSpaces(int start, int n, boolean doCount) {
 //    Hasher hasher = new OrthonormalHasher(DIMS, 0.001d);
-    Hasher hasher = new VertexTransitiveHasher(DIMS, 0.001d);
+    lsh.mahout.core.Hasher hasher = new lsh.mahout.core.VertexTransitiveHasher(DIMS, 0.001d);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     SimplexSpace<String>[] spaces = new SimplexSpace[n];
     for(int i = start; i < n; i++) {
