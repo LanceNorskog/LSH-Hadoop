@@ -8,9 +8,7 @@ import lsh.mahout.core.Hasher;
 import lsh.mahout.core.OrthonormalHasher;
 import lsh.mahout.core.SimplexSpace;
 import lsh.mahout.core.VertexTransitiveHasher;
-import lsh.mahout.core2.Simplex;
-import lsh.mahout.core2.SimplexIterator;
-import lsh.mahout.core2.SimplexVector;
+
 
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
@@ -21,6 +19,9 @@ import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.simplex.Simplex;
+import org.apache.mahout.math.simplex.SimplexIterator;
+import org.apache.mahout.math.simplex.SimplexVector;
 import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 
 

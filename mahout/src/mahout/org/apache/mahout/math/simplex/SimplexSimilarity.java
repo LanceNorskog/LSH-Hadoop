@@ -1,7 +1,7 @@
 /**
  * 
- *//*
-package lsh.mahout.core;
+ */
+package org.apache.mahout.math.simplex;
 
 import java.util.Collection;
 
@@ -12,10 +12,10 @@ import org.apache.mahout.cf.taste.similarity.PreferenceInferrer;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 
-*//**
+/**
  * Implement UserSimilarity and ItemSimilarity using SimplexSpace. 
  * SimplexSpace can store User->Item or Item->Item.
- *//*
+ */
 public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
   private final SimplexSpace<Long> userSpace;
   private final SimplexSpace<Long> itemSpace;
@@ -27,17 +27,17 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     this.measure = measure;
   }
 
-   (non-Javadoc)
+  /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.similarity.UserSimilarity#setPreferenceInferrer(org.apache.mahout.cf.taste.similarity.PreferenceInferrer)
-   
+   */
   @Override
   public void setPreferenceInferrer(PreferenceInferrer inferrer) {
     throw new UnsupportedOperationException();
   }
 
-   (non-Javadoc)
+  /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.similarity.UserSimilarity#userSimilarity(long, long)
-   
+   */
   @Override
   public double userSimilarity(long userID1, long userID2)
       throws TasteException {
@@ -45,17 +45,17 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     return d;
   }
 
-   (non-Javadoc)
+  /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.common.Refreshable#refresh(java.util.Collection)
-   
+   */
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
     throw new UnsupportedOperationException();
   }
 
-   (non-Javadoc)
+  /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.similarity.ItemSimilarity#itemSimilarities(long, long[])
-   
+   */
   @Override
   public double[] itemSimilarities(long itemID1, long[] itemID2s)
       throws TasteException {
@@ -66,9 +66,9 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     return values;
   }
 
-   (non-Javadoc)
+  /* (non-Javadoc)
    * @see org.apache.mahout.cf.taste.similarity.ItemSimilarity#itemSimilarity(long, long)
-   
+   */
   @Override
   public double itemSimilarity(long itemID1, long itemID2)
       throws TasteException {
@@ -81,9 +81,9 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     throw new UnsupportedOperationException();
   }
   
-  *//**
+  /**
    * @param args
-   *//*
+   */
   public static void main(String[] args) {
     // TODO Auto-generated method stub
 
@@ -91,4 +91,3 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
 
 
 }
-*/

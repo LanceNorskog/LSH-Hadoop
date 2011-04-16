@@ -47,7 +47,7 @@ import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
  *                            training.dat test.dat     <-- compare training and test data
  */
 
-public class CompareRecommenders {
+public class CompareSimplexRecommenders {
   static final int SAMPLES = 100;
   static lsh.mahout.core.SimplexUserNeighborhood sun = null;
 

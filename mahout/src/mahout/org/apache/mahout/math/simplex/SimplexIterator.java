@@ -1,7 +1,7 @@
 /**
  * 
  */
-package lsh.mahout.core2;
+package org.apache.mahout.math.simplex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,10 +10,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import lsh.mahout.core.Hasher;
-import lsh.mahout.core.OrthonormalHasher;
-
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -73,7 +69,7 @@ public class SimplexIterator implements Iterator<Simplex> {
     for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
-    hasher.hash(values, hashed);
+    hasher.hashDense(values, hashed);
     return hashed;
   }  
   

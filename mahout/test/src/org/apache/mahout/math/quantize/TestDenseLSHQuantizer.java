@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import lsh.mahout.core.Hasher;
 import lsh.mahout.core.OrthonormalHasher;
+import lsh.mahout.quantizer.DenseLSHQuantizer;
 
 public final class TestDenseLSHQuantizer extends Assert {
   static double EPSILON = 0.0000001;

@@ -169,7 +169,7 @@ public class WriteVectors {
   private static double[] copyHashes(Corner c, int dimensions, double gridsize) {
     double[] values = new double[dimensions];
     Hasher hasher = new VertexTransitiveHasher(dimensions, gridsize);
-    hasher.unhash(c.hashes, values);
+    hasher.unhashDense(c.hashes, values);
     return values;
   }
 

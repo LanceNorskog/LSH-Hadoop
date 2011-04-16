@@ -132,8 +132,6 @@ public final class EstimatingKnnItemBasedRecommender extends GenericItemBasedRec
     
     return optimizer.optimize(aMatrix, b);
   }
-  
-  @Override
   protected float doEstimatePreference(long theUserID, long itemID) throws TasteException {
     
     DataModel dataModel = getDataModel();

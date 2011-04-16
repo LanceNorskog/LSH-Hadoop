@@ -1,7 +1,7 @@
 /**
  * 
  */
-package lsh.mahout.core;
+/*package lsh.mahout.core;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +19,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
-/**
+*//**
  * @author lance
  *
  * Store LSH Hash<T> set of corners and users.
@@ -40,7 +40,7 @@ import org.apache.mahout.math.Vector.Element;
  *  Now! What does this do to payloads? If two same vectors are
  *  added with different payloads, they should be tacked into the
  *  hash regardless. Hmmm...
- */
+ *//*
 public class SimplexSpace<T> {
   final Hasher hasher;
   Map<T, Vector> id2vectorMap = new HashMap<T, Vector>();
@@ -136,9 +136,9 @@ public class SimplexSpace<T> {
     }
   }
   
-  /*
+  
    * Mask hash value to the current level of detail
-   */
+   
   public Hash getHashLOD(Vector v) {
     int[] hashes = new int[dimensions];
     if (v.isDense()) {
@@ -169,10 +169,10 @@ public class SimplexSpace<T> {
     }
   }    
   
-  /*
+  
    * Enumerate other co-resident hashes.
    * Do not add input hash.
-   */
+   
   
     public FastIDSet findNeighborsIDSet(T payload) {
       Hash hash = id2hashMap.get(payload);
@@ -430,3 +430,4 @@ class ChemicalInteger {
     return "" + i;
   }
 }
+*/

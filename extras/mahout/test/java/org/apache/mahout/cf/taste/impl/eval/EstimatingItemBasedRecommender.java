@@ -104,11 +104,12 @@ public class EstimatingItemBasedRecommender extends AbstractRecommender implemen
     
     log.debug("Recommending items for user ID '{}'", userID);
     
-    if (getNumPreferences(userID) == 0) {
+    PreferenceArray preferencesFromUser = getDataModel().getPreferencesFromUser(userID);
+    if (preferencesFromUser.length() == 0) {
       return Collections.emptyList();
     }
     
-    FastIDSet possibleItemIDs = getAllOtherItems(userID);
+    FastIDSet possibleItemIDs = getAllOtherItems(userID, preferencesFromUser);
     
     TopItems.Estimator<Long> estimator = new Estimator(userID);
     

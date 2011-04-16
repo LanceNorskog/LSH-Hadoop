@@ -71,7 +71,7 @@ public final class EstimatingSlopeOneRecommender extends AbstractRecommender {
    */
   public EstimatingSlopeOneRecommender(DataModel dataModel) throws TasteException {
     this(dataModel, Weighting.WEIGHTED, Weighting.WEIGHTED, new MemoryDiffStorage(dataModel,
-        Weighting.WEIGHTED, false, Long.MAX_VALUE));
+        Weighting.WEIGHTED, Long.MAX_VALUE));
   }
   
   /**

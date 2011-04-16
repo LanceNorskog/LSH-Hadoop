@@ -1,10 +1,7 @@
-package org.apache.mahout.math.quantize;
+package org.apache.mahout.math.simplex;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import lsh.mahout.core.Hasher;
-import lsh.mahout.core2.Simplex;
 
 import org.apache.mahout.math.AbstractVector;
 import org.apache.mahout.math.DenseMatrix;
@@ -12,28 +9,26 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.Vector;
 
-
 /*
  * Wrap N-dimensional Simplex as a vector. 
  * Could be write-through, but Simplex has to support this also.
- * 
- * Should not have Dense v.s. Sparse problems. That should be independent.
  */
 
-public  class SimplexVector extends AbstractVector implements Vector {
-  final Simplex hash;
+public class SimplexVector extends AbstractVector implements Vector {
+  final Simplex simplex;
   final Hasher hasher;
   
   protected static final String CANNOT_SET_READ_ONLY_VECTOR = "Cannot set ReadOnlyVector";
   
-  protected SimplexVector(Simplex hash, Hasher hasher) {
-    super(hash.getDimensions());
-    this.hash = hash;
+  public SimplexVector(Simplex simplex, Hasher hasher) {
+    super(simplex.getDimensions());
+    this.simplex = simplex;
     this.hasher = hasher;
   }
   
   public boolean isDense() {
     return true;
+//    return hash.getClass() == DenseHash.class;
   }
   
   public boolean isSequentialAccess() {
@@ -47,14 +42,15 @@ public  class SimplexVector extends AbstractVector implements Vector {
   
   @Override
   public double getQuick(int index) {
-    if (! hash.containsValue(index))
+    if (! simplex.containsValue(index))
       return 0;
     int[] ha = new int[1];
-    ha[0] = hash.getValue(index);
+    ha[0] = simplex.getValue(index);
     double[] da = new double[1];
-    hasher.unhash(ha, da);
+    hasher.unhashDense(ha, da);
     return da[0];
   }
+  
   
   @Override
   public Vector clone() {
@@ -125,7 +121,7 @@ public  class SimplexVector extends AbstractVector implements Vector {
   
   @Override
   public int getNumNondefaultElements() {
-    return hash.getNumEntries();
+    return simplex.getNumEntries();
   }
   
   @Override
@@ -133,60 +129,54 @@ public  class SimplexVector extends AbstractVector implements Vector {
     return new SimplexVectorIterator();
   }
   
-  public Simplex getSimplex () {
-    return hash;
+  public Simplex getSimplex() {
+    return simplex;
   }
   
   class SimplexVectorIterator implements Iterator<Element> {
-    private Iterator<Integer> it = hash.iterateValues();
-    final SimplexVectorElement el = new SimplexVectorElement();
+    int index = 0;
+    final SimplexVectorElement el = new SimplexVectorElement(hasher);
     double[] v = new double[1];
     int[] h = new int[1];
     
     @Override
     public boolean hasNext() {
-      return it.hasNext();
-    }
-    
-    public boolean containsValue(int index) {
-      return true;
-    }
-    
-    public int getDimensions() {
-      return hash.getDimensions();
+      return index < simplex.dimensions;
     }
     
     @Override
     public Element next() {
-      Integer index = it.next();
       el.index = index;
-      h[0] = hash.getValue(index);
-      hasher.unhash(h, v);
+      h[0] = simplex.getValue(index);
+      hasher.unhashDense(h, v);
       el.value = v[0];
+      index++;
       return el;
     }
     
     @Override
     public void remove() {
-      throw new IllegalStateException();
+      // TODO Auto-generated method stub
       
     }
     
-    class SimplexVectorElement implements Vector.Element {
+    class SimplexVectorElement implements Element {
       int index;
       double value;
+      final Hasher hasher;
       
-      @Override
+      SimplexVectorElement(Hasher hasher) {
+        this.hasher = hasher;
+      }
+      
       public double get() {
         return value;
       }
       
-      @Override
       public int index() {
         return index;
       }
       
-      @Override
       public void set(double value) {
         ;
       }

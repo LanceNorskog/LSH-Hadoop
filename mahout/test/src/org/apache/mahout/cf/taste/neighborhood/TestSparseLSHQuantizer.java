@@ -6,12 +6,12 @@ import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.quantize.Quantizer;
-import org.apache.mahout.math.quantize.SparseLSHQuantizer;
 import org.junit.Assert;
 import org.junit.Test;
 
 import lsh.mahout.core.Hasher;
 import lsh.mahout.core.OrthonormalHasher;
+import lsh.mahout.quantizer.SparseLSHQuantizer;
 
 public final class TestSparseLSHQuantizer extends Assert {
   static double EPSILON = 0.0000001;

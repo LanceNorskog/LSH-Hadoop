@@ -1,4 +1,4 @@
-package lsh.mahout.core2;
+package org.apache.mahout.math.simplex;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -28,6 +28,13 @@ public class Simplex {
   public Simplex(int[] hash) {
     this.base = hash;
     dimensions = hash.length;
+  }
+  
+  /*
+   * Can this Simplex return the bitmask of neighbors?
+   */
+  public boolean hasNeighbors() {
+    return false;
   }
 
   public void setValues(int[] values) {

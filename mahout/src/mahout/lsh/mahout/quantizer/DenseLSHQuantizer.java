@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.apache.mahout.math.quantize;
+package lsh.mahout.quantizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +16,7 @@ import lsh.mahout.core.OrthonormalHasher;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
+import org.apache.mahout.math.quantize.Quantizer;
 
 /**
  * Tyler Neylon's LSH quantizer and neighbor iteration algorithm.

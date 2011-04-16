@@ -5,8 +5,11 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
+
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.simplex.Simplex;
+import org.apache.mahout.math.simplex.SimplexIterator;
 import org.junit.Assert;
 import org.junit.Test;
 
