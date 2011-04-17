@@ -4,29 +4,27 @@ import java.util.Iterator;
 
 import org.apache.mahout.math.stats.Sampler;
 
+// bogus: Sampler interface cannot supply enough data to make this useful.
 public class SamplerIterator<T> implements Iterator<T> {
-  final Sampler<T> sampler;
+  final Iterator<T> iter;
 
   public SamplerIterator(Sampler<T> sampler) {
-    this.sampler = sampler;
+    this.iter = sampler.getSamples(true);
   }
   
   @Override
   public boolean hasNext() {
-    // TODO Auto-generated method stub
-    return false;
+    return iter.hasNext();
   }
 
   @Override
   public T next() {
-    // TODO Auto-generated method stub
-    return null;
+    return iter.next();
   }
 
   @Override
   public void remove() {
-    // TODO Auto-generated method stub
-    
+    iter.remove();
   }
 
 }
