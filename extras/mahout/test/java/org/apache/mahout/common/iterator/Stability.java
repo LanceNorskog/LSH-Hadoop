@@ -13,6 +13,7 @@ import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.stats.BernoulliSampler;
+import org.apache.mahout.math.stats.OnlineSummarizer;
 import org.apache.mahout.math.stats.ReservoirSampler;
 import org.apache.mahout.math.stats.Sampler;
 
@@ -27,10 +28,9 @@ public class Stability {
    * @param args
    */
   public static void main(String[] args) {
-    int total = 10000000;
-    int samples = 1000;
+    int total = 100000;
+    int samples = 500;
     double percent = ((double) samples) / total;
-    FastByIDMap<Integer> idmap = new FastByIDMap<Integer>(total);
     int[] scrambled = new int[total];
     Random rnd = getRnd();
     
@@ -41,38 +41,32 @@ public class Stability {
     }
     RunningAverage avg;
     RunningAverage stdev;
-    bernoulli(total, samples, percent, scrambled, rnd);
+    bernoulli(total, samples, scrambled, rnd);
     reservoir(total, samples, scrambled, rnd);
   }
   
   private static void reservoir(int total, int samples, int[] scrambled,
       Random rnd) {
-    RunningAverage avg;
-    RunningAverage stdev;
-    avg = new FullRunningAverage();
-    stdev = new FullRunningAverage();
-    for(int i = 0; i < 20; i++) {
-      RunningAverageAndStdDev tracker = new FullRunningAverageAndStdDev();
+    OnlineSummarizer os = new OnlineSummarizer();
+    for(int i = 0; i < 5; i++) {
+      OnlineSummarizer tracker = new OnlineSummarizer(); //(0.45, 0.45);
       Sampler<Integer> sampler = new ReservoirSampler<Integer>(samples, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      System.out.println(i + "," + tracker.getAverage() + "," + tracker.getStandardDeviation());
-      avg.addDatum(tracker.getAverage());
-      stdev.addDatum(tracker.getStandardDeviation());
+      System.out.println(i + "," + tracker.toString());
+//      os.add(tracker.;
     }
-    System.out.println("Reservoir: " + avg.getAverage() + "," + stdev.getAverage());
+    System.out.println("Reservoir: " );
   }
   
-  private static void bernoulli(int total, int samples, double percent,
-      int[] scrambled, Random rnd) {
+  private static void bernoulli(int total, int samples, int[] scrambled, Random rnd) {
     RunningAverage avg = new FullRunningAverage();
     RunningAverage stdev = new FullRunningAverage();
-    for(int i = 0; i < 20; i++) {
-      RunningAverageAndStdDev tracker = new FullRunningAverageAndStdDev();
+    double percent = ((double) samples) / total;
+    for(int i = 0; i < 5; i++) {
+      OnlineSummarizer tracker = new OnlineSummarizer();
       Sampler<Integer> sampler = new BernoulliSampler<Integer>(percent, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      System.out.println(i + "," + tracker.getAverage() + "," + tracker.getStandardDeviation());
-      avg.addDatum(tracker.getAverage());
-      stdev.addDatum(tracker.getStandardDeviation());
+      System.out.println(i + "," + tracker.toString());
     }
     System.out.println("Bernoulli: " + avg.getAverage() + "," + stdev.getAverage());
   }
@@ -80,7 +74,7 @@ public class Stability {
   // run scrambled integer stream through sampler
   // pull output stream and get average and standard deviation
   private static void stability(int[] scrambled, Sampler<Integer> sampler,
-      int total, int samples, RunningAverage tracker) {
+      int total, int samples, OnlineSummarizer tracker) {
     for(int sample = 0; sample < total; sample++) {
       int r = scrambled[sample];
       sampler.addSample(r);
@@ -88,8 +82,7 @@ public class Stability {
     Iterator<Integer> it = sampler.getSamples(true);
     while(it.hasNext()) {
       Integer r = it.next();
-//      tracker.addDatum(1.0/((total/2) - r));
-      tracker.addDatum(Math.log(r));
+      tracker.add(r);
     }
   }
   

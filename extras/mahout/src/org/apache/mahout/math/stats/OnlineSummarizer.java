@@ -51,9 +51,24 @@ public class OnlineSummarizer {
   // mean and variance estimates
   private double mean;
   private double variance;
+  
+  // quartile scales
+  private double lower;
+  private double upper;
+  private double cut;
 
   // number of samples seen so far
   private int n;
+  
+  public OnlineSummarizer() {
+    this(0.25, 0.75);
+  }
+
+  public OnlineSummarizer(double lower, double upper) {
+    this.lower = lower;
+    this.upper = upper;
+    cut = lower;
+  }
 
   public void add(double sample) {
     sorted = false;
@@ -84,6 +99,9 @@ public class OnlineSummarizer {
       q[1] += (Math.signum(sample - q[1]) - 0.5) * rate;
       q[2] += (Math.signum(sample - q[2])) * rate;
       q[3] += (Math.signum(sample - q[3]) + 0.5) * rate;
+//      q[1] += (Math.signum(sample - q[1]) - 0.95) * rate;
+//      q[2] += (Math.signum(sample - q[2])) * rate;
+//      q[3] += (Math.signum(sample - q[3]) + 0.95) * rate;
 
       if (q[1] < q[0]) {
         q[1] = q[0];
@@ -157,5 +175,29 @@ public class OnlineSummarizer {
 
   public double getMedian() {
     return getQuartile(2);
+  }
+  
+  @Override
+  public String toString() {
+   return "[" + 
+   pair("count", getCount()) + pair("sd", getSD()) + pair("mean", getMean()) + 
+
+   pair("min", getMin()) + pair("25%", getQuartile(1)) + pair("median", getMedian()) +
+      pair("75%", getQuartile(3)) + pair("max", getMax()) + "]";
+  }
+  
+  private String pair(String tag, double value) {
+    String s = Double.toString(value);
+    if (s.length() > 8)
+      s = s.substring(0, 7);
+    return "(" + tag + "=" + s + "),";
+  }
+  
+  public static void main(String[] args) {
+    OnlineSummarizer osQ = new OnlineSummarizer();
+    for(int i = 0; i < 200; i++) {
+      osQ.add(i % 100);
+    }
+    System.out.println(osQ.toString());
   }
 }
