@@ -96,12 +96,12 @@ public class OnlineSummarizer {
       q[4] = Math.max(sample, q[4]);
 
       double rate = 2 * (q[3] - q[1]) / n;
-      q[1] += (Math.signum(sample - q[1]) - 0.5) * rate;
-      q[2] += (Math.signum(sample - q[2])) * rate;
-      q[3] += (Math.signum(sample - q[3]) + 0.5) * rate;
-//      q[1] += (Math.signum(sample - q[1]) - 0.95) * rate;
+//      q[1] += (Math.signum(sample - q[1]) - 0.5) * rate;
 //      q[2] += (Math.signum(sample - q[2])) * rate;
-//      q[3] += (Math.signum(sample - q[3]) + 0.95) * rate;
+//      q[3] += (Math.signum(sample - q[3]) + 0.5) * rate;
+      q[1] += (Math.signum(sample - q[1]) - 0.95) * rate;
+      q[2] += (Math.signum(sample - q[2])) * rate;
+      q[3] += (Math.signum(sample - q[3]) + 0.95) * rate;
 
       if (q[1] < q[0]) {
         q[1] = q[0];

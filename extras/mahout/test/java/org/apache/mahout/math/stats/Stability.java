@@ -1,15 +1,10 @@
-package org.apache.mahout.common.iterator;
+package org.apache.mahout.math.stats;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 
-import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
-import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
-import org.apache.mahout.cf.taste.impl.common.RunningAverage;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.stats.BernoulliSampler;
@@ -17,10 +12,8 @@ import org.apache.mahout.math.stats.OnlineSummarizer;
 import org.apache.mahout.math.stats.ReservoirSampler;
 import org.apache.mahout.math.stats.Sampler;
 
-import org.apache.commons.collections.iterators.ArrayIterator;
-
 /*
- * Measure the stability of <s>the author</s> various Sampling algorithms and tools.
+ * Measure the stability of <s>the author</s> various sampling algorithms.
  */
 public class Stability {
   
@@ -30,7 +23,6 @@ public class Stability {
   public static void main(String[] args) {
     int total = 100000;
     int samples = 500;
-    double percent = ((double) samples) / total;
     int[] scrambled = new int[total];
     Random rnd = getRnd();
     
@@ -39,36 +31,50 @@ public class Stability {
     for(int i = 0; i < total; i++) {
       scrambled[i] = rnd.nextInt(total);
     }
-    RunningAverage avg;
-    RunningAverage stdev;
     bernoulli(total, samples, scrambled, rnd);
     reservoir(total, samples, scrambled, rnd);
   }
   
   private static void reservoir(int total, int samples, int[] scrambled,
       Random rnd) {
-    OnlineSummarizer os = new OnlineSummarizer();
-    for(int i = 0; i < 5; i++) {
+    RunningAverageAndStdDev mean = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev median = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev q1 = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev q3 = new FullRunningAverageAndStdDev();
+    for(int i = 0; i < 50; i++) {
       OnlineSummarizer tracker = new OnlineSummarizer(); //(0.45, 0.45);
       Sampler<Integer> sampler = new ReservoirSampler<Integer>(samples, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      System.out.println(i + "," + tracker.toString());
-//      os.add(tracker.;
+//      System.out.println(i + "," + tracker.toString());
+      // subtract what should be the mean instead of the actual mean
+      mean.addDatum(tracker.getMean());
+      median.addDatum(tracker.getMedian());
+      q1.addDatum(tracker.getQuartile(1));
+      q3.addDatum(tracker.getQuartile(3));
     }
-    System.out.println("Reservoir: " );
+    System.out.println("Reservoir stability: (mean,median,25,75) " + mean.getStandardDeviation() + ", " +
+        median.getStandardDeviation() + ", " + q1.getStandardDeviation() + ", " + q3.getStandardDeviation());
   }
   
   private static void bernoulli(int total, int samples, int[] scrambled, Random rnd) {
-    RunningAverage avg = new FullRunningAverage();
-    RunningAverage stdev = new FullRunningAverage();
+    RunningAverageAndStdDev mean = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev median = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev q1 = new FullRunningAverageAndStdDev();
+    RunningAverageAndStdDev q3 = new FullRunningAverageAndStdDev();
     double percent = ((double) samples) / total;
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 50; i++) {
       OnlineSummarizer tracker = new OnlineSummarizer();
       Sampler<Integer> sampler = new BernoulliSampler<Integer>(percent, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      System.out.println(i + "," + tracker.toString());
+//      System.out.println(i + "," + tracker.toString());
+      // subtract what should be the mean instead of the actual mean
+      mean.addDatum(tracker.getMean());
+      median.addDatum(tracker.getMedian());
+      q1.addDatum(tracker.getQuartile(1));
+      q3.addDatum(tracker.getQuartile(3));
     }
-    System.out.println("Bernoulli: " + avg.getAverage() + "," + stdev.getAverage());
+    System.out.println("Bernoulli stability: (mean,median,25,75) " + mean.getStandardDeviation() + ", " +
+        median.getStandardDeviation() + ", " + q1.getStandardDeviation() + ", " + q3.getStandardDeviation());
   }
   
   // run scrambled integer stream through sampler

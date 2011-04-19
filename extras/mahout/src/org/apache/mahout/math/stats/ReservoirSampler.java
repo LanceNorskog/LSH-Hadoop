@@ -1,6 +1,7 @@
 package org.apache.mahout.math.stats;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -9,6 +10,7 @@ import java.util.Random;
  * Basic Reservoir sampler.
  * Build a set of N samples. Randomly replace existing with new using increasing selectivity.
  * Sample set is always a linear distribution of current entire stream.
+ * Distribution can change while iterating. 
  */
 
 public class ReservoirSampler<T> extends Sampler<T> {
@@ -48,8 +50,11 @@ public class ReservoirSampler<T> extends Sampler<T> {
     return sample;
   }
   
+  @SuppressWarnings("unchecked")
   @Override
   public Iterator<T> getSamples(boolean flush) {
+    if (null == stored)
+      return (Iterator<T>) Collections.emptyList().iterator();
     Iterator<T> it = stored.iterator();
     if (flush) 
       stored = new ArrayList<T>(samples);
@@ -59,7 +64,6 @@ public class ReservoirSampler<T> extends Sampler<T> {
   @Override
   public void stop() {
     stored = null;
-    
   }
   
 }

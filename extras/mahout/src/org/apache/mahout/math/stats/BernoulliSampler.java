@@ -51,10 +51,11 @@ public class BernoulliSampler<T> extends Sampler<T> {
     }
   }
   
+  @SuppressWarnings("unchecked")
   @Override
   public Iterator<T> getSamples(boolean flush) {
     if (null == samples)
-      return (Iterator<T>) Collections.EMPTY_LIST.iterator();
+      return (Iterator<T>) Collections.emptyList().iterator();
     Iterator<T> iter = samples.iterator();
     if (flush) {
       samples = new ArrayList<T>();
