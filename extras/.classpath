@@ -1,21 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="hadoop/src"/>
-	<classpathentry kind="src" path="mahout/src"/>
 	<classpathentry kind="src" path="hadoop/test/java"/>
+	<classpathentry kind="src" path="mahout/src"/>
 	<classpathentry kind="src" path="mahout/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-examples"/>
-	<classpathentry kind="lib" path="lib/uncommons-maths-1.2.jar"/>
-	<classpathentry kind="lib" path="lib/gson-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/mahout-collections-1.0.jar" sourcepath="C:/Users/lance/.m2/repository/org/apache/mahout/mahout-collections/1.0/mahout-collections-1.0-sources.jar"/>
-	<classpathentry kind="lib" path="lib/guava-r03.jar"/>
-	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="lib/google-collections-1.0-rc2.jar"/>
-	<classpathentry kind="lib" path="lib/commons-lang-2.4.jar"/>
-	<classpathentry kind="lib" path="lib/commons-cli-2.0-mahout.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/hadoop-0.20.2"/>

@@ -25,17 +25,12 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
-import org.apache.mahout.common.MahoutTestCase;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
-import org.apache.mahout.math.DenseVector;
-import org.apache.mahout.math.IndexException;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.gson.annotations.Expose;
 
 public final class SemanticVectorTest extends TasteTestCase {
   private static final String[] MINI = {

@@ -23,6 +23,8 @@ import java.util.Random;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.ReadOnlyVector;
 
+import com.google.common.primitives.Longs;
+
 /**
  * 
  * Vector with repeatable random values.
@@ -84,7 +86,7 @@ public class RandomVector extends ReadOnlyVector {
   
   @Override
   public int hashCode() {
-    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(size() ^ (gaussian ? 7 : 11));
+    return Longs.hashCode(baseSeed) ^ Longs.hashCode(size() ^ (gaussian ? 7 : 11));
   }
 
   

@@ -20,7 +20,7 @@ package org.apache.mahout.math;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.mahout.common.RandomUtils;
+import com.google.common.primitives.Longs;
 
 /** 
  * Matrix of random but repeatable doubles. 
@@ -91,7 +91,7 @@ public class RandomMatrix extends ReadOnlyMatrix {
   
   @Override
   public int hashCode() {
-    return RandomUtils.hashLong(baseSeed) ^ RandomUtils.hashLong(rowSize()) ^ RandomUtils.hashLong(columnSize() ^ (gaussian ? 7 : 11));
+    return Longs.hashCode(baseSeed) ^ Longs.hashCode((rowSize()) ^ Longs.hashCode(columnSize() ^ (gaussian ? 7 : 11)));
   }
 
 }
