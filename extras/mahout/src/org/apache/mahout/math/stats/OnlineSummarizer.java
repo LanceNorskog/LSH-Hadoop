@@ -39,46 +39,47 @@ import org.apache.mahout.math.list.DoubleArrayList;
  * http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.105.1580
  */
 public class OnlineSummarizer {
-
+  // maximum divisor for new samples
+  // purely random stream stabilizes at 50,000 so this matches real data
+  private static int STABLE = 5000;
+  
   private boolean sorted = true;
-
+  
   // the first several samples are kept so we can boot-strap our estimates cleanly
   private DoubleArrayList starter = new DoubleArrayList(100);
-
+  
   // quartile estimates
   private final double[] q = new double[5];
-
+  
   // mean and variance estimates
   private double mean;
   private double variance;
   
   // quartile scales
-  private double lower;
-  private double upper;
-  private double cut;
-
+  private double bias = 0.5;
+  
   // number of samples seen so far
   private int n;
   
   public OnlineSummarizer() {
-    this(0.25, 0.75);
+    
   }
-
-  public OnlineSummarizer(double lower, double upper) {
-    this.lower = lower;
-    this.upper = upper;
-    cut = lower;
+  
+  public OnlineSummarizer(boolean do95_5) {
+    if (do95_5)
+      bias = 0.95;
   }
-
+  
   public void add(double sample) {
     sorted = false;
-
-    n++;
+    
+    if (n < STABLE)
+      n++;
     double oldMean = mean;
     mean += (sample - mean) / n;
     double diff = (sample - mean) * (sample - oldMean);
     variance += (diff - variance) / n;
-
+    
     if (n < 100) {
       starter.add(sample);
     } else if (n == 100 && starter != null) {
@@ -94,52 +95,50 @@ public class OnlineSummarizer {
       // n >= 100 && starter == null
       q[0] = Math.min(sample, q[0]);
       q[4] = Math.max(sample, q[4]);
-
+      
+      // should this be different between -1 < x < 1?
       double rate = 2 * (q[3] - q[1]) / n;
-//      q[1] += (Math.signum(sample - q[1]) - 0.5) * rate;
-//      q[2] += (Math.signum(sample - q[2])) * rate;
-//      q[3] += (Math.signum(sample - q[3]) + 0.5) * rate;
-      q[1] += (Math.signum(sample - q[1]) - 0.95) * rate;
+      q[1] += (Math.signum(sample - q[1]) - bias) * rate;
       q[2] += (Math.signum(sample - q[2])) * rate;
-      q[3] += (Math.signum(sample - q[3]) + 0.95) * rate;
-
+      q[3] += (Math.signum(sample - q[3]) + bias) * rate;
+      
       if (q[1] < q[0]) {
         q[1] = q[0];
       }
-
+      
       if (q[3] > q[4]) {
         q[3] = q[4];
       }
     }
   }
-
+  
   public int getCount() {
     return n;
   }
-
+  
   public double getMean() {
     return mean;
   }
-
+  
   public double getSD() {
     return Math.sqrt(variance);
   }
-
+  
   public double getMin() {
     return getQuartile(0);
   }
-
+  
   private void sort() {
     if (!sorted && starter != null) {
       starter.sortFromTo(0, 99);
       sorted = true;
     }
   }
-
+  
   public double getMax() {
     return getQuartile(4);
   }
-
+  
   public double getQuartile(int i) {
     if (n > 100 || starter == null) {
       return q[i];
@@ -172,32 +171,25 @@ public class OnlineSummarizer {
       }
     }
   }
-
+  
   public double getMedian() {
     return getQuartile(2);
   }
   
   @Override
   public String toString() {
-   return "[" + 
-   pair("count", getCount()) + pair("sd", getSD()) + pair("mean", getMean()) + 
-
-   pair("min", getMin()) + pair("25%", getQuartile(1)) + pair("median", getMedian()) +
-      pair("75%", getQuartile(3)) + pair("max", getMax()) + "]";
+    return "[" + 
+    pair("count", getCount()) + pair("sd", getSD()) + pair("mean", getMean()) + 
+    
+    pair("min", getMin()) + pair("25%", getQuartile(1)) + pair("median", getMedian()) +
+    pair("75%", getQuartile(3)) + pair("max", getMax()) + "]";
   }
   
   private String pair(String tag, double value) {
     String s = Double.toString(value);
-    if (s.length() > 8)
+    if (s.length() > 8 && -1 == s.indexOf('E'))
       s = s.substring(0, 7);
     return "(" + tag + "=" + s + "),";
   }
   
-  public static void main(String[] args) {
-    OnlineSummarizer osQ = new OnlineSummarizer();
-    for(int i = 0; i < 200; i++) {
-      osQ.add(i % 100);
-    }
-    System.out.println(osQ.toString());
-  }
 }

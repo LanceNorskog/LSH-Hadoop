@@ -3,6 +3,7 @@ package org.apache.mahout.math.stats;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -14,7 +15,7 @@ import org.apache.mahout.common.RandomUtils;
  * There are tricks to avoid doing random each time, but this is not really important.
  */
 public class BernoulliSampler<T> extends Sampler<T> {
-  List<T> samples = new ArrayList<T>();
+  List<T> samples = new LinkedList<T>();
   final double percent;
   final Random rnd;
   

@@ -163,11 +163,11 @@ public class SemanticVectorFactory {
     return v;
   }
   
-  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double rescale) {
-    double dist = measure.distance(v1, v2)/rescale;
-    dist = Distributions.normal2linear(dist);
-    return dist;
-  }
+//  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double rescale) {
+//    double dist = measure.distance(v1, v2)/rescale;
+//    dist = Distributions.normal2linear(dist);
+//    return dist;
+//  }
   
   public int getDimensions(){
     return dimensions;

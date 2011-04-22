@@ -18,6 +18,7 @@
 package org.apache.mahout.semanticvectors;
 
 import java.io.File;
+import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
@@ -25,6 +26,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
@@ -78,22 +80,43 @@ public final class SemanticVectorTest extends TasteTestCase {
   
   @Test
   public void testNearness() throws TasteException {
-    SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2);
-    testThree(svf);
-    svf = new SemanticVectorFactory(miniModel, 200);
-    testThree(svf);
+    SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2, new Random(0));
+    testManhattan(svf);
+    svf = new SemanticVectorFactory(miniModel, 200, new Random(0));
+    testCosine(svf);
   }
 
-  private void testThree(SemanticVectorFactory svf) throws TasteException {
+  private void testManhattan(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.getUserVector(0, 1, 10);
     Vector blue = svf.getUserVector(1, 1, 10);
     Vector green = svf.getUserVector(2, 1, 10);
-    blue.hashCode();
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
     double bg = measure.distance(blue, green);
-    System.out.println("red:   " + red.toString());
+    assertEquals(0.23134893607990584, rb, 0.05);
+    assertEquals(0.23555944389134312, rg, 0.05);
+    assertEquals(0.00441193779852409, bg, 0.05);
+   System.out.println("red:   " + red.toString());
+    System.out.println("blue:  " + blue.toString());
+    System.out.println("green: " + green.toString());
+    System.out.println("red-blue:   " + rb);
+    System.out.println("red-green:  " + rg);
+    System.out.println("blue-green: " + bg);
+  }
+  
+  private void testCosine(SemanticVectorFactory svf) throws TasteException {
+    Vector red = svf.getUserVector(0, 1, 10);
+    Vector blue = svf.getUserVector(1, 1, 10);
+    Vector green = svf.getUserVector(2, 1, 10);
+    DistanceMeasure measure = new CosineDistanceMeasure();
+    double rb = measure.distance(red, blue);
+    double rg = measure.distance(red, green);
+    double bg = measure.distance(blue, green);
+    assertEquals(0.07206500399320093, rb, 0.00005);
+    assertEquals(0.12486050786152714, rg, 0.00005);
+    assertEquals(0.1858631487969037, bg, 0.00005);
+   System.out.println("red:   " + red.toString());
     System.out.println("blue:  " + blue.toString());
     System.out.println("green: " + green.toString());
     System.out.println("red-blue:   " + rb);
