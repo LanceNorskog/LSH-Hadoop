@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
@@ -13,32 +14,52 @@ import org.apache.mahout.math.stats.BernoulliSampler;
 import org.apache.mahout.math.stats.OnlineSummarizer;
 import org.apache.mahout.math.stats.ReservoirSampler;
 import org.apache.mahout.math.stats.Sampler;
+import org.apache.mahout.math.stats.correlation.HoeffdingCorrelation;
 
 /*
  * Measure the stability of <s>the author</s> various sampling algorithms.
  */
 public class Stability {
+  static int TOTAL = 5000;
+  static int N = 200;
+  static int ITERATIONS = 50;
+  static int RANGE = 500;
   
   /**
    * @param args
    */
   public static void main(String[] args) {
-    int total = 50000;
-    int samples = 2000;
-    int[] scrambled = new int[total];
     Random rnd = getRnd();
+    full(rnd, 500);
+    full(rnd, 1000);
+  }
+
+  private static void full(Random rnd, int seed) {
+    int total = TOTAL;
+    int samples = N;
+    int[] scrambled = new int[total];
     
     Arrays.fill(scrambled, -1);
     // dups are ok
     for(int i = 0; i < total; i++) {
-      scrambled[i] = rnd.nextInt(5000);
+      scrambled[i] = rnd.nextInt(RANGE);
     }
-    double[] bmean = new double[50];
-    double[] rmean = new double[50];
+    double[] bmean = new double[ITERATIONS];
+    double[] rmean = new double[ITERATIONS];
+    rnd.setSeed(seed);
     bernoulli(total, samples, scrambled, rnd, bmean);
+    rnd.setSeed(seed);
     reservoir(total, samples, scrambled, rnd, rmean);
     PearsonsCorrelation pc = new PearsonsCorrelation();
-    System.out.println("Pearsons: Bernoulli v.s. Reservoir: " + pc.correlation(bmean, rmean));
+    SpearmansCorrelation sp = new SpearmansCorrelation();
+    HoeffdingCorrelation hc = new HoeffdingCorrelation();
+    System.out.println("Pearsons:  Bernoulli v.s. Reservoir: " + pc.correlation(bmean, rmean));
+    System.out.println("Spearmans: Bernoulli v.s. Reservoir: " + sp.correlation(bmean, rmean));
+    System.out.println("Hoeffding: Bernoulli v.s. Reservoir: " + hc.correlation(bmean, rmean));
+    for(int i = 0; i < ITERATIONS; i++) {
+      bmean[i] = 100000;
+    }
+    System.out.println("Hoeffding: Decorrelate: " + hc.correlation(bmean, rmean));
   }
   
   private static void reservoir(int total, int samples, int[] scrambled,
@@ -47,7 +68,7 @@ public class Stability {
     RunningAverageAndStdDev median = new FullRunningAverageAndStdDev();
     RunningAverageAndStdDev q1 = new FullRunningAverageAndStdDev();
     RunningAverageAndStdDev q3 = new FullRunningAverageAndStdDev();
-    for(int i = 0; i < 20; i++) {
+    for(int i = 0; i < ITERATIONS; i++) {
       OnlineSummarizer tracker = new OnlineSummarizer(); //(0.45, 0.45);
       Sampler<Integer> sampler = new ReservoirSampler<Integer>(samples, rnd);
       stability(scrambled, sampler, total, samples, tracker);
@@ -57,7 +78,7 @@ public class Stability {
       median.addDatum(tracker.getMedian());
       q1.addDatum(tracker.getQuartile(1));
       q3.addDatum(tracker.getQuartile(3));
-      dmean[i] = tracker.getMean();
+      dmean[i] = tracker.getMedian();
     }
     System.out.println("Reservoir stability: (mean,median,25,75) " + mean.getStandardDeviation() + ", " +
         median.getStandardDeviation() + ", " + q1.getStandardDeviation() + ", " + q3.getStandardDeviation());
@@ -69,7 +90,7 @@ public class Stability {
     RunningAverageAndStdDev q1 = new FullRunningAverageAndStdDev();
     RunningAverageAndStdDev q3 = new FullRunningAverageAndStdDev();
     double percent = ((double) samples) / total;
-    for(int i = 0; i < 20; i++) {
+    for(int i = 0; i < ITERATIONS; i++) {
       OnlineSummarizer tracker = new OnlineSummarizer();
       Sampler<Integer> sampler = new BernoulliSampler<Integer>(percent, rnd);
       stability(scrambled, sampler, total, samples, tracker);
@@ -79,7 +100,7 @@ public class Stability {
       median.addDatum(tracker.getMedian());
       q1.addDatum(tracker.getQuartile(1));
       q3.addDatum(tracker.getQuartile(3));
-      dmean[i] = tracker.getMean();
+      dmean[i] = tracker.getMedian();
     }
     System.out.println("Bernoulli stability: (mean,median,25,75) " + mean.getStandardDeviation() + ", " +
         median.getStandardDeviation() + ", " + q1.getStandardDeviation() + ", " + q3.getStandardDeviation());
@@ -101,8 +122,7 @@ public class Stability {
   }
   
   private static Random getRnd() {
-    RandomUtils.useTestSeed();
-    return RandomUtils.getRandom();
+    return new Random();
   }
   
   private static double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException {

@@ -140,7 +140,7 @@ public class OnlineSummarizer {
   }
   
   public double getQuartile(int i) {
-    if (n > 100 || starter == null) {
+    if (n < 100 || starter == null) {
       return q[i];
     } else {
       sort();
