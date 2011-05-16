@@ -2,6 +2,7 @@ package org.apache.mahout.randomvectorspace;
 
 import java.util.Random;
 
+import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.RandomVector;
@@ -24,11 +25,14 @@ public class RVSFactory  {
   private RandomVector[] space;
   private DistanceMeasure measure = new CosineDistanceMeasure();
   
-  public RVSFactory(int nVectors, int dimensions, int seed) {
+  public RVSFactory(int nVectors, int dimensions, int seed) throws Exception {
+    if (nVectors > 63) {
+      throw new Exception("Up to 63 random dimensions supported");
+    }
     this.nVectors = nVectors;
     this.dimensions = dimensions;
     this.seed = seed;
-    this.rnd = new Random(seed);
+    this.rnd = RandomUtils.getRandom(seed);
     space = new RandomVector[nVectors];
     for(int i = 0; i < nVectors; i++) {
       space[i] = new RandomVector(dimensions, seed + i * dimensions, false);
@@ -43,7 +47,7 @@ public class RVSFactory  {
       if (c >= 0)
         mask |= 1<<i;
     }
-    position.mask = mask;
+    position.bitSet = mask;
     return position;
   }
    
