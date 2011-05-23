@@ -5,11 +5,12 @@ import java.util.Iterator;
 /*
  * Injectable implementations of sampling.
  * Usable in both map/reduce and online jobs.
+ * This class really has two different uses:
+ * 1) tell me if I would drop this sample at this time, and
+ * 2) store this sample for me and perhaps give it back.
  * 
  * getSamples() returns the entire currently available sample stream.
- * getSample() walks through the available input stream. 
- * This walking position is not required correlate with the iterator.
- * You may not wish to interleave these two calls.
+ * 
  */
 
 public abstract class Sampler<T> {
