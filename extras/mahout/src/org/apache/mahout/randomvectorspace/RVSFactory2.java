@@ -9,7 +9,7 @@ import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.RandomVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
-import org.apache.mahout.math.function.DoubleFunction;
+import org.apache.mahout.math.stats.OnlineSummarizer;
 
 /*
  * Random Vector Space: generate a set of random vectors, defining a space.
@@ -70,15 +70,14 @@ public class RVSFactory2  {
   //  }
   
   public RVS quantize(Vector value) {
-    RVS position = new RVS(value.getNumNondefaultElements());
-    char mask = 0;
+    RVS position = new RVS(nVectors, value.getNumNondefaultElements());
+//    char mask = 0;
     for(int i = 0; i < nVectors; i++) {
       double m = measure(value, i);
-      if (m >= 0.5)
+      if (m >= 1.0)
         position.setBit(i);
-      else
-        position.clearBit(i);
     }
+//    System.out.println();
     return position;
   }
   
@@ -103,43 +102,33 @@ public class RVSFactory2  {
     }
   }
   
-  class AbsFunc implements DoubleFunction {
-    
-    @Override
-    public double apply(double arg1) {
-      return Math.abs(arg1);
-    }
-    
-  }
-  
-  static int RVECS = 100;
-  private static final int DIMS = 50;
-
+  static int RVECS = 1000;
+  private static final int DIMS = 100;
 
   static public void main(String[] args) {
-    //    double[] d = new double[500];
     Vector[] lots = new Vector[RVECS];
-    Vector zero = new DenseVector(DIMS);
-    for(int i = 0; i < DIMS; i++)
-      zero.set(i, 0.0);
-    RandomUtils.useTestSeed();
-    Random rnd = RandomUtils.getRandom();
+//    Vector bench = new DenseVector(DIMS);
+//    for(int i = 0; i < DIMS; i++)
+//      bench.set(i, 0.0);
+    Random rnd = RandomUtils.getRandom(0);
+    Vector bench = new DenseVector(new RandomVector(DIMS, RandomUtils.getRandom(0), false));
     for(int i = 0; i < RVECS; i++) {
-      Vector v = new RandomVector(DIMS, rnd.nextLong(), false);
+      Vector v = new RandomVector(DIMS, RandomUtils.getRandom(i*DIMS), false);
       DenseVector dv = new DenseVector(v);
       lots[i] = dv;
     }
     System.out.println("Start test");
-    RVSFactory2 fac = new RVSFactory2(RVECS, DIMS, rnd, false);
-    RVS zbits = fac.quantize(zero);
-    System.out.println("Zero bitset" + ": " + zbits.toString());
-    int count = 0;
+    RVSFactory2 fac = new RVSFactory2(RVECS, DIMS, RandomUtils.getRandom(RVECS * DIMS), false);
+    RVS benchBits = fac.quantize(bench);
+//    System.out.println("Zero bitset" + ": " + benchBits.toString());
+    OnlineSummarizer summary = new OnlineSummarizer();
     for(int i = 0; i < RVECS; i++) {
       RVS bits = fac.quantize(lots[i]);
-      System.out.println("hamming: " + bits.hamming(zbits) + " sample: " + bits.toString());
+      int hamming = bits.hamming(benchBits);
+      System.out.println("hamming: " + hamming + " sample: " + bits.toString());
+      summary.add(hamming);
     }
-    System.out.println("negative: " + count + ":" + RVECS);
-    
+    System.out.println(summary.toString());
   }
   
 }

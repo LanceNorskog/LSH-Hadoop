@@ -33,8 +33,8 @@ import com.google.common.primitives.Longs;
  */
 public class RandomVector extends ReadOnlyVector {
   
-  final private Random rnd = new Random(0);
-  final private int baseSeed;
+  final private Random rnd ;
+  final private long baseSeed;
   final boolean gaussian;
   
   // required for serialization
@@ -42,15 +42,29 @@ public class RandomVector extends ReadOnlyVector {
     super(0);
     baseSeed = 0;
     gaussian = false;
+    rnd = RandomUtils.getRandom();
+  }
+  
+  /*
+   * @param size
+   * @param seed
+   * @param gaussian
+   */
+  public RandomVector(int size, long seed, boolean gaussian) {
+    super(size);
+    baseSeed = seed;
+    this.gaussian = gaussian;
+    rnd = RandomUtils.getRandom(seed);
   }
   
   /*
    * @param size
    * @param rnd
    */
-  public RandomVector(int size, int seed, boolean gaussian) {
+  public RandomVector(int size, Random rnd, boolean gaussian) {
     super(size);
-    baseSeed = seed;
+    this.rnd = rnd;
+    baseSeed = rnd.nextLong();
     this.gaussian = gaussian;
   }
   

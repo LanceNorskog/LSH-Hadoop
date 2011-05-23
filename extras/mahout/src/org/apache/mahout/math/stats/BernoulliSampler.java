@@ -18,6 +18,7 @@ public class BernoulliSampler<T> extends Sampler<T> {
   List<T> samples = new LinkedList<T>();
   final double percent;
   final Random rnd;
+  private Double nextRnd = null;
   
   public BernoulliSampler(double percent) {
     this.percent = percent;
@@ -27,16 +28,17 @@ public class BernoulliSampler<T> extends Sampler<T> {
   public BernoulliSampler(double percent, Random rnd) {
     this.percent = percent;
     this.rnd = rnd;
+    stage();
   }
   
   @Override
   public void addSample(T sample) {
     if (null == samples)
       throw new NullPointerException();
-    double r = rnd.nextDouble();
-    if (r <= percent) {
+    if (check(sample)) {
       samples.add(sample);
     }
+    stage();
   }
   
   @Override
@@ -63,15 +65,22 @@ public class BernoulliSampler<T> extends Sampler<T> {
     }
     return iter;
   }
-
+  
   @Override
   public void stop() {
     samples = null;
   }
   
-//  @Override
-//  public boolean hasSamples() {
-//    return samples.size() > 0;
-//  }
+  @Override
+  public boolean isDropped(T sample) {
+    return check(sample);
+  }
   
+  private boolean check(T sample) {
+    return nextRnd < percent;
+  }
+  
+  private void stage() {
+    nextRnd = rnd.nextDouble();
+  }
 }

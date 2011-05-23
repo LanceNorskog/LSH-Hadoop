@@ -1,7 +1,6 @@
 package org.apache.mahout.math.stats.correlation;
 
 import org.apache.commons.math.MathRuntimeException;
-import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
 
 public class HoeffdingCorrelation {
   

@@ -27,6 +27,9 @@ public abstract class Sampler<T> {
   /* next available sample. Return null of none available. */
   public abstract T getSample();
   
+  /* would this sample be dropped at this moment? */
+  public abstract boolean isDropped(T sample);
+  
   /* stop operations. Iterators now end. */
   public abstract void stop();
 }

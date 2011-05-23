@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  * Thus it's strongly recommended that you use
  * {@link org.apache.mahout.cf.taste.impl.similarity.GenericItemSimilarity} with pre-computed similarities if
  * you're going to use this class. You can use
- * {@link org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity} too, which computes
+ * {@link org.apache.mahout.cf.taste.impl.similarity.HoeffdingCorrelationSimilarity} too, which computes
  * similarities in real-time, but will probably find this painfully slow for large amounts of data.
  * </p>
  */

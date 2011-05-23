@@ -1,29 +1,18 @@
 package org.apache.mahout.semanticvectors;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
-import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
-
-import working.Distributions;
-
-import com.google.common.collect.Collections2;
 
 /*
  * Given a DataModel, create a semantic vector for a User or Item.
@@ -31,6 +20,9 @@ import com.google.common.collect.Collections2;
  * 
  * Semantic Vector formula: ((sum(random U)+ sum(pref(u,i)))/2)/#U
  */
+
+// TODO: Split this in raw dual engine and datamodel wrapper
+// Remove subsampling
 
 public class SemanticVectorFactory {
   private final DataModel model;
@@ -58,6 +50,7 @@ public class SemanticVectorFactory {
   
   /*
    * Create a Semantic Vector for this User with Item as independent variable
+   * Subsample using Bernoulli sampling if more Items than samples requested
    */
   public Vector getUserVector(long userID, int minimum, int samples) throws TasteException {
     FastIDSet prefs = model.getItemIDsFromUser(userID);
@@ -88,19 +81,17 @@ public class SemanticVectorFactory {
       }
     } else {
       samples = Math.min(samples, nItems);
-      int marker = 0;
-      while(marker < samples) {
+      // Bernoulli sampling
+      for(int i = 0; i < samples; i++) {
         long itemID;
-        while(true) {
-          long sample;
-          sample = Math.abs(rnd.nextInt()) % nItems;
-          if (items[(int) sample] >= 0) {
-            itemID = items[(int) sample];
-            items[(int) sample] = -1;
-            break;
-          }
+        int sample;
+        sample = rnd.nextInt(nItems);
+        if (items[sample] == -1)
+          continue;
+        else {
+          itemID = items[(int) sample];
+          items[(int) sample] = -1;
         }
-        marker++;
         Float pref = model.getPreferenceValue(userID, itemID);
         if (null == pref) {
           continue;
@@ -163,11 +154,11 @@ public class SemanticVectorFactory {
     return v;
   }
   
-//  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double rescale) {
-//    double dist = measure.distance(v1, v2)/rescale;
-//    dist = Distributions.normal2linear(dist);
-//    return dist;
-//  }
+  //  public Double linearDistance(Vector v1, Vector v2, DistanceMeasure measure, double rescale) {
+  //    double dist = measure.distance(v1, v2)/rescale;
+  //    dist = Distributions.normal2linear(dist);
+  //    return dist;
+  //  }
   
   public int getDimensions(){
     return dimensions;

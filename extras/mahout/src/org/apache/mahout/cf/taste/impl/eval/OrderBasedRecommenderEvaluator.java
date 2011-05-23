@@ -35,6 +35,8 @@ import org.apache.mahout.cf.taste.recommender.Recommender;
 /**
  * Evaluate recommender by comparing order of all raw prefs with order in 
  * recommender's output for that user. Can also compare data models.
+ * 
+ * Change bubble sort to Ulam distance: minimal number of moves.
  */
 public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluator {
 
