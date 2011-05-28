@@ -12,16 +12,12 @@ import org.apache.mahout.math.function.DoubleFunction;
  */
 
 public class SliceSampler1D<T> extends Sampler<T> {
-  final DoubleFunction mapper;
+  final SampleFunction<T> mapSample;
+  final DoubleFunction mapX;
   final Random rnd;
   final double high;
   final double low;
-  // constant for all samples
-  final double width;   // starting width
-  double slice = 0;   // output of func(nextX)
-  double left = 0;
-  double right = 0;
-  boolean reset = true;
+  private boolean debug = false;
   
   /*
    * mapper: function on a type
@@ -29,23 +25,16 @@ public class SliceSampler1D<T> extends Sampler<T> {
    * width: initial width of slice
    * low, high: range of output function expected
    */
-  public SliceSampler1D(DoubleFunction mapper, Random rnd, double width, double low, double high) {
-    this.mapper = mapper;
+  public SliceSampler1D(SampleFunction<T> mapSample, DoubleFunction mapX, Random rnd, double low, double high) {
+    this.mapSample = mapSample;
+    this.mapX = mapX;
     this.rnd = rnd;
-    this.width = width;
     this.low = low;
     this.high = high;
-    double r = nextX();
-    resetWindow();
   }
   
   @Override
   public void addSample(T sample) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public T getSample() {
     throw new UnsupportedOperationException();
   }
   
@@ -55,97 +44,28 @@ public class SliceSampler1D<T> extends Sampler<T> {
   }
   
   /*
-   * Implement expanding/contracting window algorithm:
-   * @see org.apache.mahout.math.stats.Sampler#isDropped(java.lang.Object)
-   * 
    * Do one pass of "pull a sample within a sliding window"
    */
   @Override
   public boolean isDropped(T sample) {
-    // expand left and/or rightwards until both outside the slice
-    double leftY = mapper.apply(left);
-    double rightY = mapper.apply(right);
-    if (leftY < slice || rightY < slice) {
-      while(mapper.apply(left) < slice) {
-        left -= width;
-      }
-      if (left < low)
-        left = low;
-      while(mapper.apply(right) < slice) {
-        right += width;
-      }
-      if (right > high)
-        right = high;
-    }
-    // do one check, return valid
-    double x = nextX(left, right);
-    double test = mapper.apply(x);
-    if (test > slice)
-      return false;
-    resetWindow();
-    return true;
-  }
-  
-  private void resetWindow() {
-    // set initial window within full range, of given width
-    // horizontal bar: under is within slice
-    slice = mapper.apply(nextX());
-    double starter = nextX();
-    double test = mapper.apply(starter);
-    while(test > slice) {
-      starter = nextX();
-      test = mapper.apply(starter);
-    }
-    // establish initial window
-    left = starter - width/2;
-    right = starter + width/2;
-    // clamp to prescribed range
-    if (left < low) {
-      right += low - left;
-      left = low;
-    } else if (right > high) {
-      left -= right - high;
-      right = high;
-    }
+    double x = nextX();
+    double slice = mapX.apply(x);
+    double sampleX = mapSample.apply(sample);
+    double test = mapX.apply(sampleX);
+    if (debug )
+      System.out.println("low/high/x/slice/sample/test: " + low + ",\t" + high + ",\t" + x + ",\t" + slice + ",\t" + sampleX + ",\t" + test);
     
+    return test < slice;
   }
-  
-  //  private void setCenter() {
-  //    while(true) {
-  //      double r = nextX();
-  //      center = r;
-  //      if (center - width/2 < low) {
-  //        continue;
-  //      }
-  //      if (center + width/2 > high) {
-  //        continue;
-  //      }
-  //    }
-  //  }
   
   private double nextX() {
-    return nextX(low, high);
-  }
-  
-  private double nextX(double lower, double upper) {
-    return lower + (rnd.nextDouble() * (upper - lower));
+    double range = high - low;
+    double r = rnd.nextDouble() * range;
+    return low + r;
   }
   
   @Override
   public void stop() {
   }
   
-  /**
-   * @param args
-   */
-  public static void main(String[] args) {
-    // TODO Auto-generated method stub
-    
-  }
-  
-  
-}
-
-abstract class GenericFunc<T> {
-  abstract double getSample(T input);
 }
