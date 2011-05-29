@@ -38,11 +38,6 @@ public class ReservoirSampler<T> extends Sampler<T> {
     counter++;
   }
   
-  @Override
-  public T getSample() {
-    throw new UnsupportedOperationException();
-  }
-  
   @SuppressWarnings("unchecked")   // there's some way to do genericized empty list
   @Override
   public Iterator<T> getSamples(boolean flush) {
@@ -60,15 +55,12 @@ public class ReservoirSampler<T> extends Sampler<T> {
   }
   
   @Override
-  public boolean isDropped(T sample) {
-    if (stored == null)
-      throw new NullPointerException();
-    return check(sample);
+  public boolean isSampled(T sample) {
+      throw new UnsupportedOperationException("ReservoirSampler.isSampled: Cannot test reservoir without changing it");
   }
   
   private boolean check(T sample) {
     return (nextIndex < length);
-    
   }
   
   private void stage() {

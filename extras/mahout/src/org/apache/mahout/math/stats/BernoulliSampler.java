@@ -41,19 +41,6 @@ public class BernoulliSampler<T> extends Sampler<T> {
     stage();
   }
   
-  @Override
-  public T getSample() {
-    if (null == samples)
-      return null;
-    if (samples.size() > 0) {
-      T sample = samples.get(0);
-      samples.remove(0);
-      return sample;
-    } else {
-      return null;
-    }
-  }
-  
   @SuppressWarnings("unchecked")
   @Override
   public Iterator<T> getSamples(boolean flush) {
@@ -72,7 +59,7 @@ public class BernoulliSampler<T> extends Sampler<T> {
   }
   
   @Override
-  public boolean isDropped(T sample) {
+  public boolean isSampled(T sample) {
     return check(sample);
   }
   

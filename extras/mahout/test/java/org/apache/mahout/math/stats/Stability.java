@@ -4,15 +4,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Random;
 
-import org.apache.commons.math.stat.correlation.PearsonsCorrelation;
-import org.apache.commons.math.stat.correlation.SpearmansCorrelation;
-import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverageAndStdDev;
 import org.apache.mahout.cf.taste.impl.common.RunningAverageAndStdDev;
 import org.apache.mahout.math.stats.BernoulliSampler;
 import org.apache.mahout.math.stats.ReservoirSampler;
 import org.apache.mahout.math.stats.Sampler;
-import org.apache.mahout.math.stats.correlation.HoeffdingCorrelation;
 
 /*
  * Measure the stability of <s>the author</s> various sampling algorithms.
@@ -27,17 +23,16 @@ public class Stability {
    * @param args
    */
   public static void main(String[] args) {
-    Random rnd = getRnd();
-    double[] bmean1 = new double[ITERATIONS];
-    double[] rmean1 = new double[ITERATIONS];
-    full(rnd, 500, bmean1, rmean1);
-    double[] bmean2 = new double[ITERATIONS];
-    double[] rmean2 = new double[ITERATIONS];
-    full(rnd, 1000, bmean2, rmean2);
-    System.out.println("Face-off: same sampler, different seeds");
-    print("Bernoulli v.s. Bernoulli", bmean1, rmean1);
-    print("Reservoir v.s. Reservoir", bmean2, rmean2);
-    
+    for(int i = 101; i < 2000; i += 300) {
+      N = i;
+      Random rnd = getRnd();
+      double[] bmean1 = new double[ITERATIONS];
+      double[] rmean1 = new double[ITERATIONS];
+      full(rnd, 500, bmean1, rmean1);
+      double[] bmean2 = new double[ITERATIONS];
+      double[] rmean2 = new double[ITERATIONS];
+      full(rnd, 1000, bmean2, rmean2);
+    }
   }
   
   private static void full(Random rnd, int seed, double[] bmean, double[] rmean) {
@@ -50,28 +45,12 @@ public class Stability {
     Arrays.fill(scrambled, -1);
     // dups are ok
     for(int i = 0; i < total; i++) {
-//      int x = 0;
-//      while (x <= 0 || x >= RANGE) 
-//        x= (int)((rnd.nextGaussian()) + 0.5 * RANGE);
-//      scrambled[i] = x; 
-            scrambled[i] = rnd.nextInt(RANGE);
-    }
-    
-    
+      scrambled[i] = rnd.nextInt(RANGE);
+    }    
     rnd.setSeed(seed);
     bernoulli(total, samples, scrambled, rnd, bmean);
     rnd.setSeed(seed);
     reservoir(total, samples, scrambled, rnd, rmean);
-    print("Bernoulli v.s. Reservoir", bmean, rmean);
-  }
-  
-  private static void print(String header, double[] mean1, double[] mean2) {
-    PearsonsCorrelation pc = new PearsonsCorrelation();
-    SpearmansCorrelation sp = new SpearmansCorrelation();
-    HoeffdingCorrelation hc = new HoeffdingCorrelation();
-    System.out.println("Pearsons: " + header + ": " + pc.correlation(mean1, mean2));
-    System.out.println("Spearmans:" + header + ": "  + sp.correlation(mean1, mean2));
-    System.out.println("Hoeffding:" + header + ": "  + hc.correlation(mean1, mean2));
   }
   
   private static void reservoir(int total, int samples, int[] scrambled,
@@ -84,8 +63,6 @@ public class Stability {
       OnlineSummarizer tracker = new OnlineSummarizer(); 
       Sampler<Integer> sampler = new ReservoirSampler<Integer>(samples, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      //      System.out.println(i + "," + tracker.toString());
-      // subtract what should be the mean instead of the actual mean
       mean.addDatum(tracker.getMean());
       median.addDatum(tracker.getMedian());
       q1.addDatum(tracker.getQuartile(1));
@@ -106,8 +83,6 @@ public class Stability {
       OnlineSummarizer tracker = new OnlineSummarizer();
       Sampler<Integer> sampler = new BernoulliSampler<Integer>(percent, rnd);
       stability(scrambled, sampler, total, samples, tracker);
-      //      System.out.println(i + "," + tracker.toString());
-      // subtract what should be the mean instead of the actual mean
       mean.addDatum(tracker.getMean());
       median.addDatum(tracker.getMedian());
       q1.addDatum(tracker.getQuartile(1));
@@ -138,12 +113,4 @@ public class Stability {
     return new Random();
   }
   
-  private static double correlation(final double[] xArray, final double[] yArray) throws IllegalArgumentException {
-    SimpleRegression regression = new SimpleRegression();
-    for(int i=0; i<xArray.length; i++) {
-      regression.addData(xArray[i], yArray[i]);
-    }
-    return regression.getR();
-    
-  }  
 }

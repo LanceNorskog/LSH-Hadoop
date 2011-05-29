@@ -14,7 +14,6 @@ import java.util.Iterator;
  */
 
 public abstract class Sampler<T> {
-  List
 
   /* Add a new sample */
   public abstract void addSample(T sample);
@@ -26,8 +25,8 @@ public abstract class Sampler<T> {
   /* Return current set of samples. */
   public abstract Iterator<T> getSamples(boolean flush);
 
-  /* would this sample be dropped at this moment? */
-  public abstract boolean isDropped(T sample);
+  /* would this sample be added at this moment? */
+  public abstract boolean isSampled(T sample);
   
   /* stop operations. Iterators now end. */
   public abstract void stop();
