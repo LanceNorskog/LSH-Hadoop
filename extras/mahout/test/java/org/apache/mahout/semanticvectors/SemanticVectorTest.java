@@ -81,12 +81,12 @@ public final class SemanticVectorTest extends TasteTestCase {
   @Test
   public void testNearness() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2);
-    testManhattan(svf);
+    testEuclidean(svf);
     svf = new SemanticVectorFactory(miniModel, 200);
     testCosine(svf);
   }
 
-  private void testManhattan(SemanticVectorFactory svf) throws TasteException {
+  private void testEuclidean(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectUserDense(0L, 1);
     Vector blue = svf.projectUserDense(1L, 1);
     Vector green = svf.projectUserDense(2L, 1);
