@@ -80,23 +80,23 @@ public final class SemanticVectorTest extends TasteTestCase {
   
   @Test
   public void testNearness() throws TasteException {
-    SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2, new Random(0));
+    SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2);
     testManhattan(svf);
-    svf = new SemanticVectorFactory(miniModel, 200, new Random(0));
+    svf = new SemanticVectorFactory(miniModel, 200);
     testCosine(svf);
   }
 
   private void testManhattan(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.getUserVector(0, 1, 10);
-    Vector blue = svf.getUserVector(1, 1, 10);
-    Vector green = svf.getUserVector(2, 1, 10);
+    Vector red = svf.projectUserDense(0L, 1);
+    Vector blue = svf.projectUserDense(1L, 1);
+    Vector green = svf.projectUserDense(2L, 1);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
     double bg = measure.distance(blue, green);
-    assertEquals(0.23134893607990584, rb, 0.05);
-    assertEquals(0.23555944389134312, rg, 0.05);
-    assertEquals(0.00441193779852409, bg, 0.05);
+    assertEquals(0.3512971749780699, rb, 0.00005);
+    assertEquals(0.349471283329383, rg, 0.00005);
+    assertEquals(0.0023565353725962294, bg, 0.05);
    System.out.println("red:   " + red.toString());
     System.out.println("blue:  " + blue.toString());
     System.out.println("green: " + green.toString());
@@ -106,16 +106,16 @@ public final class SemanticVectorTest extends TasteTestCase {
   }
   
   private void testCosine(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.getUserVector(0, 1, 10);
-    Vector blue = svf.getUserVector(1, 1, 10);
-    Vector green = svf.getUserVector(2, 1, 10);
+    Vector red = svf.projectUserDense(0L, 1);
+    Vector blue = svf.projectUserDense(1L, 1);
+    Vector green = svf.projectUserDense(2L, 1);
     DistanceMeasure measure = new CosineDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
     double bg = measure.distance(blue, green);
-    assertEquals(0.07206500399320093, rb, 0.00005);
-    assertEquals(0.12486050786152714, rg, 0.00005);
-    assertEquals(0.1858631487969037, bg, 0.00005);
+    assertEquals(0.13499267042886387, rb, 0.00005);
+    assertEquals(0.1353972013843907, rg, 0.00005);
+    assertEquals(0.2801060298674385, bg, 0.00005);
    System.out.println("red:   " + red.toString());
     System.out.println("blue:  " + blue.toString());
     System.out.println("green: " + green.toString());
@@ -128,29 +128,29 @@ public final class SemanticVectorTest extends TasteTestCase {
   public void testVectors() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
     // use all items
-    Vector vu = svf.getUserVector(123, 0, 0);
+    Vector vu = svf.projectUserDense(123, 0);
     assertNotNull(vu);
     // use two randomly sampled items
-    vu = svf.getUserVector(123, 0, 2);
+    vu = svf.projectUserDense(123, 0);
     assertNotNull(vu);
     // use all users
-    Vector vi = svf.getItemVector(789, 0, 0);
+    Vector vi = svf.projectItemDense(789, 0);
     assertNotNull(vi);
     // use two randomly sampled users
-    vi = svf.getItemVector(789, 0, 2);
+    vi = svf.projectItemDense(789, 0);
     assertNotNull(vi);
   }
   
   @Test(expected = NoSuchUserException.class)
   public void testBadUser() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
-    Vector vu = svf.getUserVector(-1, 0, 0);
+    Vector vu = svf.projectUserDense(-1, 0);
   }
   
   @Test(expected = NoSuchItemException.class)
   public void testBadItem() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
-    Vector vu = svf.getItemVector(-1, 0, 0);
+    Vector vu = svf.projectItemDense(-1, 0);
   }
   
 }

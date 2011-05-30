@@ -27,7 +27,7 @@ public class SVFmain {
     DistanceMeasure measure = new ManhattanDistanceMeasure();
     double rescale;
     
-    SemanticVectorFactory svf = new SemanticVectorFactory(model, dimensions, new Random(0));
+    SemanticVectorFactory svf = new SemanticVectorFactory(model, dimensions);
     //    Vector v = svf.getUserVector(100, 20, 50);
     //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
     //    Vector v2 = svf.getItemVector(1282, 10, 20);
@@ -47,8 +47,8 @@ public class SVFmain {
     Vector[] va = new Vector[model.getNumUsers()];
     LongPrimitiveIterator users = model.getUserIDs();
     for(int i = 0; i < model.getNumUsers(); i++) {
-      int userID = (int) users.nextLong();
-      va[i] = svf.getUserVector(userID, 10, 40);
+      long userID = users.nextLong();
+      va[i] = svf.projectUserDense(userID, 10);
     }
     showDistributions(va, measure, rescale);
   }
@@ -57,8 +57,8 @@ public class SVFmain {
     Vector[] va = new Vector[model.getNumItems()];
     LongPrimitiveIterator items = model.getItemIDs();
     for(int i = 0; i < model.getNumItems(); i++) {
-      int itemID = (int) items.nextLong();
-      va[i] = svf.getItemVector(itemID, 10, 40);
+      long itemID = items.nextLong();
+      va[i] = svf.projectItemDense(itemID, 10);
     }
     showDistributions(va, measure, rescale);
   }
