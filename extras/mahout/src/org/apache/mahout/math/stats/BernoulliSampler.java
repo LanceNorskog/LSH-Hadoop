@@ -21,7 +21,7 @@ public class BernoulliSampler<T> extends Sampler<T> {
   private Double nextRnd = null;
   
   public BernoulliSampler(double percent) {
-    this.percent = percent;
+    this.percent = percent / 100;
     rnd = RandomUtils.getRandom();
   }
   
@@ -35,7 +35,7 @@ public class BernoulliSampler<T> extends Sampler<T> {
   public void addSample(T sample) {
     if (null == samples)
       throw new NullPointerException();
-    if (check(sample)) {
+    if (check()) {
       samples.add(sample);
     }
     stage();
@@ -60,10 +60,12 @@ public class BernoulliSampler<T> extends Sampler<T> {
   
   @Override
   public boolean isSampled(T sample) {
-    return check(sample);
+    boolean val = check();
+    stage();
+    return val;
   }
   
-  private boolean check(T sample) {
+  private boolean check() {
     return nextRnd < percent;
   }
   

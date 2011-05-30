@@ -31,7 +31,7 @@ public class ReservoirSampler<T> extends Sampler<T> {
   public void addSample(T sample) {
     if (counter <= length) {
       stored.add(sample);
-    } else if (check(sample)){
+    } else if (check()){
       stored.set((int) nextIndex, sample);
       stage();
     }
@@ -56,17 +56,17 @@ public class ReservoirSampler<T> extends Sampler<T> {
   
   @Override
   public boolean isSampled(T sample) {
-      throw new UnsupportedOperationException("ReservoirSampler.isSampled: Cannot test reservoir without changing it");
+      boolean val = check();
+      stage();
+      return val;
   }
   
-  private boolean check(T sample) {
+  private boolean check() {
     return (nextIndex < length);
   }
   
   private void stage() {
     long x = rnd.nextLong();
-    while (x == 0)
-      x = rnd.nextLong();
     nextIndex = Math.abs(x) % counter; 
   }
   

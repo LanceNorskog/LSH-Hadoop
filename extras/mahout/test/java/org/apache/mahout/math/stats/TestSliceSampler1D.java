@@ -44,3 +44,21 @@ public class TestSliceSampler1D extends MahoutTestCase {
     }
   }
 }
+
+class RandomSquared extends Random {
+  
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
+
+  public RandomSquared(long seed) {
+    super(seed);
+  }
+
+  @Override
+  public double nextDouble() {
+    this.setSeed(super.nextLong());
+    return super.nextDouble();
+  }
+}
