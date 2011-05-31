@@ -30,6 +30,8 @@ import com.google.common.primitives.Longs;
  * Vector with repeatable random values.
  *
  * Can only use java.util.Random as generator from RandomUtils does not honor setSeed()
+ * 
+ * Change to use MurmurHash projectors directly!
  */
 public class RandomVector extends ReadOnlyVector {
   
@@ -68,7 +70,15 @@ public class RandomVector extends ReadOnlyVector {
     this.gaussian = gaussian;
   }
   
-  public int getNumNondefaultElements() {
+  public boolean isDense() {
+    return true;
+  }
+  
+  public boolean isSequentialAccess() {
+    return false;
+  }
+  
+public int getNumNondefaultElements() {
     return size();
   }
   

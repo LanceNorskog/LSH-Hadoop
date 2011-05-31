@@ -37,14 +37,6 @@ public abstract class ReadOnlyVector extends AbstractVector implements Vector {
     super(size);
   }
   
-  public boolean isDense() {
-    return true;
-  }
-  
-  public boolean isSequentialAccess() {
-    return false;
-  }
-  
   public void setQuick(int index, double value) {
     throw new UnsupportedOperationException(CANNOT_SET_READ_ONLY_VECTOR);
   }
