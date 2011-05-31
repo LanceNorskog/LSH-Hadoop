@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.hadoop.item.UserVectorSplitterMapper;
+import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FastIDSet;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
 
@@ -28,6 +29,8 @@ import org.apache.mahout.math.Vector;
 
 public class SemanticVectorFactory {
   private final DataModel model;
+  private final FastByIDMap<Vector> userRs = new FastByIDMap<Vector>();
+  private final FastByIDMap<Vector> itemRs = new FastByIDMap<Vector>();
   private final int dimensions;
   // allow testing by adjusting the amount of randomness in output vector
   float FACTOR = 0.99f;
@@ -35,67 +38,57 @@ public class SemanticVectorFactory {
   public SemanticVectorFactory(DataModel model, int dimensions) {
     this.model = model;
     this.dimensions = dimensions;
+    
   }
-
+  
   /*
    * Create a Semantic Vector from items preferred by this User
    * The vector represents the common preferences for all users
    */
   public Vector projectUserDense(long userID, int minimum) throws TasteException {
-    Random rnd = getRandomItemVector(userID);
+    /*    setRandomUserVecs();
+    Vector randomUserV = userRs.get(userID);
+    Random rnd = RandomUtils.getRandom(userID);
     FastIDSet prefs = model.getItemIDsFromUser(userID);
     int nItems = prefs.size();
     if (nItems < minimum)
       return null;
-    long[] items = new long[nItems];
-    LongPrimitiveIterator itemList = prefs.iterator();
-    int index = 0;
-    while (itemList.hasNext()) {
-      items[index++] = itemList.nextLong();
-    }
-    prefs = null;
+    LongPrimitiveIterator itemIter = prefs.iterator();
     double[] values = new double[dimensions];
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     float prefSum = 0f;
     int count = 0;
-    for(int i = 0; i < nItems; i++) {
-      long itemID;
-      int sample;
-      sample = rnd.nextInt(nItems);
-      if (items[sample] == -1)
-        continue;
-      else {
-        itemID = items[(int) sample];
-        items[(int) sample] = -1;
+    Vector userR = userRs.get(userID);
+    for(int dim = 0; dim < dimensions; dim++) {
+      double userPos = userR.get(dim);
+      while(itemIter.hasNext()) {
+        long itemID = itemIter.next();;
+        Vector itemR = itemRs.get(itemID);
+        Float pref = model.getPreferenceValue(userID, itemID);
+        assert(pref >= 0);
+        pref = (pref - minPreference)/(maxPreference - minPreference);
+        
+        prefSum += userPos - pref;
+        count++;
       }
-      Float pref = model.getPreferenceValue(userID, itemID);
-      if (null == pref) {
-        continue;
-      }
-      pref = (pref - minPreference)/(maxPreference - minPreference);
-      prefSum += pref;
-      count++;
+      prefSum /= count;
+      float position = prefSum;
+      values[dim] = position;
     }
-    prefSum /= count;
-    for(int i = 0; i < dimensions; i++) {
-      float rndSum = 0f;
-      for(int j = 0; j < count; j++) {
-        rndSum += rnd.nextDouble();
-      }
-      rndSum /= count;
-      float position = (rndSum*(1-FACTOR) + prefSum*FACTOR)/2;
-      values[i] = position;
-    }
+    
     Vector v = new DenseVector(values);
-    return v;
+    return v;*/
+    return null;
   }
   
   /*
    * Create a Semantic Vector for this Item with User as independent variable
    */
   public Vector projectItemDense(final long itemID, int minimum) throws TasteException {
-    Random rnd = getRandomUserVector(itemID);
+    setRandomItemVecs();
+    setRandomUserVecs();
+    
     PreferenceArray prefs = model.getPreferencesForItem(itemID);
     int nUsers = prefs.length();
     if (nUsers < minimum)
@@ -105,38 +98,73 @@ public class SemanticVectorFactory {
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
     Iterator<Preference> lpi = prefs.iterator();
-    float prefSum = 0f;
-    
+    Vector itemR = itemRs.get(itemID);
+    int count = 0;
     while (lpi.hasNext()) {
       Preference preference = lpi.next();
-      float value = preference.getValue();
-      value = (value - minPreference)/(maxPreference - minPreference);
-      prefSum += value;
-      
-    }
-    prefSum /= nUsers;
-    for(int i = 0; i < dimensions; i++) {
-      float rndSum = 0f;
-      for(int j = 0; j < nUsers; j++) {
-        rndSum += rnd.nextDouble()/nUsers;
+      long userID = preference.getUserID();
+      Vector userR = userRs.get(userID);
+      float pref = preference.getValue();
+      pref = (pref - minPreference)/(maxPreference - minPreference);
+      for(int dim = 0; dim < dimensions; dim++) {
+        double value = 0;
+        
+        double uRd = userR.get(dim);
+        double iRd = itemR.get(dim);
+        double position = iRd + (uRd - iRd)/2 * pref;
+        assert(position >= 0.0 && position <= 1.0);
+        values[dim] += position;
       }
-      float position = (rndSum*(1-FACTOR) + prefSum*FACTOR)/2;
-      values[i] = position;
+      count++;
+    }
+    for(int dim = 0; dim < dimensions; dim++) {
+      values[dim] = values[dim] / count;
     }
     Vector v = new DenseVector(values);
-   
+    
     return v;
   }
-
-  // User and Item projection vectors are deterministic, with a disjoint seed space
-  public Random getRandomUserVector(long itemID) {
-    Random rnd = RandomUtils.getRandom(itemID);
-    return rnd;
+  
+  private void setRandomUserVecs() throws TasteException {
+    if (userRs.size() == 0) {
+      LongPrimitiveIterator userIter = model.getUserIDs();
+      while (userIter.hasNext()) {
+        long userID = userIter.nextLong();
+        userRs.put(userID, getRandomUserVector(userID));
+      }
+    }
+    
+  }
+  private void setRandomItemVecs() throws TasteException {
+    if (itemRs.size() == 0) {
+      LongPrimitiveIterator itemIter = model.getItemIDs();
+      while (itemIter.hasNext()) {
+        long itemID = itemIter.nextLong();
+        itemRs.put(itemID, getRandomItemVector(itemID));
+      }
+    }
   }
   
-  public Random getRandomItemVector(long userID) {
-    Random rnd = RandomUtils.getRandom(-userID);
-    return rnd;
+  // User and Item projection vectors are deterministic, with a disjoint seed space
+  public Vector getRandomUserVector(long userID) {
+    
+    Vector v = new DenseVector(dimensions);
+    Random rnd = new Random();
+    rnd.setSeed(userID + 500000);
+    for(int dim = 0; dim < dimensions; dim++) {
+      v.setQuick(dim, rnd.nextDouble());
+    }
+    return v;
+  }
+  
+  public Vector getRandomItemVector(long itemID) {
+    Vector v = new DenseVector(dimensions);
+    Random rnd = new Random();
+    rnd.setSeed(itemID + 300000);
+    for(int dim = 0; dim < dimensions; dim++) {
+      v.setQuick(dim, rnd.nextDouble());
+    }
+    return v;
   }
   
   public int getDimensions(){
