@@ -29,7 +29,7 @@ import org.apache.mahout.cf.taste.impl.recommender.knn.ConjugateGradientOptimize
 import org.apache.mahout.cf.taste.impl.recommender.knn.KnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.recommender.knn.Optimizer;
 import org.apache.mahout.cf.taste.impl.recommender.slopeone.SlopeOneRecommender;
-import org.apache.mahout.cf.taste.impl.similarity.HoeffdingCorrelationSimilarity;
+import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.recommender.Recommender;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
@@ -66,7 +66,7 @@ public final class OrderBasedRecommenderEvaluatorTest extends TasteTestCase {
   }
   
   private static Recommender buildKNNRecommender(DataModel dataModel) throws TasteException {
-    ItemSimilarity similarity = new HoeffdingCorrelationSimilarity(dataModel);
+    ItemSimilarity similarity = new EuclideanDistanceSimilarity(dataModel);
     Optimizer optimizer = new ConjugateGradientOptimizer();
     return new KnnItemBasedRecommender(dataModel, similarity, optimizer, 5);
   }

@@ -9,6 +9,7 @@ import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.common.distance.DistanceMeasure;
+import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -24,7 +25,7 @@ public class SVFmain {
   public static void main(String[] args) throws IOException, TasteException {
     DataModel model = new GroupLensDataModel(new File("/tmp/lsh_hadoop/GL_100k/ratings.dat"));
     int dimensions = 200;
-    DistanceMeasure measure = new ManhattanDistanceMeasure();
+    DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rescale;
     
     SemanticVectorFactory svf = new SemanticVectorFactory(model, dimensions);
