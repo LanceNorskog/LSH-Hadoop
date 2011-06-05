@@ -286,7 +286,7 @@ public class SamplingDataModel implements DataModel {
    * itemIDMap: item ID -> index into above bitset
    */
   private void fillBitCache() throws TasteException {
-    final Random rnd = RandomUtils.getRandom(0);
+    final Random rnd = RandomUtils.getRandom();
     LongPrimitiveIterator it = delegate.getUserIDs();
     int numItems = delegate.getNumItems();
     while(it.hasNext()) {
