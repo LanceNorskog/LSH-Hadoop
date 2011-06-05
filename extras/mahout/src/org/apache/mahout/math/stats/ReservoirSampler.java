@@ -24,6 +24,7 @@ public class ReservoirSampler<T> extends Sampler<T> {
     stored = new ArrayList<T>(length);
     this.length = length;
     this.rnd = rnd;
+    counter = 1;   // don't fill at first
     stage();
   }
   

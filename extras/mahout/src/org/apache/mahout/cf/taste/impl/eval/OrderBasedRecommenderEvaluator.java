@@ -140,6 +140,7 @@ public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluato
    */
    private static int mask(FastIDSet commonSet, FastIDSet otherSet, long maxItemID) {
      int count = 0;
+     int union = 0;
      for (int i = 0; i <= maxItemID; i++) {
        if (commonSet.contains(i)) {
          if (otherSet.contains(i)) {
@@ -147,7 +148,25 @@ public final class OrderBasedRecommenderEvaluator implements RecommenderEvaluato
          } else {
            commonSet.remove(i);
          }
+         if (commonSet.contains(i) || otherSet.contains(i))
+           union++;
        }
+     }
+     int common = commonSet.intersectionSize(otherSet);
+     if (count != common) {
+       System.err.println("mask() count:");
+       System.err.println(" " + commonSet.toString());
+       System.err.println(" " + otherSet.toString());
+       System.err.println("counted v.s. intersectionSize: " + count + ", " + common);       
+     }
+     FastIDSet x = commonSet.clone();
+     x.retainAll(otherSet);
+     if (union != x.size()) {
+       System.err.println("mask(): union");
+       System.err.println(" " + commonSet.toString());
+       System.err.println(" " + otherSet.toString());
+       System.err.println(" " + x.toString());
+       System.err.println("union v.s. retained.size(): " + union + ", " + x.size());       
      }
      return count;
    }

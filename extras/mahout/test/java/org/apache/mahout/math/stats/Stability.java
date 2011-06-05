@@ -16,8 +16,7 @@ import org.apache.mahout.math.stats.Sampler;
  * Measure the stability of <s>the author</s> various sampling algorithms.
  */
 public class Stability {
-  static int TOTAL = 50000;        // total number of samples
-  static int N = 1000;            // number of samples to fetch and add
+  static int TOTAL = 5000;        // total number of samples
   static int ITERATIONS = 20;     // number of iterations to build standard deviation
   static int RANGE = 50;         // numerical samples are 0-RANGE
   
@@ -66,6 +65,7 @@ public class Stability {
     FullRunningAverageAndStdDev q1 = new FullRunningAverageAndStdDev();
     FullRunningAverageAndStdDev q3 = new FullRunningAverageAndStdDev();
     int[] scrambled = new int[total];
+    double percent = ((double) reservoir) / total;
     for(int i = 0; i < ITERATIONS; i++) {
       scramble(rnd, total, scrambled);
       OnlineSummarizer tracker = new OnlineSummarizer(); 
@@ -122,17 +122,24 @@ public class Stability {
       count++;
     }
     Iterator<Integer> it = sampler.getSamples(true);
-    int r = 0;
+    Integer r = 0;
     while(it.hasNext()) {
       r = it.next();
-      tracker.add(r);
+      if (null != r)
+        tracker.add(r);
     }
+  }
+  
+  private static void order(int total, int[] scrambled) {
+    for(int i = 0; i < total; i++) {
+      scrambled[i] = i;
+      }
   }
   
   private static void scramble(Random rnd, int total, int[] scrambled) {
     Arrays.fill(scrambled, -1);
-    for(int i = 0; i < total; i++) {
-      scrambled[i] = rnd.nextInt(RANGE);
+    for(int i = 0; i < total * 10; i++) {
+      scrambled[i % total] = rnd.nextInt(RANGE);
     }
   }
   
