@@ -22,6 +22,8 @@ public class SliceRandom extends Random {
   // constant for all samples
   final double width;   // starting width
   //  final double slice;   // output of func(nextX)
+  int repeats;  // total 2nd through N through the loop
+  int skip;     // number of discontinuities
   
   /*
    * mapper: function on a type
@@ -43,33 +45,43 @@ public class SliceRandom extends Random {
    */
   @Override
   public double nextDouble() {
-    // horizontal bar: under is within slice
-    double slice = mapper.apply(nextX());
+    double x;
+    repeats = 0;
     while(true) {
-      double x = nextX();
+      // horizontal bar: under is within slice
+      double slice = mapper.apply(nextX());
       // establish initial window
-      double left = x - width/2;
-      double right = x + width/2;
-      // clamp to prescribed range
-      if (left < low || right > high) {
+      x = nextX();
+      double left = Math.max(x - width, low);
+      double right = Math.min(x + width, high);
+      // expand until both sides are outside of the slice
+      double y = 0;
+      while ((y = mapper.apply(left)) < slice && left > low) {
+        left = Math.max(left - width, low);
+      }
+      while ((y = mapper.apply(right)) < slice && right < high) {
+        right = Math.min(right + width, high);
+      }
+      if (left == low && right == high) {
+        // the window is wider than a local peak of the function
+        // should make window half as big
+        repeats++;
+        skip++;
         continue;
       }
-      // expand until outside the slice
-      while (mapper.apply(left) < slice) {
-        left -= width;
-      }
-      while (mapper.apply(right) < slice) {
-        right += width;
-      }
-      if (x < left || x > right)
-        continue;
       double fx = mapper.apply(x);
       if (fx < slice)
         break;
-      x = nextX();
+      if (high - x > x - low)
+        left = x;
+      else
+        right = x;
+      if (left >= right)
+      repeats++;
     }
     
-    return x;
+    double delta = high - low;
+    return (x - low)/delta;
   }
   
   private double nextX() {
