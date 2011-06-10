@@ -11,36 +11,49 @@ import org.apache.commons.collections.iterators.ArrayIterator;
  * Both dense and sparse supported. 
  * support sparse by adding map->index
  * 
- * Does not support Level-Of-Detail
- * needs both hash point and plus/minus for each dimension
+ * Contains the base hash, and optionally the list of neighbor simplexes.
+ * Without that list, only represents the lowest corner of a rectangular hypersolid.
  * 
- * Why is this mutable?
+ * boolean[] is probably not packed. "Tomorrow is another day."
  */
 
-public class Simplex {
-  public int[] base;
-  int dimensions;
+public class Simplex<T> {
+  final T label;
+  public final int[] base;
+  public final boolean[] neighbors;
+  public final int dimensions;
   
-  public Simplex(int size) {
-    dimensions = size;
+  public Simplex(int dimensions, boolean hasNeighbors, T label) {
+    this.dimensions = dimensions;
+    base = new int[dimensions];
+    neighbors = hasNeighbors ? new boolean[dimensions] : null;
+    this.label = label;
   }
   
-  public Simplex(int[] hash) {
+  public Simplex(int[] hash, boolean[] neighbors, T label) {
     this.base = hash;
     dimensions = hash.length;
+    this.neighbors = neighbors;
+    this.label = label;
+  }
+  
+  public boolean hasNeighbors() {
+    return neighbors != null;
   }
   
   /*
-   * Can this Simplex return the bitmask of neighbors?
+   * Get i'th neighbor Simplex. It has no neighbor descriptor or label.
+   * 
+   * This will need an iterator.
    */
-  public boolean hasNeighbors() {
-    return false;
+  public Simplex<T> getNeighbor(int index) {
+    Simplex<T> nabe = new Simplex<T>(dimensions, false, null);
+    for(int i = 0; i < dimensions; i++) {
+      nabe.base[i] = neighbors[i] ? base[i] + 1 : base[i];
+    }
+    return nabe;
   }
 
-  public void setValues(int[] values) {
-    this.base = values;
-  }
-  
   public int[] getValues() {
     return this.base;
   }
@@ -48,12 +61,6 @@ public class Simplex {
   public int getValue(int index) {
     // null exception? why, yes!
     return base[index];
-  }
-  
-  public void setValue(int index, int value) {
-    if (null == base)
-      base = new int[dimensions];
-    base[index] = value;
   }
   
   public int getDimensions() {
@@ -79,16 +86,24 @@ public class Simplex {
   
   @Override
   public int hashCode() {
-    return Arrays.hashCode(base) ^ (dimensions * 17);
+    return Arrays.hashCode(base) ^ (dimensions * 17) ^ (neighbors != null ? Arrays.hashCode(neighbors) : 0xffffffff)
+      ^ (label != null ? label.hashCode() : 0x77777777);
   }
   
   @Override
   public boolean equals(Object obj) {
-    Simplex other = (Simplex) obj;
-    boolean same = Arrays.equals(base, other.base);
-    return dimensions == other.dimensions && same;
+    Simplex<T> other = (Simplex<T>) obj;
+    if (label != other.label)
+      return false;
+    if (dimensions != other.dimensions)
+      return false;
+    if (! Arrays.equals(base, other.base))
+      return false;
+    if (hasNeighbors() != other.hasNeighbors())
+      return false;
+    if (hasNeighbors() && ! Arrays.equals(neighbors, other.neighbors))
+      return false;
+    return dimensions == other.dimensions;
   }
-
-
    
 }

@@ -32,7 +32,7 @@ import org.junit.Test;
 
 import java.io.File;
 
-/** <p>Tests {@link LSHDataModel}.</p> */
+/** <p>Tests {@link VectorDataModel}.</p> */
 public final class LSHDataModelTest extends TasteTestCase {
 
   /*
@@ -64,7 +64,7 @@ public final class LSHDataModelTest extends TasteTestCase {
     super.setUp();
     testFile = getTestTempFile("test.txt");
     writeLines(testFile, DATA);
-    model = new LSHDataModel(testFile, measure);
+    model = new VectorDataModel(testFile, measure);
   }
 
   @Test

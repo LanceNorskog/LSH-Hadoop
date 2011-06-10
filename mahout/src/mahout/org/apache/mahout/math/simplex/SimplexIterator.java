@@ -10,6 +10,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import lsh.mahout.core.Hasher;
+
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -21,7 +23,7 @@ import org.apache.mahout.math.Vector.Element;
  */
 
 
-public class SimplexIterator implements Iterator<Simplex> {
+public class SimplexIterator<T> implements Iterator<Simplex<T>> {
   static PairComparator sorter = new PairComparator();
   final Hasher hasher;
   final int dimensions;
@@ -51,7 +53,7 @@ public class SimplexIterator implements Iterator<Simplex> {
       throw new IllegalStateException("No next vector");
     int[] hash = nabes.get(index);
     index++;
-   return new Simplex(hash);
+   return new Simplex(hash, null, null);
   }
 
   @Override
@@ -69,7 +71,7 @@ public class SimplexIterator implements Iterator<Simplex> {
     for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
-    hasher.hashDense(values, hashed);
+    hasher.hash(values, hashed);
     return hashed;
   }  
   

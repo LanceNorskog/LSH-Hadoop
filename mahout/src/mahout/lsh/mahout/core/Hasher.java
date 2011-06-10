@@ -7,12 +7,11 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.Vector.Element;
-
-
 /*
  * Quantize an N-dimensional vector using either rectangles or triangles
+ * 
+ * A simplex has a base hash and a set of bits describing the surrounding dimensions
+ * This creates the base hash. SimplexIterator handles the surrounding points.
  */
 
 //  Need to hash and unhash values one at a time. Need to support sparse vectors.

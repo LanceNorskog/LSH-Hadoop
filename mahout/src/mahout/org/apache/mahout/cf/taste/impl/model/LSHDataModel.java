@@ -254,7 +254,7 @@ public class LSHDataModel extends AbstractDataModel implements ItemSimilarity {
    * @throws TasteException 
    */
   public static void main(String[] args) throws IOException, TasteException {
-    LSHDataModel model = new LSHDataModel(args[0], new ManhattanDistanceMeasure());
+    VectorDataModel model = new VectorDataModel(args[0], new ManhattanDistanceMeasure());
     model.hashCode();
     System.out.println("pow: " + Math.pow(200, 0.5));
     System.out.println("Items");
@@ -264,7 +264,7 @@ public class LSHDataModel extends AbstractDataModel implements ItemSimilarity {
     dodistances(model);
   }
 
-  static void dodistances(LSHDataModel model) throws TasteException {
+  static void dodistances(VectorDataModel model) throws TasteException {
     Float min= 10000f, max = 0f;
     for(Long userID: model.users.keySet()) {
       for(Long itemID: model.items.keySet()) {

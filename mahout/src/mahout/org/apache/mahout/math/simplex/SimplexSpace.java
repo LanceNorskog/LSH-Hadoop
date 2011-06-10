@@ -7,24 +7,79 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.mahout.common.distance.DistanceMeasure;
+import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
 
 /*
- * Contain a set of simplexes in space.
- * Optional: key for each simplex
+ * Bag for a bunch of simplexes. Convenience methods for Simplex/Vector interactions.
+ * Optional T: label for each simplex. NamedVector has a String for Vector.
  */
 
 public class SimplexSpace<T> {
-  public static Simplex newSimplex(Vector v, Hasher hasher) {
+  final List<Simplex<T>> simplexes = new ArrayList<Simplex<T>>();
+  final Map<T, Simplex<T>> key2simplexMap = new HashMap<T, Simplex<T>>();
+  final Hasher hasher;
+  final int dimensions;
+
+  public SimplexSpace(Hasher hasher, int dimensions) {
+    this.hasher = hasher;
+    this.dimensions = dimensions;
+  }
+  
+  public void addSimplex(Simplex<T> x) {
+    simplexes.add(x);
+  }
+  
+  public void addSimplex(Simplex<T> simplex, T id) {
+
+  }
+  
+  public Simplex<T> getSimplex(Vector v) {
+    T label = null;
+    if (v instanceof NamedVector) {
+      if (label instanceof String) {
+        label = (T) ((NamedVector)v).getName();
+      } else {
+        throw new IllegalArgumentException("NamedVector is only compatible with Simplex<String>");
+      }
+    }
+    return newSimplex(v, hasher, label);
+  }
+  
+  public Vector getVector(Simplex<T> simplex) {
+    return new SimplexVector(simplex, hasher);
+  }
+  
+  public double getDistance(T key1, T key2, DistanceMeasure measure) {
+    Simplex<T> h1 = key2simplexMap.get(key1);
+    Simplex<T> h2 = key2simplexMap.get(key2);
+    if (null == h1 || null == h2)
+      return -1;
+    
+    double d = hashDistance(h1, h2, measure);
+    return d;
+  }
+  
+  private double hashDistance(Simplex<T> h1, Simplex<T> h2, DistanceMeasure measure) {
+    Vector v1 = new SimplexVector(h2, hasher);
+    Vector v2 = new SimplexVector(h2, hasher);
+    double distance = measure.distance(v1, v2);
+    return distance;
+  }
+  
+  
+  public Simplex<T> newSimplex(Vector v, Hasher hasher, T label) {
     int[] hashes = new int[v.size()];
-    if (v.isDense()) {
+//    if (v.isDense()) {
       double[] values = new double[v.size()];
+      boolean[] neighbors = new boolean[v.size()];
       getValues(v, values);
-      hasher.hashDense(values, hashes);
-      return new Simplex(hashes);
-    } else {
+      hasher.hash(values, hashes);
+      return new Simplex<T>(hashes, neighbors, label);
+//    } 
+/*    else {
       // this only works with Orthonormal
       // vertextransitive has be changed to read all, then give each dimension
       double[] d = new double[1];
@@ -37,7 +92,7 @@ public class SimplexSpace<T> {
         hashes[e.index()] = h[0];
       }
       return new Simplex(hashes);
-    }
+    }*/
   }
   
   private static void getValues(Vector v, double[] values) {
@@ -46,52 +101,6 @@ public class SimplexSpace<T> {
       Element e = el.next();
       values[e.index()] = e.get();
     }
-  }  
-  
-  final List<Simplex> simplexes = new ArrayList<Simplex>();
-  final Map<T, Simplex> key2simplexMap = new HashMap<T, Simplex>();
-  final Hasher hasher;
-  final int dimensions;
-
-  
-  public SimplexSpace(Hasher hasher, int dimensions) {
-    this.hasher = hasher;
-    this.dimensions = dimensions;
-  }
-  
-  public void addSimplex(Simplex x) {
-    simplexes.add(x);
-  }
-  
-  public void addSimplex(Simplex simplex, T id) {
-
-  }
-  
-  public Simplex getSimplex(Vector v) {
-    return newSimplex(v, hasher);
-  }
-  
-  public Vector getVector(Simplex simplex) {
-    return new SimplexVector(simplex, hasher);
-  }
-  
-  public double getDistance(T key1, T key2, DistanceMeasure measure) {
-    Simplex h1 = key2simplexMap.get(key1);
-    Simplex h2 = key2simplexMap.get(key2);
-    if (null == h1 || null == h2)
-      return -1;
-    
-    double d = hashDistance(h1, h2, measure);
-    return d;
-  }
-  
-  private double hashDistance(Simplex h1, Simplex h2, DistanceMeasure measure) {
-    Vector v1 = new SimplexVector(h2, hasher);
-    Vector v2 = new SimplexVector(h2, hasher);
-    double distance = measure.distance(v1, v2);
-    return distance;
-  }
-  
-  
+  } 
   
 }

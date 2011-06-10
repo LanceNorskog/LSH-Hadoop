@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
+import lsh.mahout.core.Hasher;
+import lsh.mahout.core.OrthonormalHasher;
+
 
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Vector;
@@ -12,9 +15,6 @@ import org.apache.mahout.math.simplex.Simplex;
 import org.apache.mahout.math.simplex.SimplexIterator;
 import org.junit.Assert;
 import org.junit.Test;
-
-import lsh.mahout.core.Hasher;
-import lsh.mahout.core.OrthonormalHasher;
 
 public final class TestSimplexIterator extends Assert {
   static double EPSILON = 0.0000001;
@@ -46,7 +46,7 @@ public final class TestSimplexIterator extends Assert {
     
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     Vector lower = new DenseVector(lowerData);
-    SimplexIterator sit = new SimplexIterator(hasher, lower);
+    SimplexIterator<String> sit = new SimplexIterator<String>(hasher, lower);
     verify(dim, lowerHashed, sit);
   }
   
@@ -71,7 +71,7 @@ public final class TestSimplexIterator extends Assert {
       int[] hash = s.getValues();
       int[] orig = hashed[count];
       saved.add(s);
-      Simplex base = new Simplex(orig);
+      Simplex<String> base = new Simplex<String>(orig, null, "");
       assert(base.equals(s) && s.equals(base));
       count++;
     }
@@ -90,7 +90,7 @@ public final class TestSimplexIterator extends Assert {
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     int[] orig = new int[dim];
     hasher.hash(big, orig);
-    SimplexIterator sit = new SimplexIterator(hasher, new DenseVector(big));
+    SimplexIterator sit = new SimplexIterator(hasher, (Vector) new DenseVector(big));
     distances(dim, sit, orig);
   }
   
