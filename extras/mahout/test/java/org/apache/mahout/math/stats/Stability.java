@@ -143,4 +143,21 @@ public class Stability {
     }
   }
   
+  // swiped from mahout
+  private static int[] permute(Random gen, int max) {
+    int[] permutation = new int[max];
+    permutation[0] = 0;
+    for (int i = 1; i < max; i++) {
+      int n = gen.nextInt(i + 1);
+      if (n == i) {
+        permutation[i] = i;
+      } else {
+        permutation[i] = permutation[n];
+        permutation[n] = i;
+      }
+    }
+    return permutation;
+  }
+
+  
 }

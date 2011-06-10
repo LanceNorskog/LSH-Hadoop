@@ -45,6 +45,8 @@ public class SemanticVectorFactory {
    * Create a Semantic Vector from items preferred by this User
    * The vector represents the common preferences for all users
    */
+  
+//  TODO redo this to match projectItem
   public Vector projectUserDense(long userID, int minimum) throws TasteException {
     /*    setRandomUserVecs();
     Vector randomUserV = userRs.get(userID);
