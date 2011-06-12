@@ -10,11 +10,13 @@ import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
+import org.apache.mahout.math.simplex.Hasher;
 
 
 /*
  * Bag for a bunch of simplexes. Convenience methods for Simplex/Vector interactions.
  * Optional T: label for each simplex. NamedVector has a String for Vector.
+ * Later: level-of-detail manipulations
  */
 
 public class SimplexSpace<T> {
@@ -37,15 +39,16 @@ public class SimplexSpace<T> {
   }
   
   public Simplex<T> getSimplex(Vector v) {
-    T label = null;
     if (v instanceof NamedVector) {
+      String label = (String) ((NamedVector)v).getName();
       if (label instanceof String) {
-        label = (T) ((NamedVector)v).getName();
+        return newSimplex(v, hasher, (T) label);
       } else {
         throw new IllegalArgumentException("NamedVector is only compatible with Simplex<String>");
       }
+    } else {
+      return newSimplex(v, hasher, null);
     }
-    return newSimplex(v, hasher, label);
   }
   
   public Vector getVector(Simplex<T> simplex) {
@@ -76,7 +79,7 @@ public class SimplexSpace<T> {
       double[] values = new double[v.size()];
       boolean[] neighbors = new boolean[v.size()];
       getValues(v, values);
-      hasher.hash(values, hashes);
+      hasher.hashDense(values, hashes);
       return new Simplex<T>(hashes, neighbors, label);
 //    } 
 /*    else {

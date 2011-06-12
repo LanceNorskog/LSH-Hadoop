@@ -1,5 +1,5 @@
 
-package org.apache.mahout.math.simplex;
+package org.apache.mahout.math.simplex.weird;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -14,13 +14,13 @@ import org.apache.mahout.math.Vector;
  * Could be write-through, but Simplex has to support this also.
  */
 
-public class SimplexVector extends AbstractVector implements Vector {
-  final Simplex simplex;
+public class SimplexVector<T> extends AbstractVector implements Vector {
+  final Simplex<T> simplex;
   final Hasher hasher;
   
   protected static final String CANNOT_SET_READ_ONLY_VECTOR = "Cannot set ReadOnlyVector";
   
-  public SimplexVector(Simplex simplex, Hasher hasher) {
+  public SimplexVector(Simplex<T> simplex, Hasher hasher) {
     super(simplex.getDimensions());
     this.simplex = simplex;
     this.hasher = hasher;
@@ -74,7 +74,7 @@ public class SimplexVector extends AbstractVector implements Vector {
     
     private final DenseElement element;
     
-    protected AllIterator(SimplexVector vector) {
+    protected AllIterator(SimplexVector<T> vector) {
       element = new DenseElement(vector);
       element.index = -1;
     }
@@ -129,7 +129,7 @@ public class SimplexVector extends AbstractVector implements Vector {
     return new SimplexVectorIterator();
   }
   
-  public Simplex getSimplex() {
+  public Simplex<T> getSimplex() {
     return simplex;
   }
   
@@ -156,7 +156,7 @@ public class SimplexVector extends AbstractVector implements Vector {
     
     @Override
     public void remove() {
-      // TODO Auto-generated method stub
+      throw new UnsupportedOperationException("Not yet");
       
     }
     

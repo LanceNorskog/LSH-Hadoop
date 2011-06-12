@@ -10,8 +10,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import lsh.mahout.core.Hasher;
-
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
 
@@ -71,7 +69,7 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
-    hasher.hash(values, hashed);
+    hasher.hashDense(values, hashed);
     return hashed;
   }  
   
@@ -129,29 +127,3 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
   }
 
  }
-
-class Pair {
-  final int index;
-  final double value;
-  
-  public Pair(int index, double value) {
-    this.index = index;
-    this.value = value;
-  }
-}
-
-class PairComparator implements Comparator<Pair> {
-  
-  // sorts from highest to lowest
-
-  @Override
-  public int compare(Pair a, Pair b) {
-    if (a.value < b.value)
-      return 1;
-    else if (a.value > b.value)
-      return -1;
-    else
-      return 0;
-  }
-}
-
