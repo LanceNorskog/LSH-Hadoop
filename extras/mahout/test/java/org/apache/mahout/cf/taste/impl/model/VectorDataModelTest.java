@@ -19,6 +19,7 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
@@ -118,55 +119,55 @@ public final class VectorDataModelTest extends TasteTestCase {
   //    assertEquals(model.getRawUserData(), newModel.getRawUserData());
   //  }
   //  
-  @Test
-  public void testRecommend() throws Exception {
-    UserSimilarity userSimilarity = new PearsonCorrelationSimilarity(model);
-    UserNeighborhood neighborhood = new NearestNUserNeighborhood(3, userSimilarity, model);
-    Recommender recommender = new GenericUserBasedRecommender(model, neighborhood, userSimilarity);
-    int recSize = recommender.recommend(123, 3).size();
-    assertEquals(1, recSize);
-    recSize = recommender.recommend(234, 3).size();
-    assertEquals(0, recSize);
-    recSize = recommender.recommend(345, 3).size();
-    assertEquals(1, recSize);
-    
-    // Make sure this doesn't throw an exception
-    model.refresh(null);
-  }
+//  @Test
+//  public void testRecommend() throws Exception {
+//    UserSimilarity userSimilarity = new PearsonCorrelationSimilarity(model);
+//    UserNeighborhood neighborhood = new NearestNUserNeighborhood(3, userSimilarity, model);
+//    Recommender recommender = new GenericUserBasedRecommender(model, neighborhood, userSimilarity);
+//    int recSize = recommender.recommend(123, 2).size();
+//    assertEquals(1, recSize);
+//    recSize = recommender.recommend(234, 3).size();
+//    assertEquals(0, recSize);
+//    recSize = recommender.recommend(345, 2).size();
+//    assertEquals(1, recSize);
+//    
+//    // Make sure this doesn't throw an exception
+//    model.refresh(null);
+//  }
   
-  //  @Test
-  //  public void testTranspose() throws Exception {
-  //    PreferenceArray userPrefs = model.getPreferencesFromUser(456);
-  //    assertNotNull("user prefs are null and it shouldn't be", userPrefs);
-  //    PreferenceArray pref = model.getPreferencesForItem(123);
-  //    assertNotNull("pref is null and it shouldn't be", pref);
-  //    assertEquals("pref Size: " + pref.length() + " is not: " + 3, 3, pref.length());
-  //  }
-  //  
-  //  @Test  
-  //  public void testGetItems() throws Exception {
-  //    LongPrimitiveIterator it = model.getItemIDs();
-  //    assertNotNull(it);
-  //    assertTrue(it.hasNext());
-  //    assertEquals(123, it.nextLong());
-  //    assertTrue(it.hasNext());
-  //    assertEquals(234, it.nextLong());
-  //    assertTrue(it.hasNext());
-  //    assertEquals(456, it.nextLong());
-  //    assertTrue(it.hasNext());
-  //    assertEquals(654, it.nextLong());
-  //    assertTrue(it.hasNext());
-  //    assertEquals(789, it.nextLong());
-  //    assertTrue(it.hasNext());
-  //    assertEquals(999, it.nextLong());
-  //    assertFalse(it.hasNext());
-  //    try {
-  //      it.next();
-  //      fail("Should throw NoSuchElementException");
-  //    } catch (NoSuchElementException nsee) {
-  //      // good
-  //    }
-  //  }
+    @Test
+    public void testTranspose() throws Exception {
+      PreferenceArray userPrefs = model.getPreferencesFromUser(456);
+      assertNotNull("user prefs are null and it shouldn't be", userPrefs);
+      PreferenceArray pref = model.getPreferencesForItem(123);
+      assertNotNull("pref is null and it shouldn't be", pref);
+      assertEquals("pref Size: " + pref.length() + " is not: " + 3, 3, pref.length());
+    }
+    
+    @Test  
+    public void testGetItems() throws Exception {
+      LongPrimitiveIterator it = model.getItemIDs();
+      assertNotNull(it);
+      assertTrue(it.hasNext());
+      assertEquals(123, it.nextLong());
+      assertTrue(it.hasNext());
+      assertEquals(234, it.nextLong());
+      assertTrue(it.hasNext());
+      assertEquals(456, it.nextLong());
+      assertTrue(it.hasNext());
+      assertEquals(654, it.nextLong());
+      assertTrue(it.hasNext());
+      assertEquals(789, it.nextLong());
+      assertTrue(it.hasNext());
+      assertEquals(999, it.nextLong());
+      assertFalse(it.hasNext());
+      try {
+        it.next();
+        fail("Should throw NoSuchElementException");
+      } catch (NoSuchElementException nsee) {
+        // good
+      }
+    }
   //  
   //  @Test
   //  public void testPreferencesForItem() throws Exception {

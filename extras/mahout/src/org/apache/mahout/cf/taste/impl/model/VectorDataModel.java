@@ -25,7 +25,7 @@ import org.apache.mahout.math.Vector;
  * Values: 0.0 <= pref <= 1.0, normal distribution. 0.5 default.
  */
 
-public class VectorDataModel extends AbstractDataModel implements ItemSimilarity {
+public class VectorDataModel extends AbstractDataModel {
   // Use L(0.5) instead of L1 (Manhattan) or L2 (Euclidean)
   // L(0.5) seems to give a saddle for 200-300 dimension saddle
   public static final double FRACTION_L = 0.5;
@@ -57,7 +57,7 @@ public class VectorDataModel extends AbstractDataModel implements ItemSimilarity
 
   @Override
   public LongPrimitiveIterator getItemIDs() throws TasteException {
-    return (LongPrimitiveIterator) items.keySet().iterator();
+    return new LPIL(items.keySet().iterator());
   }
 
   @Override
@@ -186,29 +186,29 @@ public class VectorDataModel extends AbstractDataModel implements ItemSimilarity
   }
 
   /* ItemSimilarity methods */
-  @Override
-  public double[] itemSimilarities(long itemID1, long[] itemID2s)
-      throws TasteException {
-    double[] prefs = new double[itemID2s.length];
-    for(int i = 0; i < itemID2s.length; i++) {
-      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
-      prefs[i] = (double) distance;
-    }
-    return prefs;
-  }
-
-  @Override
-  public double itemSimilarity(long itemID1, long itemID2)
-      throws TasteException {
-    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
-    return (double) distance;
-  }
-
-
-  @Override
-  public long[] allSimilarItemIDs(long itemID) throws TasteException {
-    // TODO Auto-generated method stub
-    return null;
-  }
+//  @Override
+//  public double[] itemSimilarities(long itemID1, long[] itemID2s)
+//      throws TasteException {
+//    double[] prefs = new double[itemID2s.length];
+//    for(int i = 0; i < itemID2s.length; i++) {
+//      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
+//      prefs[i] = (double) distance;
+//    }
+//    return prefs;
+//  }
+//
+//  @Override
+//  public double itemSimilarity(long itemID1, long itemID2)
+//      throws TasteException {
+//    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
+//    return (double) distance;
+//  }
+//
+//
+//  @Override
+//  public long[] allSimilarItemIDs(long itemID) throws TasteException {
+//    // TODO Auto-generated method stub
+//    return null;
+//  }
 
  }
