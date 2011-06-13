@@ -195,11 +195,9 @@ public class RegressOrderBasedRecommender {
   private static VectorDataModel doGenericSemanticV(DataModel dataModel) throws TasteException {
     int dimensions = 2;
     SemanticVectorFactory svf = new SemanticVectorFactory(dataModel, dimensions);
-    FastByIDMap<PreferenceArray> userData = new FastByIDMap<PreferenceArray>(dataModel.getNumUsers());
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     Map<Long,Vector> itemVecs = new HashMap<Long,Vector>();
     VectorDataModel vdm = new VectorDataModel(dimensions, measure);
-    DataModel gdm = new GenericDataModel(userData);
     
     int minimum = 5;
     LongPrimitiveIterator itemIDs = dataModel.getItemIDs();
@@ -219,7 +217,8 @@ public class RegressOrderBasedRecommender {
         Preference pref = prefiter.next();
         long itemID = pref.getItemID();
         Vector itemV = itemVecs.get(itemID);
-        vdm.addEntry(userID, userV, itemID, itemV);  
+        vdm.addUser(userID, userV);  
+        vdm.addItem(itemID, itemV);  
       }
     }
     

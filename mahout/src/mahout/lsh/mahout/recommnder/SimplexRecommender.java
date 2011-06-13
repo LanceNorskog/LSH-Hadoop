@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.apache.mahout.cf.taste.impl.model;
+package lsh.mahout.recommnder;
 
 import java.io.FileReader;
 import java.io.IOException;

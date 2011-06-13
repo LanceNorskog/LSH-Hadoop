@@ -134,9 +134,9 @@ public class SemanticVectorFactory {
         long userID = userIter.nextLong();
         userRs.put(userID, getRandomUserVector(userID));
       }
-    }
-    
+    }   
   }
+  
   private void setRandomItemVecs() throws TasteException {
     if (itemRs.size() == 0) {
       LongPrimitiveIterator itemIter = model.getItemIDs();
@@ -152,8 +152,8 @@ public class SemanticVectorFactory {
     
     Vector v = new DenseVector(dimensions);
     Random rnd = new Random();
-    rnd.setSeed(userID + 500000);
     for(int dim = 0; dim < dimensions; dim++) {
+      rnd.setSeed(userID + 500000 + dim * 10);
       v.setQuick(dim, rnd.nextDouble());
     }
     return v;
@@ -162,8 +162,8 @@ public class SemanticVectorFactory {
   public Vector getRandomItemVector(long itemID) {
     Vector v = new DenseVector(dimensions);
     Random rnd = new Random();
-    rnd.setSeed(itemID + 300000);
     for(int dim = 0; dim < dimensions; dim++) {
+      rnd.setSeed(itemID + 300000 + dim*10);
       v.setQuick(dim, rnd.nextDouble());
     }
     return v;

@@ -199,7 +199,6 @@ public class RegressPreferenceBasedRecommender {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     Map<Long,Vector> itemVecs = new HashMap<Long,Vector>();
     VectorDataModel vdm = new VectorDataModel(dimensions, measure);
-    DataModel gdm = new GenericDataModel(userData);
     
     int minimum = 5;
     LongPrimitiveIterator itemIDs = dataModel.getItemIDs();
@@ -219,7 +218,8 @@ public class RegressPreferenceBasedRecommender {
         Preference pref = prefiter.next();
         long itemID = pref.getItemID();
         Vector itemV = itemVecs.get(itemID);
-        vdm.addEntry(userID, userV, itemID, itemV);  
+        vdm.addUser(userID, userV);  
+        vdm.addItem(itemID, itemV);  
       }
     }
     
