@@ -51,7 +51,7 @@ public class CornerMapper extends Mapper<Object, Text, Text, Text> {
 
     try {
 
-      Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
+      SimplexFactory hasher = (SimplexFactory) Class.forName(hasherClass).newInstance();
       int dimensions;
       double[] stretch;
       double size = 1.0;

@@ -28,7 +28,7 @@ public class PointMapper extends Mapper<Object, Text, Text, Text> {
     String gridsize = conf.get(LSHDriver.GRIDSIZE);
 
     try {
-      Hasher hasher = (Hasher) Class.forName(hasherClass).newInstance();
+      SimplexFactory hasher = (SimplexFactory) Class.forName(hasherClass).newInstance();
       String parts[] = gridsize.split("[ ,]");
       double[] stretch = new double[parts.length];
       for(int i = 0; i < parts.length; i++) {
