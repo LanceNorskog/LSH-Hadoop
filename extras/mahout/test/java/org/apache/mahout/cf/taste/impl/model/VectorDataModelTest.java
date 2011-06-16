@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -87,7 +88,7 @@ public final class VectorDataModelTest extends TasteTestCase {
     
     SemanticVectorFactory svf = new SemanticVectorFactory(baseModel, 2);
     this.measure = new EuclideanDistanceMeasure();
-    VectorDataModel vm = new VectorDataModel(2, measure);
+    VectorDataModel vm = new VectorDataModel(2, measure, 2 * 2);
     LongPrimitiveIterator users = baseModel.getUserIDs();
     while (users.hasNext()) {
       long userID = users.nextLong();
@@ -101,6 +102,12 @@ public final class VectorDataModelTest extends TasteTestCase {
       vm.addItem(itemID, itemV);
     }
     this.model = vm;
+  }
+  
+  @Test
+  public void testSizes() throws TasteException {
+    assertEquals("Expected 4 users in big model", 4, model.getNumUsers());
+    assertEquals("Expected 2 items in big model", 2, model.getNumItems());
   }
   
   //  @Test  
@@ -139,34 +146,21 @@ public final class VectorDataModelTest extends TasteTestCase {
     public void testTranspose() throws Exception {
       PreferenceArray userPrefs = model.getPreferencesFromUser(456);
       assertNotNull("user prefs are null and it shouldn't be", userPrefs);
-      PreferenceArray pref = model.getPreferencesForItem(123);
+      PreferenceArray pref = model.getPreferencesForItem(654);
       assertNotNull("pref is null and it shouldn't be", pref);
-      assertEquals("pref Size: " + pref.length() + " is not: " + 3, 3, pref.length());
+      assertEquals("pref Size: " + pref.length() + " is not: " + 4, 4, pref.length());
     }
     
-    @Test  
+    @Test  (expected = NoSuchElementException.class)
     public void testGetItems() throws Exception {
       LongPrimitiveIterator it = model.getItemIDs();
       assertNotNull(it);
       assertTrue(it.hasNext());
-      assertEquals(123, it.nextLong());
-      assertTrue(it.hasNext());
-      assertEquals(234, it.nextLong());
-      assertTrue(it.hasNext());
-      assertEquals(456, it.nextLong());
-      assertTrue(it.hasNext());
       assertEquals(654, it.nextLong());
-      assertTrue(it.hasNext());
-      assertEquals(789, it.nextLong());
       assertTrue(it.hasNext());
       assertEquals(999, it.nextLong());
       assertFalse(it.hasNext());
-      try {
-        it.next();
-        fail("Should throw NoSuchElementException");
-      } catch (NoSuchElementException nsee) {
-        // good
-      }
+      it.next();
     }
   //  
   //  @Test
