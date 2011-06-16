@@ -44,7 +44,7 @@ public final class SemanticVectorTest extends TasteTestCase {
     "2,10,0.1"
   };
   
- private static final String[] MIDI = {
+  private static final String[] MIDI = {
     "123,456,0.1",
     "123,789,0.6",
     "123,654,0.7",
@@ -61,8 +61,8 @@ public final class SemanticVectorTest extends TasteTestCase {
     "456,654,0.0",
     "456,999,0.2",};
   
- private DataModel miniModel;
- private DataModel midiModel;
+  private DataModel miniModel;
+  private DataModel midiModel;
   private File miniFile;
   private File midiFile;
   
@@ -85,7 +85,7 @@ public final class SemanticVectorTest extends TasteTestCase {
     svf = new SemanticVectorFactory(miniModel, 200);
     testCosine(svf);
   }
-
+  
   private void testEuclidean(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectItemDense(10L, 1);
     Vector blue = svf.projectItemDense(11L, 1);
@@ -100,10 +100,10 @@ public final class SemanticVectorTest extends TasteTestCase {
     System.out.println("red-blue:   " + rb);
     System.out.println("red-green:  " + rg);
     System.out.println("blue-green: " + bg);
-   assertEquals(0.20534722130108632, rb, 0.00005);
-    assertEquals(0.04788456484599084, rg, 0.00005);
-    assertEquals(0.23143337478183917, bg, 0.05);
-   }
+    assertEquals(0.09207475777244815, rb, 0.00005);
+    assertEquals(0.06667715551055312, rg, 0.00005);
+    assertEquals(0.1587513971025851, bg, 0.05);
+  }
   
   private void testCosine(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectItemDense(10L, 1);
@@ -119,10 +119,10 @@ public final class SemanticVectorTest extends TasteTestCase {
     System.out.println("red-blue:   " + rb);
     System.out.println("red-green:  " + rg);
     System.out.println("blue-green: " + bg);    
-    assertEquals(0.20625911857459078, rb, 0.00005);
-    assertEquals(0.15241498668969544, rg, 0.00005);
-    assertEquals(0.1812701224356943, bg, 0.00005);
-
+    assertEquals(3.285536949558798E-4, rb, 0.00005);
+    assertEquals(2.938679694960422E-4, rg, 0.00005);
+    assertEquals(0.00121582145646415, bg, 0.00005);
+    
   }
   
   /*@Test
@@ -153,5 +153,5 @@ public final class SemanticVectorTest extends TasteTestCase {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
     Vector vu = svf.projectItemDense(-1, 0);
   }
-*/  
+   */  
 }
