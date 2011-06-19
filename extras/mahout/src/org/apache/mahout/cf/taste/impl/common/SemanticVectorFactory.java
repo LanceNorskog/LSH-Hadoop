@@ -1,4 +1,4 @@
-package org.apache.mahout.semanticvectors;
+package org.apache.mahout.cf.taste.impl.common;
 
 import java.util.Iterator;
 import java.util.Random;

@@ -15,13 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.mahout.semanticvectors;
+package org.apache.mahout.cf.taste.impl.common;
 
 import java.io.File;
-import java.util.Random;
 
-import org.apache.mahout.cf.taste.common.NoSuchItemException;
-import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
@@ -30,7 +27,6 @@ import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 import org.junit.Before;
 import org.junit.Test;
 
