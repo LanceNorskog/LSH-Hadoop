@@ -12,6 +12,7 @@ import org.apache.mahout.math.Vector;
 /*
  * Wrap N-dimensional Simplex as a vector. 
  * Could be write-through, but Simplex has to support this also.
+ * Writing once at a time only works with OrthonormalHasher, not VertexTransitiveHasher
  */
 
 public class SimplexVector<T> extends AbstractVector implements Vector {
@@ -136,8 +137,7 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
   class SimplexVectorIterator implements Iterator<Element> {
     int index = 0;
     final SimplexVectorElement el = new SimplexVectorElement(hasher);
-    double[] v = new double[1];
-    int[] h = new int[1];
+
     
     @Override
     public boolean hasNext() {
@@ -146,6 +146,8 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
     
     @Override
     public Element next() {
+      double[] v = new double[1];
+      int[] h = new int[1];
       el.index = index;
       h[0] = simplex.getValue(index);
       hasher.unhashDense(h, v);

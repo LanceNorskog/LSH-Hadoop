@@ -8,8 +8,7 @@ import org.apache.commons.collections.iterators.ArrayIterator;
 
 /*
  * Hashed values, stored in hash space.
- * Both dense and sparse supported. 
- * support sparse by adding map->index
+ * Dense only
  * 
  * Contains the base hash, and optionally the list of neighbor simplexes.
  * Without that list, only represents the lowest corner of a rectangular hypersolid.
@@ -43,8 +42,6 @@ public class Simplex<T> {
   
   /*
    * Get i'th neighbor Simplex. It has no neighbor descriptor or label.
-   * 
-   * This will need an iterator.
    */
   public Simplex<T> getNeighbor(int index) {
     Simplex<T> nabe = new Simplex<T>(dimensions, false, null);
@@ -93,6 +90,7 @@ public class Simplex<T> {
   @Override
   public boolean equals(Object obj) {
     Simplex<T> other = (Simplex<T>) obj;
+    // TODO: no, have to compare contents
     if (label != other.label)
       return false;
     if (dimensions != other.dimensions)

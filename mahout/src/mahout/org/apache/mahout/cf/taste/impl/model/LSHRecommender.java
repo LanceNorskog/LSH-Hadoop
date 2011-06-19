@@ -37,15 +37,15 @@ import org.apache.mahout.math.simplex.SimplexFactory;
  * Redone for new Simplex Vector stuff: no knowledge of internals
  *
  */
-public class SimplexRecommender implements Recommender {
+public class LSHRecommender implements Recommender {
   List<RecommendedItem> NORECS = Collections.emptyList();
-  final SimplexTextDataModel model;
+  final LSHTextDataModel model;
 
-  public SimplexRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+  public LSHRecommender(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     model = createDataModel(props, dataFile);
   }
 
-  public static SimplexTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+  public static LSHTextDataModel createDataModel(Properties props, String dataFile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     SimplexFactory sf;
     String hasherClass = props.getProperty(LSHDriver.HASHER);
     double gridsize = Double.parseDouble(props.getProperty(LSHDriver.GRIDSIZE));
@@ -59,7 +59,7 @@ public class SimplexRecommender implements Recommender {
     }
     sf.setStretch(stretch);
     CornerGen cg = new CornerGen(sf, stretch);
-    return new SimplexTextDataModel(dataFile, cg);
+    return new LSHTextDataModel(dataFile, cg);
   }
 
 
@@ -332,7 +332,7 @@ public class SimplexRecommender implements Recommender {
     props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
     props.setProperty(LSHDriver.DIMENSION, "150");
     props.setProperty(LSHDriver.GRIDSIZE, "1.0");
-    SimplexRecommender rec = new SimplexRecommender(props, args[0]);
+    LSHRecommender rec = new LSHRecommender(props, args[0]);
     //		LongPrimitiveIterator lpi = model.getUserIDs();
     //		System.out.println("User IDs:");
     //		while (lpi.hasNext()) {

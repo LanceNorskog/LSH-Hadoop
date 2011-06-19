@@ -81,12 +81,51 @@ public final class SemanticVectorTest extends TasteTestCase {
   @Test
   public void testNearness() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(miniModel, 2);
-    testEuclidean(svf);
+    testEuclideanUser(svf);
+    testEuclideanItem(svf);
     svf = new SemanticVectorFactory(miniModel, 200);
-    testCosine(svf);
+    testCosineUser(svf);
+    testCosineItem(svf);
+  }
+
+  private void testEuclideanUser(SemanticVectorFactory svf) throws TasteException {
+    Vector red = svf.projectUserDense(0L, 1);
+    Vector blue = svf.projectUserDense(1L, 1);
+    Vector green = svf.projectUserDense(2L, 1);
+    DistanceMeasure measure = new EuclideanDistanceMeasure();
+    double rb = measure.distance(red, blue);
+    double rg = measure.distance(red, green);
+    double bg = measure.distance(blue, green);
+    System.out.println("red:   " + red.toString());
+    System.out.println("blue:  " + blue.toString());
+    System.out.println("green: " + green.toString());
+    System.out.println("red-blue:   " + rb);
+    System.out.println("red-green:  " + rg);
+    System.out.println("blue-green: " + bg);
+    assertEquals(0.16458991148732435, rb, 0.00005);
+    assertEquals(0.10752920706215117, rg, 0.00005);
+    assertEquals(0.2721185153196426, bg, 0.05);
   }
   
-  private void testEuclidean(SemanticVectorFactory svf) throws TasteException {
+  private void testCosineUser(SemanticVectorFactory svf) throws TasteException {
+    Vector red = svf.projectUserDense(0L, 1);
+    Vector blue = svf.projectUserDense(1L, 1);
+    Vector green = svf.projectUserDense(2L, 1);
+    DistanceMeasure measure = new CosineDistanceMeasure();
+    double rb = measure.distance(red, blue);
+    double rg = measure.distance(red, green);
+    double bg = measure.distance(blue, green);
+    System.out.println("red:   " + red.toString());
+    System.out.println("blue:  " + blue.toString());
+    System.out.println("green: " + green.toString());
+    System.out.println("red-blue:   " + rb);
+    System.out.println("red-green:  " + rg);
+    System.out.println("blue-green: " + bg);    
+    assertEquals(0.016021707007274122, rb, 0.00005);
+    assertEquals(0.03301051970229918, rg, 0.00005);
+    assertEquals(0.093861176912028, bg, 0.00005);    
+  }
+  private void testEuclideanItem(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectItemDense(10L, 1);
     Vector blue = svf.projectItemDense(11L, 1);
     Vector green = svf.projectItemDense(12L, 1);
@@ -105,7 +144,7 @@ public final class SemanticVectorTest extends TasteTestCase {
     assertEquals(0.1587513971025851, bg, 0.05);
   }
   
-  private void testCosine(SemanticVectorFactory svf) throws TasteException {
+  private void testCosineItem(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectItemDense(10L, 1);
     Vector blue = svf.projectItemDense(11L, 1);
     Vector green = svf.projectItemDense(12L, 1);
@@ -121,10 +160,9 @@ public final class SemanticVectorTest extends TasteTestCase {
     System.out.println("blue-green: " + bg);    
     assertEquals(3.285536949558798E-4, rb, 0.00005);
     assertEquals(2.938679694960422E-4, rg, 0.00005);
-    assertEquals(0.00121582145646415, bg, 0.00005);
-    
+    assertEquals(0.00121582145646415, bg, 0.00005);    
   }
-  
+
   /*@Test
   public void testVectors() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);

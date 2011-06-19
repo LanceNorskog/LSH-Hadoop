@@ -28,7 +28,7 @@ import org.apache.mahout.cf.taste.model.PreferenceArray;
  * Can't load very many!
  */
 
-public class SimplexTextDataModel extends AbstractDataModel {
+public class LSHTextDataModel extends AbstractDataModel {
   // raw text corner-first LSH of users
   final Lookup userDB;
   // raw text corner-first LSH of items
@@ -47,7 +47,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
   final double offset = 1;
   final boolean earlyBinding = false;
 
-  public SimplexTextDataModel(String cornersFile, CornerGen cg) throws IOException {
+  public LSHTextDataModel(String cornersFile, CornerGen cg) throws IOException {
     //		this.hasher = hasher;
     this.cg = cg;
     userDB = new Lookup(null, false, false, false, false, true, false, false, false);
@@ -261,7 +261,7 @@ public class SimplexTextDataModel extends AbstractDataModel {
   public static void main(String[] args) throws IOException {
     VertexTransitiveHasher hasher = new VertexTransitiveHasher(50, 0.70);
     CornerGen cg = new CornerGen(hasher, hasher.stretch);
-    SimplexTextDataModel model = new SimplexTextDataModel("/tmp/lsh_hadoop/shortU.txt", cg);
+    LSHTextDataModel model = new LSHTextDataModel("/tmp/lsh_hadoop/shortU.txt", cg);
     model.hashCode();
   }
 

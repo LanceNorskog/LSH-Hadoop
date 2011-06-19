@@ -17,6 +17,8 @@ import org.apache.mahout.math.simplex.Hasher;
  * Bag for a bunch of simplexes. Convenience methods for Simplex/Vector interactions.
  * Optional T: label for each simplex. NamedVector has a String for Vector.
  * Later: level-of-detail manipulations
+ * 
+ * TODO: redo generics nature
  */
 
 public class SimplexSpace<T> {
@@ -38,21 +40,21 @@ public class SimplexSpace<T> {
 
   }
   
-  public Simplex<T> getSimplex(Vector v) {
+  public Simplex<String> getSimplex(Vector v) {
     if (v instanceof NamedVector) {
-      String label = (String) ((NamedVector)v).getName();
+      T label = (T) ((NamedVector)v).getName();
       if (label instanceof String) {
-        return newSimplex(v, hasher, (T) label);
+        return (Simplex<String>) newSimplex(v, hasher, label);
       } else {
         throw new IllegalArgumentException("NamedVector is only compatible with Simplex<String>");
       }
     } else {
-      return newSimplex(v, hasher, null);
+      return (Simplex<String>) newSimplex(v, hasher, null);
     }
   }
   
   public Vector getVector(Simplex<T> simplex) {
-    return new SimplexVector(simplex, hasher);
+    return new SimplexVector<T>(simplex, hasher);
   }
   
   public double getDistance(T key1, T key2, DistanceMeasure measure) {
@@ -66,12 +68,11 @@ public class SimplexSpace<T> {
   }
   
   private double hashDistance(Simplex<T> h1, Simplex<T> h2, DistanceMeasure measure) {
-    Vector v1 = new SimplexVector(h2, hasher);
-    Vector v2 = new SimplexVector(h2, hasher);
+    Vector v1 = new SimplexVector<T>(h2, hasher);
+    Vector v2 = new SimplexVector<T>(h2, hasher);
     double distance = measure.distance(v1, v2);
     return distance;
   }
-  
   
   public Simplex<T> newSimplex(Vector v, Hasher hasher, T label) {
     int[] hashes = new int[v.size()];
@@ -97,13 +98,21 @@ public class SimplexSpace<T> {
       return new Simplex(hashes);
     }*/
   }
+
+  public Iterator<T> getKeyIterator() {
+    return key2simplexMap.keySet().iterator();
+  }
   
-  private static void getValues(Vector v, double[] values) {
+  public int getDimensions() {
+    return dimensions;
+  } 
+  private void getValues(Vector v, double[] values) {
     Iterator<Element> el = v.iterateNonZero();
     while(el.hasNext()) {
       Element e = el.next();
       values[e.index()] = e.get();
     }
-  } 
-  
+  }
+
+
 }

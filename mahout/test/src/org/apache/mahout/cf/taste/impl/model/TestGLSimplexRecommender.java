@@ -56,7 +56,7 @@ public class TestGLSimplexRecommender {
     //		AverageAbsoluteDifferenceRecommenderEvaluatorDual evaluatorDual = new AverageAbsoluteDifferenceRecommenderEvaluatorDual();
     //	    DataModel model = GLSimplexRecommenderBuilder.recommender.model;
     GLSimplexRecommenderBuilder builder = new GLSimplexRecommenderBuilder();
-    SimplexTextDataModel model = GLSimplexRecommenderBuilder.recommender.model;
+    LSHTextDataModel model = GLSimplexRecommenderBuilder.recommender.model;
     DataModel realModel = new GroupLensDataModel(new File(args[0]));
     GroupLensRecommender realRecco = new GroupLensRecommender(realModel);
     //	    System.out.println("GroupLensRecommender v.s. GroupLens data");
@@ -86,7 +86,7 @@ public class TestGLSimplexRecommender {
     evaluateN2(builder.buildRecommender(null), model, realRecco, realModel);
   }
 
-  private static void evaluateN2(Recommender recommender, SimplexTextDataModel model, 
+  private static void evaluateN2(Recommender recommender, LSHTextDataModel model, 
       GroupLensRecommender realRecco,
       DataModel realModel) throws TasteException {
     double sum = 0.0;
@@ -151,18 +151,18 @@ public class TestGLSimplexRecommender {
   //		System.out.println("Average delta: " + (sum / count));
   //	}
 
-  private SimplexRecommender buildRecommender(String[] args)
+  private LSHRecommender buildRecommender(String[] args)
   throws InstantiationException, IllegalAccessException,
   ClassNotFoundException, IOException {
     Properties props = new Properties();
     props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
     props.setProperty(LSHDriver.DIMENSION, "100");
     props.setProperty(LSHDriver.GRIDSIZE, "0.6");
-    SimplexRecommender rec = new SimplexRecommender(props, args[0]);
+    LSHRecommender rec = new LSHRecommender(props, args[0]);
     return rec;
   }
 
-  private static void printAllRecommendations(SimplexRecommender rec)
+  private static void printAllRecommendations(LSHRecommender rec)
   throws TasteException {
     LongPrimitiveIterator it = rec.model.getUserIDs();
     while (it.hasNext()) {
@@ -180,7 +180,7 @@ public class TestGLSimplexRecommender {
     }
   }
 
-  private static LongPrimitiveIterator printItems(SimplexRecommender rec)
+  private static LongPrimitiveIterator printItems(LSHRecommender rec)
   throws TasteException {
     LongPrimitiveIterator lpi;
     System.out.println("Item IDs:");
@@ -191,7 +191,7 @@ public class TestGLSimplexRecommender {
     return lpi;
   }
 
-  private static LongPrimitiveIterator printUsers(SimplexRecommender rec)
+  private static LongPrimitiveIterator printUsers(LSHRecommender rec)
   throws TasteException {
     LongPrimitiveIterator lpi = rec.model.getUserIDs();
     System.out.println("User IDs:");

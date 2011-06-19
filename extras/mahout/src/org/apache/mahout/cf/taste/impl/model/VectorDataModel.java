@@ -29,7 +29,7 @@ import com.google.common.collect.Collections2;
 /*
  * Maintain vectors of user v.s. item. 
  * 
- * Values: 0.0 <= pref <= 1.0.
+ * Values are always normalized to 0.0 <= pref <= 1.0.
  */
 
 public class VectorDataModel extends AbstractDataModel {
@@ -152,9 +152,9 @@ public class VectorDataModel extends AbstractDataModel {
       this.hashCode();
     }
     buckets[(int) (d * (buckets.length-1))]++;
-    double e;
-    e = (1-d);
-    return e;
+    double r;
+    r = (1-d);
+    return r;
   }
   
   @Override

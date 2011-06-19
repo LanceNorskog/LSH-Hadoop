@@ -65,7 +65,7 @@ public class RateAllItems {
   ClassNotFoundException, IOException, TasteException {
     Recommender recco;
     recco = doSimplexDataModel(args[1]);
-    SimplexTextDataModel simplexModel = (SimplexTextDataModel) recco.getDataModel();
+    LSHTextDataModel simplexModel = (LSHTextDataModel) recco.getDataModel();
     printEaseOfRecommendations(simplexModel, recco);
   }
 
@@ -86,12 +86,12 @@ public class RateAllItems {
     printSumPrefs(pointModel, 0);
   }
 
-  private static SimplexRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+  private static LSHRecommender doSimplexDataModel(String cornersfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
     Properties props = new Properties();
     props.setProperty(LSHDriver.HASHER, "lsh.core.VertexTransitiveHasher");
     props.setProperty(LSHDriver.DIMENSION, "150");
     props.setProperty(LSHDriver.GRIDSIZE, "0.43");
-    SimplexRecommender rec = new SimplexRecommender(props, cornersfile);
+    LSHRecommender rec = new LSHRecommender(props, cornersfile);
     return rec;
   }
 

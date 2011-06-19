@@ -8,28 +8,14 @@ package org.apache.mahout.math.simplex;
  */
 
 public class VertexTransitiveHasher extends Hasher {
-  public double[] stretch;
   final int dimensions;
+  final double gridsize;
   static final double S3 = Math.sqrt(3.0d);
   static final double MU = (1.0d - (1.0d/Math.sqrt(3.0d)))/2.0d;
   
-  public VertexTransitiveHasher() {
-    dimensions = 0;
-  }
-  
-  public VertexTransitiveHasher(int dim, Double stretch) {
-    dimensions = dim;
-    if (null != stretch) {
-      this.stretch = new double[dim];
-      for(int i = 0; i < dim; i++) {
-        this.stretch[i] = stretch;
-      }
-    }
-  }
-  
-  public VertexTransitiveHasher(double stretch[]) {
-    dimensions = stretch.length;
-    this.stretch = stretch;
+  public VertexTransitiveHasher(int dimensions, Double gridsize) {
+    this.dimensions = dimensions;
+    this.gridsize = gridsize;
   }
   
   @Override
@@ -40,17 +26,13 @@ public class VertexTransitiveHasher extends Hasher {
       hashed[i] = (int) (projected[i]);
     }
   }
-
+  
   
   // input space to hashed space
   protected void project(double[] values, double[] gp) {
     double sum = 0.0d;
     for(int i = 0; i < gp.length; i++) {
-      if (null != stretch) {
-        gp[i] = values[i] / stretch[i];
-      } else {
-        gp[i] = values[i];		
-      }
+      gp[i] = values[i] / gridsize;		
       sum += gp[i];
     }
     double musum = MU * sum;
@@ -68,11 +50,7 @@ public class VertexTransitiveHasher extends Hasher {
     }
     sum = sum / (1.0 / S3 + MU * hash.length); 
     for(int i = 0; i < hash.length; i++) {
-      if (null != stretch) {
-        values[i] = S3 * (hash[i] -  MU * sum * stretch[i]);
-      } else {
-        values[i] = S3 * (hash[i] -  MU * sum);
-      }
+      values[i] = S3 * (hash[i] -  MU * sum * gridsize);
     }
   }
   
