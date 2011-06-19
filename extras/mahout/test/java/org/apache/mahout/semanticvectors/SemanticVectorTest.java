@@ -89,9 +89,9 @@ public final class SemanticVectorTest extends TasteTestCase {
   }
 
   private void testEuclideanUser(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.projectUserDense(0L, 1);
-    Vector blue = svf.projectUserDense(1L, 1);
-    Vector green = svf.projectUserDense(2L, 1);
+    Vector red = svf.projectUserDense(0);
+    Vector blue = svf.projectUserDense(1);
+    Vector green = svf.projectUserDense(2);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
@@ -108,9 +108,9 @@ public final class SemanticVectorTest extends TasteTestCase {
   }
   
   private void testCosineUser(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.projectUserDense(0L, 1);
-    Vector blue = svf.projectUserDense(1L, 1);
-    Vector green = svf.projectUserDense(2L, 1);
+    Vector red = svf.projectUserDense(0);
+    Vector blue = svf.projectUserDense(1);
+    Vector green = svf.projectUserDense(2);
     DistanceMeasure measure = new CosineDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
@@ -126,9 +126,9 @@ public final class SemanticVectorTest extends TasteTestCase {
     assertEquals(0.093861176912028, bg, 0.00005);    
   }
   private void testEuclideanItem(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.projectItemDense(10L, 1);
-    Vector blue = svf.projectItemDense(11L, 1);
-    Vector green = svf.projectItemDense(12L, 1);
+    Vector red = svf.projectItemDense(10);
+    Vector blue = svf.projectItemDense(11);
+    Vector green = svf.projectItemDense(12);
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);
@@ -145,9 +145,9 @@ public final class SemanticVectorTest extends TasteTestCase {
   }
   
   private void testCosineItem(SemanticVectorFactory svf) throws TasteException {
-    Vector red = svf.projectItemDense(10L, 1);
-    Vector blue = svf.projectItemDense(11L, 1);
-    Vector green = svf.projectItemDense(12L, 1);
+    Vector red = svf.projectItemDense(10);
+    Vector blue = svf.projectItemDense(11);
+    Vector green = svf.projectItemDense(12);
     DistanceMeasure measure = new CosineDistanceMeasure();
     double rb = measure.distance(red, blue);
     double rg = measure.distance(red, green);

@@ -14,13 +14,13 @@ import org.apache.mahout.math.Vector;
 
 /*
  * Given a DataModel, create a semantic vector for a User or Item.
- * Vectors are always 0.0 -> 1.0, normal distribution
+ * Vectors are always 0.0 -> 1.0, 
+ * Also, always normal distribution (since we're adding a lot of random numbers).
  * 
- * Semantic Vector formula: ((sum(random U)+ sum(pref(u,i)))/2)/#U
+ * Semantic vectors project a dependent variable (User or Item) into space
+ * based on preference values from the independent variable (User or Item): 
+ *  ((sum(random independent)+ sum(pref(independent,dependent)))/2)/#independent
  */
-
-// TODO: Split this in raw dual engine and datamodel wrapper
-// Add generator for matching random vector
 
 public class SemanticVectorFactory {
   private final DataModel model;
@@ -40,13 +40,13 @@ public class SemanticVectorFactory {
    * The vector represents the common preferences for all users
    */
   
-  public Vector projectUserDense(final long userID, int minimum) throws TasteException {
+  public Vector projectUserDense(final long userID) throws TasteException {
     setRandomItemVecs();
     setRandomUserVecs();
     
     PreferenceArray prefs = model.getPreferencesFromUser(userID);
     int nPrefs = prefs.length();
-    if (nPrefs < minimum)
+    if (nPrefs == 0)
       return null;
     //    System.out.println("user: " + userID + " nUsers: " + nUsers);
     double[] values = new double[dimensions];
@@ -54,7 +54,6 @@ public class SemanticVectorFactory {
     float maxPreference = model.getMaxPreference();
     Iterator<Preference> lpi = prefs.iterator();
     Vector userR = userRs.get(userID);
-    int count = 0;
     while (lpi.hasNext()) {
       Preference preference = lpi.next();
       long itemID = preference.getItemID();
@@ -65,13 +64,12 @@ public class SemanticVectorFactory {
         double independent = itemR.get(dim);
         double dependent = userR.get(dim);
         double position = dependent + (independent - dependent)/2 * pref;
-        assert(position >= 0.0 && position <= 1.0);
+        position = Math.max(0.0000001, Math.min(0.99999999999, position));
         values[dim] += position;
       }
-      count++;
     }
     for(int dim = 0; dim < dimensions; dim++) {
-      values[dim] = values[dim] / count;
+      values[dim] = values[dim] / nPrefs;
     }
     Vector v = new DenseVector(values);
     
@@ -81,13 +79,13 @@ public class SemanticVectorFactory {
   /*
    * Create a Semantic Vector for this Item with User as independent variable
    */
-  public Vector projectItemDense(final long itemID, int minimum) throws TasteException {
+  public Vector projectItemDense(final long itemID) throws TasteException {
     setRandomItemVecs();
     setRandomUserVecs();
     
     PreferenceArray prefs = model.getPreferencesForItem(itemID);
     int nPrefs = prefs.length();
-    if (nPrefs < minimum)
+    if (nPrefs == 0)
       return null;
     //    System.out.println("item: " + itemID + " nItems: " + nItems);
     double[] values = new double[dimensions];
@@ -95,7 +93,6 @@ public class SemanticVectorFactory {
     float maxPreference = model.getMaxPreference();
     Iterator<Preference> lpi = prefs.iterator();
     Vector itemR = itemRs.get(itemID);
-    int count = 0;
     while (lpi.hasNext()) {
       Preference preference = lpi.next();
       long userID = preference.getUserID();
@@ -106,13 +103,12 @@ public class SemanticVectorFactory {
         double independent = userR.get(dim);
         double dependent = itemR.get(dim);
         double position = dependent + (independent - dependent)/2 * pref;
-        assert(position >= 0.0 && position <= 1.0);
+        position = Math.max(0.0000001, Math.min(0.99999999999, position));
         values[dim] += position;
       }
-      count++;
     }
     for(int dim = 0; dim < dimensions; dim++) {
-      values[dim] = values[dim] / count;
+      values[dim] = values[dim] / nPrefs;
     }
     Vector v = new DenseVector(values);
     
