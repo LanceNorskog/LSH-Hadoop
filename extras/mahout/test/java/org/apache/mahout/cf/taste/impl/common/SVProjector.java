@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class SVProjector {
   
   static int DIM = 200;
   static int SAMPLES = 200;
+  static int WIDTH = 20;
   
   /**
    * @param args
@@ -53,20 +55,23 @@ public class SVProjector {
     for(int i = 0; i < DIM; i++) 
       unitVector.set(i, 1.0);
     rescale = measure.distance(zeroVector, unitVector);
-    project(svf, model, measure, rescale, "/tmp/lsh_hadoop/gl100k_" + DIM + "_users.csv", "/tmp/lsh_hadoop/gl100k_"+ DIM + "_items.csv", "/tmp/lsh_hadoop/gl100k_"+ DIM + "_full.csv"
-        , "/tmp/lsh_hadoop/gl100k_" + DIM + "_distances.csv");
+    project(svf, model, measure, rescale, 
+        "/tmp/lsh_hadoop/gl100k_" + DIM + "x" + WIDTH + "_users.csv", 
+        "/tmp/lsh_hadoop/gl100k_"+ DIM + "x" + WIDTH + "_items.csv", 
+        "/tmp/lsh_hadoop/gl100k_"+ DIM + "_full.csv", 
+        "/tmp/lsh_hadoop/gl100k_" + DIM + "x" + WIDTH + "_distancerows.csv");
   }
   
   // stats on distances for user/item distances for actual prefs
   private static void project(SemanticVectorFactory svf, DataModel model,
-      DistanceMeasure measure, double rescale, String userPath, String itemPath, String fullPath, String distanceMatrixPath) throws TasteException, IOException {
+      DistanceMeasure measure, double rescale, String userPath, String itemPath, String fullPath, String distancesPath) throws TasteException, IOException {
     List<Vector> fullUserMap = new ArrayList<Vector>();
     List<Vector> fullItemMap = new ArrayList<Vector>();
     List<Vector> userP = new ArrayList<Vector>();
     List<Vector> itemP = new ArrayList<Vector>();
     LongPrimitiveIterator userIter = model.getUserIDs();
     LongPrimitiveIterator itemIter = model.getItemIDs();
-    Matrix rp = getRandomMatrix(2, DIM);
+    Matrix rp = getRandomMatrixSqrt3(WIDTH, DIM);
     
     report("Creating User vecs: "+model.getNumUsers());
     
@@ -80,6 +85,7 @@ public class SVProjector {
       long itemID = itemIter.nextLong();
       fullItemMap.add(svf.projectItemDense(itemID));
     }
+    printVectors("/tmp/lsh_hadoop/gl100k_all_items.csv", fullItemMap);
     report("Decimating User vecs: "+model.getNumUsers());
     fullUserMap = decimate(fullUserMap, SAMPLES);
     report("Decimating Item vecs: "+model.getNumItems());
@@ -90,28 +96,64 @@ public class SVProjector {
     report("Projecting Item vecs: "+SAMPLES);
     projectVectors(itemPath, fullItemMap, itemP, rp);
     
-    Matrix itemDistances = new DenseMatrix(SAMPLES, SAMPLES);
+    Matrix itemDistancesFull = new DenseMatrix(SAMPLES * SAMPLES, 4);
+    Matrix itemDistancesP = new DenseMatrix(SAMPLES * SAMPLES, 4);
     report("Calculating Item distances: "+SAMPLES);
-    findDistances(fullItemMap, itemDistances);
+    findDistances(fullItemMap, itemDistancesFull);
+    findDistances(itemP, itemDistancesP);
     report("Calculating Item distances: "+SAMPLES);
-    System.out.println("Item distances matrix norm: " + Algebra.getNorm(itemDistances));
     report("Done");
-    printDistance(distanceMatrixPath, itemDistances);
-    printVectors(userPath, userP);
+    System.out.println("Item distances matrix norms: full = " + Algebra.getNorm(itemDistancesFull) + 
+        ", projected = " + Algebra.getNorm(itemDistancesP));
     printVectors(itemPath, itemP);    
     printVectors(fullPath, fullItemMap);
+//    printDistance(distancesPath, itemDistances);
+//        printDistancesRatio(distancesPath, itemDistancesFull, itemDistancesP);
+    //        printVectors(userPath, userP);
   }
+  
+  private static void printDistancesRatio(String distancesPath,
+      Matrix distancesFull, Matrix distancesP) throws IOException {
+    File f = new File(distancesPath);
+    f.delete();
+    f.createNewFile();
+    PrintStream ps = new PrintStream(f);
+    ps.println("rowid,row,col,full,rp,ratio");
+    for(int i = 0; i < distancesFull.numRows(); i++) {
+      double full = distancesFull.get(i, 3);
+      double projected = distancesP.get(i, 3);
+      double ratio = Double.NaN;
+      if (! Double.isNaN(full) && !Double.isNaN(projected) && full != 0 && projected != 0)
+        ratio = full / projected;
+      ps.println(i + "," + distancesFull.get(i, 1) + "," + distancesFull.get(i, 2)+ "," + full + "," + projected + "," + ratio);
+    }
+    ps.println();
+  }
+  
   
   private static void findDistances(List<Vector> fullMap,
       Matrix distances) {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
+    int count = 0;
+    double total = 0;
     for(int r = 0; r < fullMap.size(); r++)
       for(int c = 0; c < fullMap.size(); c++) {
         double distance = measure.distance(fullMap.get(r), fullMap.get(c));
-        distances.set(r, c, distance);
+        distances.set(count, 0, count);
+        distances.set(count, 1, r);
+        distances.set(count, 2, c);
+        distances.set(count, 3, distance);
+        total += distance;
+        count++;
       }
+    double mean = total / count;
+    System.out.println("Mean: " + mean);
+    for(int i = 0; i < count; i++) {
+      double distance = distances.get(i, 3);
+      distances.set(i, 3, distance / mean);
+    }
   }
-
+  
   private static void printDistance(String distanceMatrixPath,
       Matrix distances) throws IOException {
     File f = new File(distanceMatrixPath);
@@ -126,10 +168,10 @@ public class SVProjector {
       }
       ps.println();
     }
- 
+    
     
   }
-
+  
   private static List<Vector> decimate(List<Vector> fullMap, int samples) {
     Random rnd = RandomUtils.getRandom(0);
     int size = fullMap.size();
@@ -150,7 +192,7 @@ public class SVProjector {
     }
     return sublist;
   }
-
+  
   static long tod = 0;
   private static void report(String string) {
     long now = System.currentTimeMillis();
@@ -161,13 +203,70 @@ public class SVProjector {
     System.out.print(string);
   }
   
-  private static Matrix getRandomMatrix(int rows, int columns) {
+  private static Matrix getRandomMatrixLinear(int rows, int columns) {
+    Matrix rm = new DenseMatrix(rows, columns);
+    Random rnd = RandomUtils.getRandom(500);
+    for(int r = 0; r < rows; r++) {
+      for(int c = 0; c < columns; c++) {
+        double value = rnd.nextDouble();
+        rm.set(r, c, value);
+      }
+    }
+    return rm;
+  }
+  
+  private static Matrix getRandomMatrixGaussian(int rows, int columns) {
     Matrix rm = new DenseMatrix(rows, columns);
     Random rnd = RandomUtils.getRandom(500);
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
         double value = rnd.nextGaussian();
         rm.set(r, c, value);
+      }
+    }
+    return rm;
+  }
+  
+  private static Matrix getRandomMatrixPlusminus(int rows, int columns) {
+    double sqrt3 = Math.sqrt(3);
+    Matrix rm = new DenseMatrix(rows, columns);
+    Random rnd = RandomUtils.getRandom(500);
+    int buckets[] = new int[6];
+    for(int r = 0; r < rows; r++) {
+      for(int c = 0; c < columns; c++) {
+        //        double value = Math.min(5.99999, 6 * rnd.nextDouble());
+        int test = rnd.nextInt(2);
+        //        System.out.print(test);
+        if (test == 0)
+          rm.set(r, c, -1);
+        else if (test == 1)
+          rm.set(r, c, 1);
+        // else 0
+        buckets[test] ++;
+      }
+    }
+    System.out.println();
+    System.out.println("buckets: " + Arrays.toString(buckets));
+    return rm;
+  }
+  
+  private static Matrix getRandomMatrixSqrt3(int rows, int columns) {
+    double sqrt3 = Math.sqrt(3);
+    Matrix rm = new DenseMatrix(rows, columns);
+    Random rnd = RandomUtils.getRandom(500);
+    for(int r = 0; r < rows; r++) {
+      for(int c = 0; c < columns; c++) {
+        //        double value = Math.min(5.99999, 6 * rnd.nextDouble());
+        int test = rnd.nextInt(6);
+        System.out.print(test);
+//        if (test == 0)
+//          rm.set(r, c, -1);
+//        else if (test == 1)
+//          rm.set(r, c, 1);
+        if (test == 0)
+          rm.set(r, c, -sqrt3);
+        else if (test == 1)
+          rm.set(r, c, sqrt3);
       }
     }
     return rm;
@@ -181,8 +280,6 @@ public class SVProjector {
     while(iter.hasNext()) {
       Vector vid = iter.next();
       Vector vr = rp.times(vid);
-      if (vr.size() != 2)
-        throw new RuntimeException("Output must be 2-vector");
       rVecs.add(vr);
     }
   }
@@ -201,11 +298,11 @@ public class SVProjector {
       Vector vr = iter.next();
       ps.print(count++);
       ps.print(",");
-      for(int i = 0; i < vr.size(); i++) {
+      for(int i = 0; i + 1 < vr.size(); i++) {
         ps.print(vr.get(i));
         ps.print(",");
       }
-      ps.println();
+      ps.println(vr.get(vr.size() - 1));
     }
     ps.close(); 
   }

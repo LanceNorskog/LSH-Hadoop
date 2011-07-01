@@ -65,7 +65,6 @@ public final class RMSRunningAverageTest extends TasteTestCase {
 		assertEquals(5.41602560309064, average.getAverage(), EPSILON);
 		if (null != stDev)
 			assertEquals(5.773502691896257, stDev.getStandardDeviation(), EPSILON);
-
 	}
 
 	private static void doTestBig(RunningAverageAndStdDev average, double epsilon) {

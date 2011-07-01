@@ -25,6 +25,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.common.SemanticVectorFactory;
 import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
 import org.apache.mahout.cf.taste.impl.recommender.GenericUserBasedRecommender;
 import org.apache.mahout.cf.taste.impl.similarity.PearsonCorrelationSimilarity;
@@ -37,7 +38,6 @@ import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -98,7 +98,7 @@ public final class VectorDataModelTest extends TasteTestCase {
     LongPrimitiveIterator items = baseModel.getItemIDs();
     while (items.hasNext()) {
       long itemID = items.nextLong();
-      Vector itemV = svf.projectItemDense(itemID, 1);
+      Vector itemV = svf.projectItemDense(itemID);
       vm.addItem(itemID, itemV);
     }
     this.model = vm;

@@ -27,8 +27,6 @@ public class SemanticVectorFactory {
   private final FastByIDMap<Vector> userRs = new FastByIDMap<Vector>();
   private final FastByIDMap<Vector> itemRs = new FastByIDMap<Vector>();
   private final int dimensions;
-  // allow testing by adjusting the amount of randomness in output vector
-  private float FACTOR = 0.99f;
   
   public SemanticVectorFactory(DataModel model, int dimensions) {
     this.model = model;

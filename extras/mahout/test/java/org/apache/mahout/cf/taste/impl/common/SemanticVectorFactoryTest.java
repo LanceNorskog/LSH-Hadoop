@@ -30,7 +30,7 @@ import org.apache.mahout.math.Vector;
 import org.junit.Before;
 import org.junit.Test;
 
-public final class SemanticVectorTest extends TasteTestCase {
+public final class SemanticVectorFactoryTest extends TasteTestCase {
   private static final String[] MINI = {
     "0,10,0.51",
     "0,11,0.2",

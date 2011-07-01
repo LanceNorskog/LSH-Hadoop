@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.FastByIDMap;
 import org.apache.mahout.cf.taste.impl.common.FullRunningAverage;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -18,7 +17,6 @@ import org.apache.mahout.cf.taste.impl.eval.EstimatingItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingKnnItemBasedRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingSlopeOneRecommender;
 import org.apache.mahout.cf.taste.impl.eval.EstimatingUserBasedRecommender;
-import org.apache.mahout.cf.taste.impl.eval.OrderBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.eval.PreferenceBasedRecommenderEvaluator;
 import org.apache.mahout.cf.taste.impl.model.GenericDataModel;
 import org.apache.mahout.cf.taste.impl.model.SamplingDataModel;
@@ -46,13 +44,7 @@ import org.apache.mahout.common.distance.ManhattanDistanceMeasure;
 //import org.apache.mahout.common.distance.MinkowskiDistanceMeasure;
 import org.apache.mahout.common.distance.SquaredEuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.semanticvectors.SemanticVectorFactory;
-
-
-import org.apache.mahout.cf.taste.eval.RecommenderEvaluator;
-import org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula;
-
-import static org.apache.mahout.cf.taste.eval.RecommenderEvaluator.Formula.*;
+//import org.apache.mahout.semanticvectors.SemanticVectorFactory;
 
 /*
  * Compare preferences returned by Recommenders and DataModels.
@@ -74,38 +66,41 @@ public class RegressOrderBasedRecommender {
   // give two ratings.dat files, training and test
   private static void trainingTestCompare(String[] args) throws IOException, TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.8, Distribution.HOLOGRAPHIC); 
-    DataModel glModelTest = new SamplingDataModel(glModel, 0.6, 1.0, Distribution.HOLOGRAPHIC); 
-    RecommenderEvaluator obre = new OrderBasedRecommenderEvaluator();
+    DataModel glModelTraining = new SamplingDataModel(glModel, 0.0, 0.8, Distribution.USER); 
+    DataModel glModelTest = new SamplingDataModel(glModel, 0.6, 1.0, Distribution.USER); 
+    OrderBasedRecommenderEvaluator obre;
     RunningAverage tracker = new FullRunningAverage();
     
     //    Recommender trainingRecco = doEstimatingSimplexUser(glModelTraining);
     //    Recommender testRecco = doEstimatingSimplexUser(glModelTest);
     Recommender trainingRecco = doEstimatingUser(glModelTraining);
     Recommender testRecco = doEstimatingUser(glModelTest);
-    obre.evaluate(trainingRecco, testRecco, SAMPLES, tracker, MEANRANK);
-    System.err.println("Training v.s Test score: " + tracker.getAverage());
+    double delta = obre.evaluate(trainingRecco, testRecco);
+    System.err.println("Training v.s Test score: " + delta);
   }
   
   private static void crossCompare(String[] args) throws IOException,
   TasteException {
     GroupLensDataModel glModel = new GroupLensDataModel(new File(args[0])); 
-    VectorDataModel vdModel = doGenericSemanticV(glModel);
+//    VectorDataModel vdModel = doGenericSemanticV(glModel);
     Recommender estimatingRecco = doEstimatingUser(glModel);
     //    Recommender slope1Recco = doSlope1Recco(glModel);
     Recommender pearsonRecco = doPearsonItemRecco(glModel);
     Recommender simplexRecco = doPearsonItemRecco(glModel);
-    RecommenderEvaluator obre = new OrderBasedRecommenderEvaluator();
+    OrderBasedRecommenderEvaluator obre = new Meanrank();
     RunningAverage tracker = null;
     
     tracker = new FullRunningAverage();
-    Formula formula = MEANRANK;
+    double delta = obre.evaluate(estimatingRecco, pearsonRecco);
+    System.err.println("Estimating v.s. Pearson score: " + delta);
+//    tracker = new FullRunningAverage();
+//    Formula formula = MEANRANK;
     //    bsrv.evaluate(estimatingRecco, simplexRecco, SAMPLES, tracker, formula);
     //    System.err.println("Estimating v.s. Simplex score: " + tracker.getAverage());
     //    System.out.println("Total hashes, subtracted hashes: " + sun.total + "," + sun.subtracted);
-    tracker = new FullRunningAverage();
-    obre.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, formula);
-    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
+//    tracker = new FullRunningAverage();
+//    obre.evaluate(estimatingRecco, pearsonRecco, SAMPLES, tracker, formula);
+//    System.err.println("Estimating v.s. Pearson score: " + tracker.getAverage());
     //    tracker = new FullRunningAverage();
     //    bsrv.evaluate(slope1Recco, pearsonRecco, SAMPLES, tracker, formula);
     //    System.err.println("Slope1 v.s. Pearson score: " + tracker.getAverage());
@@ -192,39 +187,39 @@ public class RegressOrderBasedRecommender {
   //    }
   //  }
   
-  private static VectorDataModel doGenericSemanticV(DataModel dataModel) throws TasteException {
-    int dimensions = 2;
-    SemanticVectorFactory svf = new SemanticVectorFactory(dataModel, dimensions);
-    DistanceMeasure measure = new EuclideanDistanceMeasure();
-    Map<Long,Vector> itemVecs = new HashMap<Long,Vector>();
-    VectorDataModel vdm = new VectorDataModel(dimensions, measure);
-    
-    int minimum = 5;
-    LongPrimitiveIterator itemIDs = dataModel.getItemIDs();
-    while (itemIDs.hasNext()) {
-      Long itemID = itemIDs.next();
-      Vector itemV = svf.projectItemDense(itemID, minimum);
-      itemVecs.put(itemID, itemV);
-    }
-    
-    LongPrimitiveIterator userIDs = dataModel.getUserIDs();
-    while (userIDs.hasNext()) {
-      Long userID = userIDs.next();
-      Vector userV = svf.getRandomUserVector(userID);
-      PreferenceArray pa = dataModel.getPreferencesFromUser(userID);
-      Iterator<Preference> prefiter = pa.iterator();
-      while(prefiter.hasNext()) {
-        Preference pref = prefiter.next();
-        long itemID = pref.getItemID();
-        Vector itemV = itemVecs.get(itemID);
-        vdm.addUser(userID, userV);  
-        vdm.addItem(itemID, itemV);  
-      }
-    }
-    
-    return vdm;
-  }
-  
+//  private static VectorDataModel doGenericSemanticV(DataModel dataModel) throws TasteException {
+//    int dimensions = 2;
+//    SemanticVectorFactory svf = new SemanticVectorFactory(dataModel, dimensions);
+//    DistanceMeasure measure = new EuclideanDistanceMeasure();
+//    Map<Long,Vector> itemVecs = new HashMap<Long,Vector>();
+//    VectorDataModel vdm = new VectorDataModel(dimensions, measure);
+//    
+//    int minimum = 5;
+//    LongPrimitiveIterator itemIDs = dataModel.getItemIDs();
+//    while (itemIDs.hasNext()) {
+//      Long itemID = itemIDs.next();
+//      Vector itemV = svf.projectItemDense(itemID, minimum);
+//      itemVecs.put(itemID, itemV);
+//    }
+//    
+//    LongPrimitiveIterator userIDs = dataModel.getUserIDs();
+//    while (userIDs.hasNext()) {
+//      Long userID = userIDs.next();
+//      Vector userV = svf.getRandomUserVector(userID);
+//      PreferenceArray pa = dataModel.getPreferencesFromUser(userID);
+//      Iterator<Preference> prefiter = pa.iterator();
+//      while(prefiter.hasNext()) {
+//        Preference pref = prefiter.next();
+//        long itemID = pref.getItemID();
+//        Vector itemV = itemVecs.get(itemID);
+//        vdm.addUser(userID, userV);  
+//        vdm.addItem(itemID, itemV);  
+//      }
+//    }
+//    
+//    return vdm;
+//  }
+//  
   private static Recommender doEstimatingUser(DataModel bcModel) throws TasteException {
     //    UserSimilarity similarity = new CachingUserSimilarity(new EuclideanDistanceSimilarity(bcModel), bcModel);
     UserSimilarity similarity = new EuclideanDistanceSimilarity(bcModel);

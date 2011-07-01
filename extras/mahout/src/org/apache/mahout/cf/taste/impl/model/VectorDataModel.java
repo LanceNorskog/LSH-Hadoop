@@ -2,10 +2,6 @@ package org.apache.mahout.cf.taste.impl.model;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
@@ -17,12 +13,11 @@ import org.apache.mahout.cf.taste.impl.common.LongPrimitiveArrayIterator;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.cf.taste.similarity.ItemSimilarity;
+import org.apache.mahout.cf.taste.similarity.PreferenceInferrer;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
-
-import com.google.common.collect.Collections2;
-
 
 //TODO: need to add preferences
 
@@ -32,19 +27,13 @@ import com.google.common.collect.Collections2;
  * Values are always normalized to 0.0 <= pref <= 1.0.
  */
 
-public class VectorDataModel extends AbstractDataModel {
+public class VectorDataModel extends AbstractDataModel implements UserSimilarity, ItemSimilarity{
   final private int dimensions;
   final private DistanceMeasure measure;
-//  final private Map<Long,Vector> users = new HashMap<Long, Vector>();
-//  final private Map<Long,Vector> items = new HashMap<Long, Vector>();
   final private FastByIDMap<Vector> users = new FastByIDMap<Vector>();
   final private FastByIDMap<Vector> items = new FastByIDMap<Vector>();
   final double maximum;
-  // debug
-  public double total = 0;
-  public int count = 0;
-  public int clamped = 0;
-  public long[] buckets = new long[10];
+  long[] buckets = new long[10];
   
   public VectorDataModel(int dimensions) {
     this.measure = new EuclideanDistanceMeasure();
@@ -136,9 +125,6 @@ public class VectorDataModel extends AbstractDataModel {
   
   private Float getPreferenceValuePoint(Vector v1, Vector v2) {
     double distance = measure.distance(v1, v2);
-    total += distance;
-    count++;
-    // System.err.println(v1 +"," + v2 + "," + distance);
     double rating = distance2rating(distance);
     return (float) rating;
   }
@@ -148,7 +134,6 @@ public class VectorDataModel extends AbstractDataModel {
     if (d <= 0.0 || d > 1.0d) {
       d = Math.max(0.000001, d);
       d = Math.min(0.999999, d);
-      clamped ++;
       this.hashCode();
     }
     buckets[(int) (d * (buckets.length-1))]++;
@@ -237,30 +222,62 @@ public class VectorDataModel extends AbstractDataModel {
     
   }
   
+  public int getDimensions() {
+    return dimensions;
+  }
+
+  
   /* ItemSimilarity methods */
-  //  @Override
-  //  public double[] itemSimilarities(long itemID1, long[] itemID2s)
-  //      throws TasteException {
-  //    double[] prefs = new double[itemID2s.length];
-  //    for(int i = 0; i < itemID2s.length; i++) {
-  //      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
-  //      prefs[i] = (double) distance;
-  //    }
-  //    return prefs;
-  //  }
-  //
-  //  @Override
-  //  public double itemSimilarity(long itemID1, long itemID2)
-  //      throws TasteException {
-  //    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
-  //    return (double) distance;
-  //  }
-  //
-  //
-  //  @Override
-  //  public long[] allSimilarItemIDs(long itemID) throws TasteException {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
+    @Override
+    public double[] itemSimilarities(long itemID1, long[] itemID2s)
+        throws TasteException {
+      requireItems();
+      double[] prefs = new double[itemID2s.length];
+      for(int i = 0; i < itemID2s.length; i++) {
+        float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
+        prefs[i] = (double) distance;
+      }
+      return prefs;
+    }
+  
+    @Override
+    public double itemSimilarity(long itemID1, long itemID2)
+        throws TasteException {
+      requireItems();
+      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
+      return (double) distance;
+    }
+  
+  
+    // this requires a distance value - perhaps could give it in constructor?
+    @Override
+    public long[] allSimilarItemIDs(long itemID) throws TasteException {
+      requireItems();
+      throw new UnsupportedOperationException();
+    }
+
+    /* UserSimilarity methods */
+    @Override
+    public double userSimilarity(long userID1, long userID2)
+        throws TasteException {
+      requireUsers();
+      return 0;
+    }
+
+    @Override
+    public void setPreferenceInferrer(PreferenceInferrer inferrer) {
+      throw new UnsupportedOperationException();
+      
+    }
+    
+    private void requireUsers() {
+      if (users.size() == 0)
+        throw new UnsupportedOperationException("VectorDataModel: UserSimilarity method requires user vectors");
+    }
+  
+    private void requireItems() {
+      if (items.size() == 0)
+        throw new UnsupportedOperationException("VectorDataModel: ItemSimilarity method requires item vectors");
+    }
   
 }
