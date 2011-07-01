@@ -30,9 +30,9 @@ import org.apache.mahout.math.stats.OnlineSummarizer;
 
 public class SVProjector {
   
-  static int DIM = 200;
+  static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
-  static int WIDTH = 20;
+  static int TARGET_DIMENSIONS = 20;
   
   /**
    * @param args
@@ -40,76 +40,65 @@ public class SVProjector {
    * @throws TasteException 
    */
   public static void main(String[] args) throws IOException, TasteException {
-    DataModel model = new GroupLensDataModel(new File("/tmp/lsh_hadoop/GL_100k/ratings.dat"));
+    DataModel model;
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double rescale;
     
-    SemanticVectorFactory svf = new SemanticVectorFactory(model, DIM);
-    //    Vector v = svf.getUserVector(100, 20, 50);
-    //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
-    //    Vector v2 = svf.getItemVector(1282, 10, 20);
-    //    System.out.println("count: " + svf.count + ", skip: " + svf.skip);
-    DIM = svf.getDimensions();
-    Vector unitVector = new DenseVector(DIM);
-    Vector zeroVector = new DenseVector(DIM);
-    for(int i = 0; i < DIM; i++) 
+    if (args.length != 2)
+      throw new TasteException("Usage: grouplens.dat file_prefix");
+    model = new GroupLensDataModel(new File(args[0]));
+    SemanticVectorFactory svf = new SemanticVectorFactory(model, SOURCE_DIMENSIONS);
+    SOURCE_DIMENSIONS = svf.getDimensions();
+    Vector unitVector = new DenseVector(SOURCE_DIMENSIONS);
+    Vector zeroVector = new DenseVector(SOURCE_DIMENSIONS);
+    for(int i = 0; i < SOURCE_DIMENSIONS; i++) 
       unitVector.set(i, 1.0);
     rescale = measure.distance(zeroVector, unitVector);
-    project(svf, model, measure, rescale, 
-        "/tmp/lsh_hadoop/gl100k_" + DIM + "x" + WIDTH + "_users.csv", 
-        "/tmp/lsh_hadoop/gl100k_"+ DIM + "x" + WIDTH + "_items.csv", 
-        "/tmp/lsh_hadoop/gl100k_"+ DIM + "_full.csv", 
-        "/tmp/lsh_hadoop/gl100k_" + DIM + "x" + WIDTH + "_distancerows.csv");
+    project(svf, model, measure, rescale, args[1] + "_" + SOURCE_DIMENSIONS);
+    
   }
   
   // stats on distances for user/item distances for actual prefs
   private static void project(SemanticVectorFactory svf, DataModel model,
-      DistanceMeasure measure, double rescale, String userPath, String itemPath, String fullPath, String distancesPath) throws TasteException, IOException {
-    List<Vector> fullUserMap = new ArrayList<Vector>();
+      DistanceMeasure measure, double rescale, String path) throws TasteException, IOException {
+    String pathX = path + "x" + TARGET_DIMENSIONS;
     List<Vector> fullItemMap = new ArrayList<Vector>();
-    List<Vector> userP = new ArrayList<Vector>();
-    List<Vector> itemP = new ArrayList<Vector>();
-    LongPrimitiveIterator userIter = model.getUserIDs();
+    List<Vector> itemsRP = new ArrayList<Vector>();
     LongPrimitiveIterator itemIter = model.getItemIDs();
-    Matrix rp = getRandomMatrixSqrt3(WIDTH, DIM);
+    Matrix rp = getRandomMatrixSqrt3(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
     
-    report("Creating User vecs: "+model.getNumUsers());
-    
-    while(userIter.hasNext()) {
-      long userID = userIter.nextLong();
-      fullUserMap.add(svf.projectUserDense(userID));
-    }
     report("Creating Item vecs: "+model.getNumItems());
     
     while(itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
       fullItemMap.add(svf.projectItemDense(itemID));
     }
-    printVectors("/tmp/lsh_hadoop/gl100k_all_items.csv", fullItemMap);
-    report("Decimating User vecs: "+model.getNumUsers());
-    fullUserMap = decimate(fullUserMap, SAMPLES);
+    report("Projecting Item vecs: "+SAMPLES);
+    projectVectors(fullItemMap, itemsRP, rp);
+    
+    printVectors(path + "_all_items.csv", fullItemMap);
+    // Train KNime tools from full item vector set
+    printVectors(pathX + "_all_items.csv", itemsRP);
+    
+    // Decimate down to SAMPLES # vectors
     report("Decimating Item vecs: "+model.getNumItems());
     fullItemMap = decimate(fullItemMap, SAMPLES);
+    itemsRP = decimate(itemsRP, SAMPLES);
+    printVectors(path + "_items.csv", fullItemMap);
     
-    report("Projecting User vecs: "+SAMPLES);
-    projectVectors(userPath, fullUserMap, userP, rp);
-    report("Projecting Item vecs: "+SAMPLES);
-    projectVectors(itemPath, fullItemMap, itemP, rp);
     
     Matrix itemDistancesFull = new DenseMatrix(SAMPLES * SAMPLES, 4);
-    Matrix itemDistancesP = new DenseMatrix(SAMPLES * SAMPLES, 4);
+    Matrix itemDistancesRP = new DenseMatrix(SAMPLES * SAMPLES, 4);
     report("Calculating Item distances: "+SAMPLES);
     findDistances(fullItemMap, itemDistancesFull);
-    findDistances(itemP, itemDistancesP);
+    findDistances(itemsRP, itemDistancesRP);
     report("Calculating Item distances: "+SAMPLES);
     report("Done");
     System.out.println("Item distances matrix norms: full = " + Algebra.getNorm(itemDistancesFull) + 
-        ", projected = " + Algebra.getNorm(itemDistancesP));
-    printVectors(itemPath, itemP);    
-    printVectors(fullPath, fullItemMap);
-//    printDistance(distancesPath, itemDistances);
-//        printDistancesRatio(distancesPath, itemDistancesFull, itemDistancesP);
-    //        printVectors(userPath, userP);
+        ", projected = " + Algebra.getNorm(itemDistancesRP));
+    printVectors(pathX + "_items.csv", itemsRP);    
+    //  printMatrix(path + "_items_distance_matrix.csv", itemDistances);
+    //  printDistancesRatio(pathX + "_items_distance_rows.csv", itemDistancesFull, itemDistancesP);
   }
   
   private static void printDistancesRatio(String distancesPath,
@@ -136,7 +125,7 @@ public class SVProjector {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     int count = 0;
     double total = 0;
-    for(int r = 0; r < fullMap.size(); r++)
+    for(int r = 0; r < fullMap.size(); r++) {
       for(int c = 0; c < fullMap.size(); c++) {
         double distance = measure.distance(fullMap.get(r), fullMap.get(c));
         distances.set(count, 0, count);
@@ -146,15 +135,15 @@ public class SVProjector {
         total += distance;
         count++;
       }
+    }
     double mean = total / count;
-    System.out.println("Mean: " + mean);
     for(int i = 0; i < count; i++) {
       double distance = distances.get(i, 3);
       distances.set(i, 3, distance / mean);
     }
   }
   
-  private static void printDistance(String distanceMatrixPath,
+  private static void printMatrix(String distanceMatrixPath,
       Matrix distances) throws IOException {
     File f = new File(distanceMatrixPath);
     f.delete();
@@ -259,10 +248,10 @@ public class SVProjector {
         //        double value = Math.min(5.99999, 6 * rnd.nextDouble());
         int test = rnd.nextInt(6);
         System.out.print(test);
-//        if (test == 0)
-//          rm.set(r, c, -1);
-//        else if (test == 1)
-//          rm.set(r, c, 1);
+        //        if (test == 0)
+        //          rm.set(r, c, -1);
+        //        else if (test == 1)
+        //          rm.set(r, c, 1);
         if (test == 0)
           rm.set(r, c, -sqrt3);
         else if (test == 1)
@@ -272,7 +261,7 @@ public class SVProjector {
     return rm;
   }
   
-  private static void projectVectors(String path,
+  private static void projectVectors(
       List<Vector> vecs, List<Vector> rVecs, Matrix rp) throws TasteException,
       IOException, FileNotFoundException {
     
@@ -294,10 +283,11 @@ public class SVProjector {
     PrintStream ps = new PrintStream(psFile);
     int count = 1; // Excel starts at 1
     Iterator<Vector> iter = rVecs.iterator();
+    // #,1,values...   1 is a hack for KNime
     while(iter.hasNext()) {
       Vector vr = iter.next();
       ps.print(count++);
-      ps.print(",");
+      ps.print(",1,");
       for(int i = 0; i + 1 < vr.size(); i++) {
         ps.print(vr.get(i));
         ps.print(",");
