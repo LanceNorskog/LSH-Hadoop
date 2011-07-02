@@ -19,6 +19,8 @@ package org.apache.mahout.cf.taste.impl.common;
 
 import java.io.File;
 
+import org.apache.mahout.cf.taste.common.NoSuchItemException;
+import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.TasteTestCase;
 import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
@@ -121,6 +123,7 @@ public final class SemanticVectorFactoryTest extends TasteTestCase {
     assertEquals(0.03301051970229918, rg, 0.00005);
     assertEquals(0.093861176912028, bg, 0.00005);    
   }
+  
   private void testEuclideanItem(SemanticVectorFactory svf) throws TasteException {
     Vector red = svf.projectItemDense(10);
     Vector blue = svf.projectItemDense(11);
@@ -159,33 +162,25 @@ public final class SemanticVectorFactoryTest extends TasteTestCase {
     assertEquals(0.00121582145646415, bg, 0.00005);    
   }
 
-  /*@Test
-  public void testVectors() throws TasteException {
+  @Test
+  public void testGoodUser() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
-    // use all items
-    Vector vu = svf.projectItemDense(123, 0);
-    assertNotNull(vu);
-    // use two randomly sampled items
-    vu = svf.projectItemDense(123, 0);
-    assertNotNull(vu);
-    // use all Items
-    Vector vi = svf.projectItemDense(789, 0);
-    assertNotNull(vi);
-    // use two randomly sampled Items
-    vi = svf.projectItemDense(789, 0);
-    assertNotNull(vi);
+    Vector vUser = svf.projectItemDense(123);
+    assertNotNull(vUser);
+    Vector vItem = svf.projectItemDense(123);
+    assertNotNull(vItem);
   }
   
-  @Test(expected = NoSuchUserException.class)
   public void testBadUser() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
-    Vector vu = svf.projectItemDense(-1, 0);
+    Vector vUser = svf.projectUserDense(-1);
+    assertNull(vUser);
   }
   
-  @Test(expected = NoSuchItemException.class)
   public void testBadItem() throws TasteException {
     SemanticVectorFactory svf = new SemanticVectorFactory(midiModel, 0);
-    Vector vu = svf.projectItemDense(-1, 0);
+    Vector vItem = svf.projectItemDense(-1);
+    assertNull(vItem);
   }
-   */  
+     
 }

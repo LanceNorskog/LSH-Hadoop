@@ -36,6 +36,10 @@ public class SemanticVectorFactory {
   /*
    * Create a Semantic Vector from items preferred by this User
    * The vector represents the common preferences for all users
+   * 
+   * Project items to points on a line, and "tug" users towards them.
+   * Each dimension has independent random points.
+   * In projectItemDense(), user is random and item is tugged.
    */
   
   public Vector projectUserDense(final long userID) throws TasteException {
@@ -46,7 +50,6 @@ public class SemanticVectorFactory {
     int nPrefs = prefs.length();
     if (nPrefs == 0)
       return null;
-    //    System.out.println("user: " + userID + " nUsers: " + nUsers);
     double[] values = new double[dimensions];
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
@@ -78,14 +81,13 @@ public class SemanticVectorFactory {
    * Create a Semantic Vector for this Item with User as independent variable
    */
   public Vector projectItemDense(final long itemID) throws TasteException {
-    setRandomItemVecs();
     setRandomUserVecs();
+    setRandomItemVecs();
     
     PreferenceArray prefs = model.getPreferencesForItem(itemID);
     int nPrefs = prefs.length();
     if (nPrefs == 0)
       return null;
-    //    System.out.println("item: " + itemID + " nItems: " + nItems);
     double[] values = new double[dimensions];
     float minPreference = model.getMinPreference();
     float maxPreference = model.getMaxPreference();
@@ -134,6 +136,7 @@ public class SemanticVectorFactory {
   }
   
   // User and Item projection vectors are deterministic, with a disjoint seed space
+  // TODO: Very very hokey. This needs MurmurHash version of the RandomVector concept.
   public Vector getRandomUserVector(long userID) {
     Vector v = new DenseVector(dimensions);
     Random rnd = new Random();

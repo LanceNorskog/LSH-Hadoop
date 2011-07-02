@@ -18,5 +18,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/extras"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mahoutlibs"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
