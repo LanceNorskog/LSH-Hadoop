@@ -29,7 +29,6 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
   
   public boolean isDense() {
     return true;
-//    return hash.getClass() == DenseHash.class;
   }
   
   public boolean isSequentialAccess() {
@@ -51,7 +50,6 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
     hasher.unhashDense(ha, da);
     return da[0];
   }
-  
   
   @Override
   public Vector clone() {

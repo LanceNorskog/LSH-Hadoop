@@ -5,9 +5,6 @@ package org.apache.mahout.math.simplex;
  * 
  * Hash point to nearest grid corner.
  * stretch of 0.5 means grid to 0.5 instead of 1.0
- * 
- * Without a stretch, no dependence on dimensions.
- * TODO: make stretch sparse with a default value
  */
 
 public class OrthonormalHasher extends Hasher {
@@ -18,16 +15,21 @@ public class OrthonormalHasher extends Hasher {
     this.dimensions = dimensions;
     this.gridsize = gridsize;
   }
+ 
+  @Override
+  public Double getFactor(double[] values) {
+    return 0.0;
+  }
   
   @Override
-  public void hashDense(double[] values, int[] hashed) {
+  public void hashDense(double[] values, int[] hashed, Double factor) {
     for(int i = 0; i < values.length; i++) {
       hashed[i] = (int) Math.floor(values[i] / gridsize);
     }
   }
   
   @Override
-  public void unhashDense(int[] hash, double[] values) {
+  public void unhashDense(int[] hash, double[] values, Double factor) {
     for (int i = 0; i < hash.length; i++) {
       values[i] = hash[i] * gridsize;
     }
@@ -35,15 +37,7 @@ public class OrthonormalHasher extends Hasher {
   
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("Orthonormal Hasher(dense only): dim=" + dimensions);
-    if (gridsize != 1.0) {
-      sb.append('[' + gridsize + ']');
-    }
-    return sb.toString();
+    return "dimensions=" + dimensions + ",gridsize=" + gridsize;
   }
-  
-  
-  
-  
+
 }
