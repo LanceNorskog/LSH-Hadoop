@@ -35,7 +35,7 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     nabes = proximity_hashes(v);
     this.v = v;
   }
-
+  
   @Override
   public boolean hasNext() {
     if (null == nabes) {
@@ -44,16 +44,16 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     }
     return index <= dimensions;
   }
-
+  
   @Override
   public Simplex next() {
     if (! hasNext())
       throw new IllegalStateException("No next vector");
     int[] hash = nabes.get(index);
     index++;
-   return new Simplex(hash, null, null);
+    return new Simplex<T>(hash, null, null, null);
   }
-
+  
   @Override
   public void remove() {
     throw new UnsupportedOperationException();
@@ -69,7 +69,8 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     for(int index = 0; index < v.size(); index++) {
       values[index] = v.get(index);
     }
-    hasher.hashDense(values, hashed);
+    double factor = hasher.getFactor(values);
+    hasher.hashDense(values, hashed, factor);
     return hashed;
   }  
   
@@ -77,7 +78,7 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
   // this code is a transcription of python code
   // needs refactoring for good Java style
   // and for iterative generation instead of prebuilt list
-
+  
   private List<int[]> proximity_hashes(Vector v) {
     int[] this_hash = getHash(v);
     List<int[]> hashes = new ArrayList<int[]>();
@@ -92,7 +93,7 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     }
     return hashes;
   }
-
+  
   private Vector subtract(Vector v, int[] this_hash) {
     Vector out = v.like();
     for(int i = 0; i < this_hash.length; i++) {
@@ -100,7 +101,7 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     }
     return out;
   }
-
+  
   // return indexes of values sorted in reverse
   private List<Integer> sort_as_perm(Vector v) {
     Iterator<Element> vIt = v.iterator();
@@ -120,10 +121,10 @@ public class SimplexIterator<T> implements Iterator<Simplex<T>> {
     }
     return indexes;
   }
-
+  
   private void add_hash(List<int[]> hashes, int[] this_hash) {
     int[] copy = Arrays.copyOf(this_hash, this_hash.length);
     hashes.add(copy);
   }
-
- }
+  
+}

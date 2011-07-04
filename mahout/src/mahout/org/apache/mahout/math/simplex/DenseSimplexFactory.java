@@ -1,13 +1,5 @@
 package org.apache.mahout.math.simplex;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
@@ -23,7 +15,7 @@ import org.apache.mahout.math.Vector;
 //  1) prepare stretched musum
 //  2) project individual values
 
-public class DenseSimplexFactory extends SimplexFactory {
+public class DenseSimplexFactory extends SimplexFactory<String> {
   static PairComparator sorter = new PairComparator();
   final Hasher hasher;
   final Vector stretch;
@@ -42,24 +34,21 @@ public class DenseSimplexFactory extends SimplexFactory {
   }
   
   @Override
-  public Simplex<?> hash(Vector v) {
-    Object label = null;
+  public Simplex<String> hash(Vector v) {
+    String label = null;
     if (v instanceof NamedVector) {
       label = ((NamedVector) v).getName();
     }
     int size = v.size();
     double[] da = new double[size];
+    for(int i = 0; i < size; i++)
+      da[i] = v.getQuick(i);
     int[] ia = new int[size];
-    hasher.hashDense(da, ia);
+    Double factor = hasher.getFactor(da);
+    hasher.hashDense(da, ia, factor);
     boolean[] ba = new boolean[size];
-    Simplex<?> s = new Simplex<Object>(ia, ba, label);
+    Simplex<String> s = new Simplex<String>(ia, ba, factor, label);
     return s;
   }
-  
-  @Override
-  public Vector unhash(Simplex<?> s) {
-    // TODO Auto-generated method stub
-    return null;
-  }  
   
 }

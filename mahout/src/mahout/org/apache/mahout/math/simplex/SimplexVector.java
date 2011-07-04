@@ -18,11 +18,14 @@ import org.apache.mahout.math.Vector;
 public class SimplexVector<T> extends AbstractVector implements Vector {
   final Simplex<T> simplex;
   final Hasher hasher;
+  Double factor;
   
   protected static final String CANNOT_SET_READ_ONLY_VECTOR = "Cannot set ReadOnlyVector";
   
   public SimplexVector(Simplex<T> simplex, Hasher hasher) {
     super(simplex.getDimensions());
+    if (simplex.getFactor() == null) 
+      throw new UnsupportedOperationException("");
     this.simplex = simplex;
     this.hasher = hasher;
   }
@@ -47,7 +50,7 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
     int[] ha = new int[1];
     ha[0] = simplex.getValue(index);
     double[] da = new double[1];
-    hasher.unhashDense(ha, da);
+    hasher.unhashDense(ha, da, factor);
     return da[0];
   }
   
@@ -148,7 +151,7 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
       int[] h = new int[1];
       el.index = index;
       h[0] = simplex.getValue(index);
-      hasher.unhashDense(h, v);
+      hasher.unhashDense(h, v, factor);
       el.value = v[0];
       index++;
       return el;
@@ -156,7 +159,7 @@ public class SimplexVector<T> extends AbstractVector implements Vector {
     
     @Override
     public void remove() {
-      throw new UnsupportedOperationException("Not yet");
+      throw new UnsupportedOperationException();
       
     }
     

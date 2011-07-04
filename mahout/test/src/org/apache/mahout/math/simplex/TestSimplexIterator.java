@@ -12,6 +12,8 @@ import org.apache.mahout.math.simplex.SimplexIterator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.sun.org.apache.xml.internal.utils.Trie;
+
 public final class TestSimplexIterator extends Assert {
   static double EPSILON = 0.0000001;
   
@@ -21,19 +23,23 @@ public final class TestSimplexIterator extends Assert {
   double[] lowerData = {1.2, 2.9};
   double[] lowerQuantized = {1.0,2.0};
   int[][] lowerHashed = {
-      {1,2,},
-      {1,3,},
-      {2,3,},
+      {1,2,},   // ll
+      {2,2,},   // lr
+      {2,3,},   // ur
   };
+  double lowerFactor = 3.1;
+  boolean[] lowerNabes = {true, false};
   
   // this point is in the upper left simplex
   double[] upperData = {1.2, 2.9};
   double[] upperQuantized = {1.0,2.0};
   int[][] upperHashed = {
-      {1,2,},
-      {1,3,},
-      {2,3,},
+      {1,2,},   // ll
+      {1,3,},   // ul
+      {2,3,},   // ur
   };
+  double upperFactor = 3.1;
+  boolean[] upperNabes = {false, true};
   
   // iterates over lower right triangle
   @Test
@@ -43,7 +49,7 @@ public final class TestSimplexIterator extends Assert {
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     Vector lower = new DenseVector(lowerData);
     SimplexIterator<String> sit = new SimplexIterator<String>(hasher, lower);
-    verify(dim, lowerHashed, sit);
+    verify(dim, lowerHashed, sit, lowerFactor);
   }
   
   // iterates over lower right triangle
@@ -54,11 +60,11 @@ public final class TestSimplexIterator extends Assert {
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     Vector upper = new DenseVector(upperData);
     SimplexIterator sit = new SimplexIterator(hasher, upper);
-    verify(dim, upperHashed, sit);
+    verify(dim, upperHashed, sit, upperFactor);
   }
   
   private void verify(int dim, int[][] hashed,
-      SimplexIterator sit) {
+      SimplexIterator sit, double factor) {
     Set<Simplex> saved = new HashSet<Simplex>();
     int count = 0;
     int ones = 0;
@@ -67,7 +73,7 @@ public final class TestSimplexIterator extends Assert {
       int[] hash = s.getValues();
       int[] orig = hashed[count];
       saved.add(s);
-      Simplex<String> base = new Simplex<String>(orig, null, "");
+      Simplex<String> base = new Simplex<String>(orig, null, factor, "");
       assert(base.equals(s) && s.equals(base));
       count++;
     }
@@ -85,7 +91,8 @@ public final class TestSimplexIterator extends Assert {
     }
     Hasher hasher = new OrthonormalHasher(dim, 1.0);
     int[] hashed = new int[dim];
-    hasher.hashDense(big, hashed);
+    double factor = hasher.getFactor(big);
+    hasher.hashDense(big, hashed, factor);
     SimplexIterator sit = new SimplexIterator(hasher, (Vector) new DenseVector(big));
     distances(dim, sit, hashed, null);
   }

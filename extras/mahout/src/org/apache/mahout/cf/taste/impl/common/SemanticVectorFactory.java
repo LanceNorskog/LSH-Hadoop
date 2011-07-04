@@ -10,6 +10,7 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.Preference;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.math.DenseVector;
+import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.Vector;
 
 /*
@@ -80,7 +81,7 @@ public class SemanticVectorFactory {
   /*
    * Create a Semantic Vector for this Item with User as independent variable
    */
-  public Vector projectItemDense(final long itemID) throws TasteException {
+  public Vector projectItemDense(long itemID, String label) throws TasteException {
     setRandomUserVecs();
     setRandomItemVecs();
     
@@ -111,7 +112,8 @@ public class SemanticVectorFactory {
       values[dim] = values[dim] / nPrefs;
     }
     Vector v = new DenseVector(values);
-    
+    if (null != label)
+      v = new NamedVector(v, label);
     return v;
   }
   

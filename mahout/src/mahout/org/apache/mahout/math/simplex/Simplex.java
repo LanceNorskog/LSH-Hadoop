@@ -9,6 +9,7 @@ import org.apache.commons.collections.iterators.ArrayIterator;
 /*
  * Hashed values, stored in hash space.
  * Dense only
+ * No knowledge of Vectors. Simple data structure.
  * 
  * Contains the base hash, and optionally the list of neighbor simplexes.
  * Without that list, only represents the lowest corner of a rectangular hypersolid.
@@ -21,19 +22,22 @@ public class Simplex<T> {
   public final int[] base;
   public final boolean[] neighbors;
   public final int dimensions;
+  final Double factor;
   
-  public Simplex(int dimensions, boolean hasNeighbors, T label) {
+  private Simplex(int dimensions, boolean hasNeighbors, T label, Double factor) {
     this.dimensions = dimensions;
     base = new int[dimensions];
     neighbors = hasNeighbors ? new boolean[dimensions] : null;
     this.label = label;
+    this.factor = factor;
   }
   
-  public Simplex(int[] hash, boolean[] neighbors, T label) {
+  public Simplex(int[] hash, boolean[] neighbors, Double factor, T label) {
     this.base = hash;
     dimensions = hash.length;
     this.neighbors = neighbors;
     this.label = label;
+    this.factor = factor;
   }
   
   public boolean hasNeighbors() {
@@ -44,10 +48,11 @@ public class Simplex<T> {
    * Get i'th neighbor Simplex. It has no neighbor descriptor or label.
    */
   public Simplex<T> getNeighbor(int index) {
-    Simplex<T> nabe = new Simplex<T>(dimensions, false, null);
+    int[] nabeHash = new int[dimensions];
     for(int i = 0; i < dimensions; i++) {
-      nabe.base[i] = neighbors[i] ? base[i] + 1 : base[i];
+      nabeHash[i] = neighbors[i] ? base[i] + 1 : base[i];
     }
+    Simplex<T> nabe = new Simplex<T>(nabeHash, null, factor, null);
     return nabe;
   }
 
@@ -58,6 +63,10 @@ public class Simplex<T> {
   public int getValue(int index) {
     // null exception? why, yes!
     return base[index];
+  }
+  
+  public Double getFactor() {
+    return factor;
   }
   
   public int getDimensions() {

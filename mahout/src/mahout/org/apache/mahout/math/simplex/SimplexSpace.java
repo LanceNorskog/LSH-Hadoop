@@ -22,7 +22,7 @@ import org.apache.mahout.math.simplex.Hasher;
  */
 
 public class SimplexSpace<T> {
-  final List<Simplex<T>> simplexes = new ArrayList<Simplex<T>>();
+//  final List<Simplex<T>> simplexes = new ArrayList<Simplex<T>>();
   final Map<T, Simplex<T>> key2simplexMap = new HashMap<T, Simplex<T>>();
   final Hasher hasher;
   final int dimensions;
@@ -32,56 +32,40 @@ public class SimplexSpace<T> {
     this.dimensions = dimensions;
   }
   
-  public void addSimplex(Simplex<T> x) {
-    simplexes.add(x);
-  }
-  
   public void addSimplex(Simplex<T> simplex, T id) {
-
-  }
-  
-  public Simplex<String> getSimplex(Vector v) {
-    if (v instanceof NamedVector) {
-      T label = (T) ((NamedVector)v).getName();
-      if (label instanceof String) {
-        return (Simplex<String>) newSimplex(v, hasher, label);
-      } else {
-        throw new IllegalArgumentException("NamedVector is only compatible with Simplex<String>");
-      }
-    } else {
-      return (Simplex<String>) newSimplex(v, hasher, null);
-    }
+    key2simplexMap.put(id, simplex);
   }
   
   public Vector getVector(Simplex<T> simplex) {
     return new SimplexVector<T>(simplex, hasher);
   }
   
-  public double getDistance(T key1, T key2, DistanceMeasure measure) {
+  public Double getDistance(T key1, T key2, DistanceMeasure measure) {
     Simplex<T> h1 = key2simplexMap.get(key1);
     Simplex<T> h2 = key2simplexMap.get(key2);
     if (null == h1 || null == h2)
-      return -1;
+      return null;
     
     double d = hashDistance(h1, h2, measure);
     return d;
   }
   
   private double hashDistance(Simplex<T> h1, Simplex<T> h2, DistanceMeasure measure) {
-    Vector v1 = new SimplexVector<T>(h2, hasher);
+    Vector v1 = new SimplexVector<T>(h1, hasher);
     Vector v2 = new SimplexVector<T>(h2, hasher);
     double distance = measure.distance(v1, v2);
     return distance;
   }
   
-  public Simplex<T> newSimplex(Vector v, Hasher hasher, T label) {
+  public Simplex<T> newSimplex(Vector v, T label) {
     int[] hashes = new int[v.size()];
 //    if (v.isDense()) {
       double[] values = new double[v.size()];
       boolean[] neighbors = new boolean[v.size()];
       getValues(v, values);
-      hasher.hashDense(values, hashes);
-      return new Simplex<T>(hashes, neighbors, label);
+      Double factor = hasher.getFactor(values);
+      hasher.hashDense(values, hashes, factor);
+      return new Simplex<T>(hashes, neighbors, factor, label);
 //    } 
 /*    else {
       // this only works with Orthonormal

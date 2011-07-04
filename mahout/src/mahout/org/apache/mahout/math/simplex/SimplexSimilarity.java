@@ -83,9 +83,11 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
       throws TasteException {
     if (null == itemSpace)
       throw new TasteException("SimplexSimilarity: no Item vectors configured");
-    double d = itemSpace.getDistance(itemID1, itemID2, measure);
+    Double d = itemSpace.getDistance(itemID1, itemID2, measure);
     // 0.0 <= d <= 1.0, guaranteed by SimplexSpace implementation
     // distance of 0 or 1 causes problems- 1/0 happens
+    if (d == null || Double.isInfinite(d) | Double.isNaN(d))
+      return 0;
     return Math.max(0.000001, Math.min(0.9999999, d));
   }
 
