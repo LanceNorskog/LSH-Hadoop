@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -16,6 +15,7 @@ import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
+import org.apache.mahout.common.MurmurHashRandom;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
@@ -23,16 +23,14 @@ import org.apache.mahout.math.Algebra;
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
-import org.apache.mahout.math.RandomMatrix;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.stats.OnlineSummarizer;
 
 
 public class SVProjector {
   
   static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
-  static int TARGET_DIMENSIONS = 20;
+  static int TARGET_DIMENSIONS = 2;
   
   /**
    * @param args
@@ -62,43 +60,70 @@ public class SVProjector {
   private static void project(SemanticVectorFactory svf, DataModel model,
       DistanceMeasure measure, double rescale, String path) throws TasteException, IOException {
     String pathX = path + "x" + TARGET_DIMENSIONS;
-    List<Vector> fullItemMap = new ArrayList<Vector>();
+    List<Vector> origItemMap = new ArrayList<Vector>();
     List<Vector> itemsRP = new ArrayList<Vector>();
     LongPrimitiveIterator itemIter = model.getItemIDs();
-    Matrix rp = getRandomMatrixSqrt3(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
+    report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
+    Matrix rp = getRandomMatrixGaussian(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
     
     report("Creating Item vecs: "+model.getNumItems());
     
     while(itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
-      fullItemMap.add(svf.projectItemDense(itemID));
+      origItemMap.add(svf.projectItemDense(itemID));
     }
-    report("Projecting Item vecs: "+SAMPLES);
-    projectVectors(fullItemMap, itemsRP, rp);
+    //    report("Projecting Item vecs: "+SAMPLES);
+    projectVectors(origItemMap, itemsRP, rp);
     
-    printVectors(path + "_all_items.csv", fullItemMap);
+    //    printVectors(path + "_all_items.csv", origItemMap);
     // Train KNime tools from full item vector set
-    printVectors(pathX + "_all_items.csv", itemsRP);
+    //    printVectors(pathX + "_all_items.csv", itemsRP);
     
     // Decimate down to SAMPLES # vectors
     report("Decimating Item vecs: "+model.getNumItems());
-    fullItemMap = decimate(fullItemMap, SAMPLES);
+    origItemMap = decimate(origItemMap, SAMPLES);
     itemsRP = decimate(itemsRP, SAMPLES);
-    printVectors(path + "_items.csv", fullItemMap);
+    printVectors(path + "_items.csv", origItemMap);
     
     
-    Matrix itemDistancesFull = new DenseMatrix(SAMPLES * SAMPLES, 4);
-    Matrix itemDistancesRP = new DenseMatrix(SAMPLES * SAMPLES, 4);
+    Matrix itemDistancesOrig = new DenseMatrix(SAMPLES, SAMPLES);
+    Matrix itemDistancesRP = new DenseMatrix(SAMPLES, SAMPLES);
+    Matrix itemDistancesRatio = new DenseMatrix(SAMPLES, SAMPLES);
     report("Calculating Item distances: "+SAMPLES);
-    findDistances(fullItemMap, itemDistancesFull);
+    findDistances(origItemMap, itemDistancesOrig);
     findDistances(itemsRP, itemDistancesRP);
     report("Calculating Item distances: "+SAMPLES);
+    findDistanceRatios(itemDistancesOrig,itemDistancesRP, itemDistancesRatio);
     report("Done");
-    System.out.println("Item distances matrix norms: full = " + Algebra.getNorm(itemDistancesFull) + 
+    System.out.println("Item distances matrix norms: orig = " + Algebra.getNorm(itemDistancesOrig) + 
         ", projected = " + Algebra.getNorm(itemDistancesRP));
     printVectors(pathX + "_items.csv", itemsRP);    
-    //  printMatrix(path + "_items_distance_matrix.csv", itemDistances);
-    //  printDistancesRatio(pathX + "_items_distance_rows.csv", itemDistancesFull, itemDistancesP);
+    printMatrix(path + "_items_distances.csv", itemDistancesOrig);
+    printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
+    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
+    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
+  }
+  
+  private static void findDistanceRatios(Matrix distancesOrig,
+      Matrix distancesRP, Matrix distancesRatio) {
+    
+    //    double total = 0;
+    //    for(int r = 0; r < distancesOrig.numRows(); r++) {
+    //      for(int c = 0; c < distancesOrig.numCols(); c++) {
+    //        double dist = distancesOrig.get(r, c) / distancesRP.get(r, c);
+    //        if (dist > -111111111111111d && dist < 111111111111111d)
+    //          total += dist;
+    //      }
+    //    }
+    //    double mean = total / (distancesOrig.numRows() * distancesOrig.numCols());
+    for(int r = 0; r < SAMPLES; r++) {
+      for(int c = 0; c < SAMPLES; c++) {
+        double ratio = distancesOrig.get(r, c) / distancesRP.get(r, c);
+        if (Double.isNaN(ratio) || Double.isInfinite(ratio))
+          ratio = 1;
+        distancesRatio.set(r, c, ratio); 
+      }
+    }
   }
   
   private static void printDistancesRatio(String distancesPath,
@@ -107,39 +132,33 @@ public class SVProjector {
     f.delete();
     f.createNewFile();
     PrintStream ps = new PrintStream(f);
-    ps.println("rowid,row,col,full,rp,ratio");
-    for(int i = 0; i < distancesFull.numRows(); i++) {
-      double full = distancesFull.get(i, 3);
-      double projected = distancesP.get(i, 3);
-      double ratio = Double.NaN;
-      if (! Double.isNaN(full) && !Double.isNaN(projected) && full != 0 && projected != 0)
-        ratio = full / projected;
-      ps.println(i + "," + distancesFull.get(i, 1) + "," + distancesFull.get(i, 2)+ "," + full + "," + projected + "," + ratio);
+    ps.println("id,row,col,full,rp,ratio");
+    int count = 0;
+    for(int row = 0; row < distancesFull.numRows(); row++) {
+      for(int col = 0; col < distancesFull.numCols(); col++) {
+        ps.print(count + "," + row + "," + col + ",");
+        double full = distancesFull.get(row, col);
+        double projected = distancesP.get(row, col);
+        double ratio = Double.NaN;
+        if (! Double.isNaN(full) && !Double.isNaN(projected) && full != 0 && projected != 0)
+          ratio = full / projected;
+        ps.println(full + "," + projected + "," + ratio);
+        count++;
+      }
     }
     ps.println();
   }
   
-  
+  // not normalized
   private static void findDistances(List<Vector> fullMap,
       Matrix distances) {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
-    int count = 0;
     double total = 0;
     for(int r = 0; r < fullMap.size(); r++) {
       for(int c = 0; c < fullMap.size(); c++) {
         double distance = measure.distance(fullMap.get(r), fullMap.get(c));
-        distances.set(count, 0, count);
-        distances.set(count, 1, r);
-        distances.set(count, 2, c);
-        distances.set(count, 3, distance);
-        total += distance;
-        count++;
+        distances.set(r, c, distance);
       }
-    }
-    double mean = total / count;
-    for(int i = 0; i < count; i++) {
-      double distance = distances.get(i, 3);
-      distances.set(i, 3, distance / mean);
     }
   }
   
@@ -153,7 +172,8 @@ public class SVProjector {
       for(int c = 0; c < distances.columnSize(); c++) {
         double distance = distances.get(r, c);
         ps.print(distance);
-        ps.print(",");
+        if (c != distances.columnSize() - 1)
+          ps.print(",");
       }
       ps.println();
     }
@@ -162,7 +182,7 @@ public class SVProjector {
   }
   
   private static List<Vector> decimate(List<Vector> fullMap, int samples) {
-    Random rnd = RandomUtils.getRandom(0);
+    Random rnd = new MurmurHashRandom(0);
     int size = fullMap.size();
     if (samples >= size)
       return fullMap;
@@ -206,11 +226,12 @@ public class SVProjector {
   
   private static Matrix getRandomMatrixGaussian(int rows, int columns) {
     Matrix rm = new DenseMatrix(rows, columns);
-    Random rnd = RandomUtils.getRandom(500);
+    Random rnd = new Random(500);
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
         double value = rnd.nextGaussian();
         rm.set(r, c, value);
+        System.out.print('.');
       }
     }
     return rm;
@@ -242,7 +263,7 @@ public class SVProjector {
   private static Matrix getRandomMatrixSqrt3(int rows, int columns) {
     double sqrt3 = Math.sqrt(3);
     Matrix rm = new DenseMatrix(rows, columns);
-    Random rnd = RandomUtils.getRandom(500);
+    Random rnd = new MurmurHashRandom(500);
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
         //        double value = Math.min(5.99999, 6 * rnd.nextDouble());
@@ -286,8 +307,8 @@ public class SVProjector {
     // #,1,values...   1 is a hack for KNime
     while(iter.hasNext()) {
       Vector vr = iter.next();
-      ps.print(count++);
-      ps.print(",1,");
+      //      ps.print(count++);
+      //      ps.print(",1,");
       for(int i = 0; i + 1 < vr.size(); i++) {
         ps.print(vr.get(i));
         ps.print(",");
@@ -305,19 +326,19 @@ public class SVProjector {
     return d/prefs.length();
   }
   
-  private static void showDistributions(Vector[] va,
-      DistanceMeasure measure, double rescale, String userDistancesPath) {
-    OnlineSummarizer tracker = new OnlineSummarizer();
-    for(int i = 0; i < va.length;i++) {
-      for(int j = i + 1; j < va.length; j++) {
-        if ((null == va[i]) || (va[j] == null))
-          continue;
-        double distance = measure.distance(va[i], va[j]);
-        distance /= rescale;
-        tracker.add(distance);
-      }
-    }
-  }
+  //  private static void showDistributions(Vector[] va,
+  //      DistanceMeasure measure, double rescale, String userDistancesPath) {
+  //    OnlineSummarizer tracker = new OnlineSummarizer();
+  //    for(int i = 0; i < va.length;i++) {
+  //      for(int j = i + 1; j < va.length; j++) {
+  //        if ((null == va[i]) || (va[j] == null))
+  //          continue;
+  //        double distance = measure.distance(va[i], va[j]);
+  //        distance /= rescale;
+  //        tracker.add(distance);
+  //      }
+  //    }
+  //  }
   
   
 }
