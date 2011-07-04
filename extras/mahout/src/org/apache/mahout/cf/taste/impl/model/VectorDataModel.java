@@ -27,7 +27,7 @@ import org.apache.mahout.math.Vector;
  * Values are always normalized to 0.0 <= pref <= 1.0.
  */
 
-public class VectorDataModel extends AbstractDataModel implements UserSimilarity, ItemSimilarity{
+public class VectorDataModel extends AbstractDataModel implements UserSimilarity, ItemSimilarity {
   final private int dimensions;
   final private DistanceMeasure measure;
   final private FastByIDMap<Vector> users = new FastByIDMap<Vector>();
@@ -261,7 +261,8 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
     public double userSimilarity(long userID1, long userID2)
         throws TasteException {
       requireUsers();
-      return 0;
+      float distance = getPreferenceValuePoint(items.get(userID1), items.get(userID2));
+      return (double) distance;
     }
 
     @Override
