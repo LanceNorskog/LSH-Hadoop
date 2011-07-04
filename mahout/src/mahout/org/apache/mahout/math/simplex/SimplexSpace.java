@@ -47,6 +47,7 @@ public class SimplexSpace<T> {
       return null;
     
     double d = hashDistance(h1, h2, measure);
+    d = (2.0 *(1 - d)) - 1;
     return d;
   }
   

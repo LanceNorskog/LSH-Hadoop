@@ -48,7 +48,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
       throws TasteException {
     if (null == userSpace)
       throw new TasteException("SimplexSimilarity: no User vectors configured");
-    double d =(1 + 1/ userSpace.getDistance(userID1, userID2, measure));
+    double d = userSpace.getDistance(userID1, userID2, measure);
     return d;
   }
 
@@ -75,9 +75,6 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     return values;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.similarity.ItemSimilarity#itemSimilarity(long, long)
-   */
   @Override
   public double itemSimilarity(long itemID1, long itemID2)
       throws TasteException {
@@ -88,7 +85,7 @@ public class SimplexSimilarity implements UserSimilarity, ItemSimilarity {
     // distance of 0 or 1 causes problems- 1/0 happens
     if (d == null || Double.isInfinite(d) | Double.isNaN(d))
       return 0;
-    return Math.max(0.000001, Math.min(0.9999999, d));
+    return Math.max(-0.9999999, Math.min(0.9999999, d));
   }
 
   @Override

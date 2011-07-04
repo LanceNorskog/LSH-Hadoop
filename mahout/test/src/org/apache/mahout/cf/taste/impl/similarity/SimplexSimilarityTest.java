@@ -32,6 +32,8 @@ import org.junit.Test;
 
 /** <p>Tests {@link SimplexSimilarity}.</p> */
 public final class SimplexSimilarityTest extends SimilarityTestCase {
+  
+  public static final int DIMENSIONS = 20;
 
   @Test
   public void testFullCorrelation1() throws Exception {
@@ -47,10 +49,23 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
     assertCorrelationEquals(Math.sqrt(2)/10, correlation);
   }
 
+  private SimplexSpace<Long> getUserSpace(DataModel model) throws TasteException {
+    SimplexSpace<Long> userSpace = new SimplexSpace<Long>(new OrthonormalHasher(DIMENSIONS, 0.1), DIMENSIONS);
+    LongPrimitiveIterator userIter = model.getUserIDs();
+    SemanticVectorFactory svf = new SemanticVectorFactory(model, DIMENSIONS);
+    while (userIter.hasNext()) {
+      long userID = userIter.nextLong();
+      Vector userV = svf.projectUserDense(userID);
+      Simplex<Long> userS = userSpace.newSimplex(userV, userID);
+      userSpace.addSimplex(userS, userID);
+    }
+    return userSpace;
+  }
+
   private SimplexSpace<Long> getItemSpace(DataModel model) throws TasteException {
-    SimplexSpace<Long> itemSpace = new SimplexSpace<Long>(new OrthonormalHasher(2, 0.1), 2);
+    SimplexSpace<Long> itemSpace = new SimplexSpace<Long>(new OrthonormalHasher(DIMENSIONS, 0.1), DIMENSIONS);
     LongPrimitiveIterator itemIter = model.getItemIDs();
-    SemanticVectorFactory svf = new SemanticVectorFactory(model, 2);
+    SemanticVectorFactory svf = new SemanticVectorFactory(model, DIMENSIONS);
     while (itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
       Vector itemV = svf.projectItemDense(itemID, null);
@@ -60,7 +75,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
     return itemSpace;
   }
 
-/*  @Test
+  @Test
   public void testFullCorrelation2() throws Exception {
     DataModel dataModel = getDataModel(
             new long[] {1, 2},
@@ -68,9 +83,12 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {1.0, 2.0, 3.0},
                     {4.0, 5.0, 6.0},
             });
-    double correlation = new SpearmanCorrelationSimilarity(dataModel).userSimilarity(1, 2);
+    SimplexSpace<Long> userSpace = getUserSpace(dataModel);
+    double correlation = new SimplexSimilarity(userSpace, null, 
+        new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(1.0, correlation);
   }
+
 
   @Test
   public void testAnticorrelation() throws Exception {
@@ -80,9 +98,12 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {1.0, 2.0, 3.0},
                     {3.0, 2.0, 1.0},
             });
-    double correlation = new SpearmanCorrelationSimilarity(dataModel).userSimilarity(1, 2);
+    SimplexSpace<Long> userSpace = getUserSpace(dataModel);
+    double correlation = new SimplexSimilarity(userSpace, null, 
+        new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(-1.0, correlation);
   }
+
 
   @Test
   public void testSimple() throws Exception {
@@ -92,10 +113,11 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {1.0, 2.0, 3.0},
                     {2.0, 3.0, 1.0},
             });
-    double correlation = new SimplexSimilarity(dataModel).userSimilarity(1, 2);
+    SimplexSpace<Long> userSpace = getUserSpace(dataModel);
+    double correlation = new SimplexSimilarity(userSpace, null, new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(-0.5, correlation);
   }
-*/
+
   private  SimplexSpace<Long> getSpace(int DIMS) {
     //    DistanceMeasure measure = new ChebyshevDistanceMeasure(); 
     //    DistanceMeasure measure = new ManhattanDistanceMeasure(); 
