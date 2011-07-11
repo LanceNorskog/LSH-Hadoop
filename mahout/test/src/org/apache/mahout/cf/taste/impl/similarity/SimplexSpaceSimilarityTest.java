@@ -26,12 +26,12 @@ import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.simplex.OrthonormalHasher;
 import org.apache.mahout.math.simplex.Simplex;
-import org.apache.mahout.math.simplex.SimplexSimilarity;
+import org.apache.mahout.math.simplex.SimplexSpaceSimilarity;
 import org.apache.mahout.math.simplex.SimplexSpace;
 import org.junit.Test;
 
-/** <p>Tests {@link SimplexSimilarity}.</p> */
-public final class SimplexSimilarityTest extends SimilarityTestCase {
+/** <p>Tests {@link SimplexSpaceSimilarity}.</p> */
+public final class SimplexSpaceSimilarityTest extends SimilarityTestCase {
   
   public static final int DIMENSIONS = 20;
 
@@ -44,7 +44,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {1.0, 2.0, 3.0},
             });
     SimplexSpace<Long> itemSpace = getItemSpace(dataModel);
-    double correlation = new SimplexSimilarity(null, itemSpace, new EuclideanDistanceMeasure()).itemSimilarity(1, 2);
+    double correlation = new SimplexSpaceSimilarity(null, itemSpace, new EuclideanDistanceMeasure()).itemSimilarity(1, 2);
     // No reason for this number; SVF vectors are deterministic from the itemID. Yes, this is bad.
     assertCorrelationEquals(Math.sqrt(2)/10, correlation);
   }
@@ -68,7 +68,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
     SemanticVectorFactory svf = new SemanticVectorFactory(model, DIMENSIONS);
     while (itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
-      Vector itemV = svf.projectItemDense(itemID, null);
+      Vector itemV = svf.projectItemDense(itemID);
       Simplex<Long> itemS = itemSpace.newSimplex(itemV, itemID);
       itemSpace.addSimplex(itemS, itemID);
     }
@@ -84,7 +84,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {4.0, 5.0, 6.0},
             });
     SimplexSpace<Long> userSpace = getUserSpace(dataModel);
-    double correlation = new SimplexSimilarity(userSpace, null, 
+    double correlation = new SimplexSpaceSimilarity(userSpace, null, 
         new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(1.0, correlation);
   }
@@ -99,7 +99,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {3.0, 2.0, 1.0},
             });
     SimplexSpace<Long> userSpace = getUserSpace(dataModel);
-    double correlation = new SimplexSimilarity(userSpace, null, 
+    double correlation = new SimplexSpaceSimilarity(userSpace, null, 
         new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(-1.0, correlation);
   }
@@ -114,7 +114,7 @@ public final class SimplexSimilarityTest extends SimilarityTestCase {
                     {2.0, 3.0, 1.0},
             });
     SimplexSpace<Long> userSpace = getUserSpace(dataModel);
-    double correlation = new SimplexSimilarity(userSpace, null, new EuclideanDistanceMeasure()).userSimilarity(1, 2);
+    double correlation = new SimplexSpaceSimilarity(userSpace, null, new EuclideanDistanceMeasure()).userSimilarity(1, 2);
     assertCorrelationEquals(-0.5, correlation);
   }
 

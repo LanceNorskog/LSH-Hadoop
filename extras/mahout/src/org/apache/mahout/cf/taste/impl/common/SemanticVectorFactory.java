@@ -43,7 +43,13 @@ public class SemanticVectorFactory {
    * In projectItemDense(), user is random and item is tugged.
    */
   
-  public Vector projectUserDense(final long userID) throws TasteException {
+  public Vector projectUserDense(long itemID, String label) throws TasteException {
+    Vector v = projectUserDense(itemID);
+    v = new NamedVector(v, label);
+    return v;
+  }
+  
+  public Vector projectUserDense(long userID) throws TasteException {
     setRandomItemVecs();
     setRandomUserVecs();
     
@@ -74,7 +80,6 @@ public class SemanticVectorFactory {
       values[dim] = values[dim] / nPrefs;
     }
     Vector v = new DenseVector(values);
-    
     return v;
   }
   
@@ -82,6 +87,12 @@ public class SemanticVectorFactory {
    * Create a Semantic Vector for this Item with User as independent variable
    */
   public Vector projectItemDense(long itemID, String label) throws TasteException {
+    Vector v = projectItemDense(itemID);
+    v = new NamedVector(v, label);
+    return v;
+  }
+  
+  public Vector projectItemDense(long itemID) throws TasteException {
     setRandomUserVecs();
     setRandomItemVecs();
     
@@ -112,8 +123,7 @@ public class SemanticVectorFactory {
       values[dim] = values[dim] / nPrefs;
     }
     Vector v = new DenseVector(values);
-    if (null != label)
-      v = new NamedVector(v, label);
+    
     return v;
   }
   

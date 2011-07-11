@@ -15,6 +15,7 @@ import org.apache.commons.collections.iterators.ArrayIterator;
  * Without that list, only represents the lowest corner of a rectangular hypersolid.
  * 
  * boolean[] is probably not packed. "Tomorrow is another day."
+ * "factor" is value owned by the hasher. VertexTransitive needs the sum of all values.
  */
 
 public class Simplex<T> {
@@ -106,9 +107,7 @@ public class Simplex<T> {
       return false;
     if (! Arrays.equals(base, other.base))
       return false;
-    if (hasNeighbors() != other.hasNeighbors())
-      return false;
-    if (hasNeighbors() && ! Arrays.equals(neighbors, other.neighbors))
+    if (! Arrays.equals(neighbors, other.neighbors))
       return false;
     return dimensions == other.dimensions;
   }

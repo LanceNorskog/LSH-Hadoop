@@ -15,7 +15,6 @@ import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
-import org.apache.mahout.common.MurmurHashRandom;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
@@ -23,7 +22,11 @@ import org.apache.mahout.math.Algebra;
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
+import org.apache.mahout.math.MurmurHashRandom;
+import org.apache.mahout.math.QRDecomposition;
+import org.apache.mahout.math.SingularValueDecomposition;
 import org.apache.mahout.math.Vector;
+import org.apache.mahout.math.VectorList;
 
 
 public class SVProjector {
@@ -60,32 +63,110 @@ public class SVProjector {
   private static void project(SemanticVectorFactory svf, DataModel model,
       DistanceMeasure measure, double rescale, String path) throws TasteException, IOException {
     String pathX = path + "x" + TARGET_DIMENSIONS;
-    List<Vector> origItemMap = new ArrayList<Vector>();
+    List<Vector> itemsOrig = new ArrayList<Vector>();
     List<Vector> itemsRP = new ArrayList<Vector>();
     LongPrimitiveIterator itemIter = model.getItemIDs();
     report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
-    Matrix rp = getRandomMatrixGaussian(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
+    Matrix rp = getRandomMatrixLinear(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
     
     report("Creating Item vecs: "+model.getNumItems());
     
     while(itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
-      origItemMap.add(svf.projectItemDense(itemID));
+      itemsOrig.add(svf.projectItemDense(itemID, itemID + ""));
     }
-    //    report("Projecting Item vecs: "+SAMPLES);
-    projectVectors(origItemMap, itemsRP, rp);
+    report("SVD full items: ");
+    svdOrig(itemsOrig);
     
-    //    printVectors(path + "_all_items.csv", origItemMap);
-    // Train KNime tools from full item vector set
-    //    printVectors(pathX + "_all_items.csv", itemsRP);
-    
+    printVectors(path + "_all_items.csv", itemsOrig);
     // Decimate down to SAMPLES # vectors
-    report("Decimating Item vecs: "+model.getNumItems());
-    origItemMap = decimate(origItemMap, SAMPLES);
+    itemsOrig = decimate(itemsOrig, SAMPLES);
+    report("SVD 200 items: ");
+    svdOrig(itemsOrig);
     itemsRP = decimate(itemsRP, SAMPLES);
-    printVectors(path + "_items.csv", origItemMap);
+    
+    report("Projecting Item vecs: "+SAMPLES);
+    projectVectors(itemsOrig, itemsRP, rp);
+    //        printVectors(path + "_items.csv", itemsOrig);
+    //    printVectors(pathX + "_items.csv", itemsRP);
+    
+    //    reProject(pathX, itemsOrig, itemsRP);    
     
     
+    //    distances(path, pathX, origItemMap, itemsRP);
+    
+  }
+  
+  private static void svdOrig(List<Vector> itemsOrig) {
+    Matrix origMatrix = setVectorList(itemsOrig);
+    SingularValueDecomposition svd = new SingularValueDecomposition(origMatrix);
+    double[] singulars = svd.getSingularValues();
+    report("Singulars:\n");
+    System.out.println("\t" + Arrays.toString(singulars));
+    double sum = 0;
+    double running = 0;
+    for(int i = 0; i < singulars.length; i++) {
+      sum += singulars[i];
+    }
+    System.out.println("\tSum: " + sum);
+    int buckets[] = new int[]{-1,-1,-1,-1};
+    for(int i = 0; i < singulars.length; i++) {
+      running += singulars[i]/sum;
+      if (buckets[3] == -1 && running > 0.99) {
+        buckets[3] = i;
+      } 
+      if (buckets[2] == -1 & running > 0.95) {
+        buckets[2] = i;
+      } 
+      if (buckets[1] == -1 && running > 0.90) {
+        buckets[1] = i;
+      } 
+      if (buckets[0]== -1 & running > 0.80) {
+        buckets[0] = i;
+      }
+    }
+    System.out.print("\t0.80, 0.90, 0.95, 0.99 #: " + Arrays.toString(buckets));
+    double[] percentages = new double[3];
+    percentages[0] =  buckets[1]/(0.0001 + buckets[0]);
+    percentages[1] = buckets[2]/(0.00001 + buckets[1]);
+    percentages[2] = buckets[3]/(0.00001 + buckets[2]);
+    System.out.println(", % delta: " + Arrays.toString(percentages));
+  }
+  
+  /*
+   * Use Ted Dunning's trick of projecting again, using the largest singular vectors
+   */
+  private static void reProject(String pathX, List<Vector> itemsOrig, List<Vector> itemsRP)
+      throws TasteException, IOException, FileNotFoundException {
+    report("Reprojection:");
+    Matrix q = getQ(itemsRP);
+    VectorList itemsOrigQ = null;
+    itemsOrigQ = setVectorList(itemsOrig);
+    
+    // SAMPLES x TARGET_DIMS
+    Matrix origRPQ = q.transpose().times(itemsOrigQ);
+    SingularValueDecomposition svd = new SingularValueDecomposition(origRPQ);
+    double[] singulars = svd.getSingularValues();
+    report("Singulars:\n");
+    System.out.println("\t" + Arrays.toString(singulars));
+    
+    report("Done");
+    Matrix u = svd.getU();
+    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose());
+  }
+  
+  private static VectorList setVectorList(List<Vector> itemsOrig) {
+    VectorList itemsOrigQ;
+    itemsOrigQ = new VectorList(itemsOrig.size(), SOURCE_DIMENSIONS);
+    for(int i = 0; i < itemsOrig.size(); i++)
+      itemsOrigQ.assignRow(i, itemsOrig.get(i));
+    return itemsOrigQ;
+  }
+  
+  private static void distances(String path, String pathX,
+      List<Vector> origItemMap, List<Vector> itemsRP) throws IOException {
+    report("Distances:");
+    origItemMap = decimate(origItemMap, SAMPLES);
     Matrix itemDistancesOrig = new DenseMatrix(SAMPLES, SAMPLES);
     Matrix itemDistancesRP = new DenseMatrix(SAMPLES, SAMPLES);
     Matrix itemDistancesRatio = new DenseMatrix(SAMPLES, SAMPLES);
@@ -97,11 +178,20 @@ public class SVProjector {
     report("Done");
     System.out.println("Item distances matrix norms: orig = " + Algebra.getNorm(itemDistancesOrig) + 
         ", projected = " + Algebra.getNorm(itemDistancesRP));
-    printVectors(pathX + "_items.csv", itemsRP);    
     printMatrix(path + "_items_distances.csv", itemDistancesOrig);
     printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
     printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
     printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
+  }
+  
+  private static Matrix getQ(List<Vector> itemsRP) {
+    Matrix rpMat = new VectorList(itemsRP.size(), itemsRP.get(0).size());
+    for(int i = 0; i < itemsRP.size(); i++) {
+      rpMat.assignRow(i, itemsRP.get(i));
+    }
+    QRDecomposition decomp = new QRDecomposition(rpMat);
+    Matrix q = decomp.getQ();
+    return q;
   }
   
   private static void findDistanceRatios(Matrix distancesOrig,
@@ -214,7 +304,7 @@ public class SVProjector {
   
   private static Matrix getRandomMatrixLinear(int rows, int columns) {
     Matrix rm = new DenseMatrix(rows, columns);
-    Random rnd = RandomUtils.getRandom(500);
+    Random rnd = new MurmurHashRandom(500);
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
         double value = rnd.nextDouble();
@@ -226,7 +316,7 @@ public class SVProjector {
   
   private static Matrix getRandomMatrixGaussian(int rows, int columns) {
     Matrix rm = new DenseMatrix(rows, columns);
-    Random rnd = new Random(500);
+    Random rnd = new MurmurHashRandom(500);
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
         double value = rnd.nextGaussian();
@@ -240,7 +330,7 @@ public class SVProjector {
   private static Matrix getRandomMatrixPlusminus(int rows, int columns) {
     double sqrt3 = Math.sqrt(3);
     Matrix rm = new DenseMatrix(rows, columns);
-    Random rnd = RandomUtils.getRandom(500);
+    Random rnd = new MurmurHashRandom(500);
     int buckets[] = new int[6];
     for(int r = 0; r < rows; r++) {
       for(int c = 0; c < columns; c++) {
@@ -251,7 +341,8 @@ public class SVProjector {
           rm.set(r, c, -1);
         else if (test == 1)
           rm.set(r, c, 1);
-        // else 0
+        else 
+          throw new IllegalStateException("rnd.nextInt(2) returned: " + test);
         buckets[test] ++;
       }
     }
