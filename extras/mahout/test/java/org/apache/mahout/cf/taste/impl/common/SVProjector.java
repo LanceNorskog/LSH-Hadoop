@@ -6,13 +6,16 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.mahout.cf.taste.common.TasteException;
-import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.model.GroupLensDataModel;
+import org.apache.mahout.cf.taste.impl.model.MetadataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.model.PreferenceArray;
 import org.apache.mahout.common.RandomUtils;
@@ -23,6 +26,7 @@ import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
 import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.MurmurHashRandom;
+import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.QRDecomposition;
 import org.apache.mahout.math.SingularValueDecomposition;
 import org.apache.mahout.math.Vector;
@@ -31,7 +35,7 @@ import org.apache.mahout.math.VectorList;
 
 public class SVProjector {
   
-  static int SOURCE_DIMENSIONS = 200;
+  static int SOURCE_DIMENSIONS = 4;
   static int SAMPLES = 200;
   static int TARGET_DIMENSIONS = 2;
   
@@ -47,24 +51,20 @@ public class SVProjector {
     
     if (args.length != 2)
       throw new TasteException("Usage: grouplens.dat file_prefix");
-    model = new GroupLensDataModel(new File(args[0]));
+    MetadataModel<String> movieNames = new MetadataModel<String>(new HashMap<Long,String>(), "movies");
+    model = new GroupLensDataModel(new File(args[0]), movieNames, null, null);
     SemanticVectorFactory svf = new SemanticVectorFactory(model, SOURCE_DIMENSIONS);
     SOURCE_DIMENSIONS = svf.getDimensions();
-    Vector unitVector = new DenseVector(SOURCE_DIMENSIONS);
-    Vector zeroVector = new DenseVector(SOURCE_DIMENSIONS);
-    for(int i = 0; i < SOURCE_DIMENSIONS; i++) 
-      unitVector.set(i, 1.0);
-    rescale = measure.distance(zeroVector, unitVector);
-    project(svf, model, measure, rescale, args[1] + "_" + SOURCE_DIMENSIONS);
+    project(svf, model, measure, movieNames, args[1] + "_" + SOURCE_DIMENSIONS);
     
   }
   
   // stats on distances for user/item distances for actual prefs
   private static void project(SemanticVectorFactory svf, DataModel model,
-      DistanceMeasure measure, double rescale, String path) throws TasteException, IOException {
+      DistanceMeasure measure, MetadataModel<String> itemsMetadata, String path) throws TasteException, IOException {
     String pathX = path + "x" + TARGET_DIMENSIONS;
-    List<Vector> itemsOrig = new ArrayList<Vector>();
-    List<Vector> itemsRP = new ArrayList<Vector>();
+    List<NamedVector> itemsOrig = new ArrayList<NamedVector>();
+    List<NamedVector> itemsRP = new ArrayList<NamedVector>();
     LongPrimitiveIterator itemIter = model.getItemIDs();
     report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
     Matrix rp = getRandomMatrixLinear(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
@@ -73,31 +73,32 @@ public class SVProjector {
     
     while(itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
-      itemsOrig.add(svf.projectItemDense(itemID, itemID + ""));
+      itemsOrig.add((NamedVector) svf.projectItemDense(itemID, itemID + ""));
     }
     report("SVD full items: ");
     svdOrig(itemsOrig);
     
-    printVectors(path + "_all_items.csv", itemsOrig);
+    printVectors(path + "_all_items.csv", SOURCE_DIMENSIONS, itemsOrig, itemsMetadata);
     // Decimate down to SAMPLES # vectors
-    itemsOrig = decimate(itemsOrig, SAMPLES);
-    report("SVD 200 items: ");
-    svdOrig(itemsOrig);
+//    itemsOrig = decimate(itemsOrig, SAMPLES);
+    report("SVD "+ SAMPLES + " items: ");
+    		
+//    svdOrig(itemsOrig);
     itemsRP = decimate(itemsRP, SAMPLES);
     
     report("Projecting Item vecs: "+SAMPLES);
     projectVectors(itemsOrig, itemsRP, rp);
     //        printVectors(path + "_items.csv", itemsOrig);
-    //    printVectors(pathX + "_items.csv", itemsRP);
+    printVectors(pathX + "_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
     
-    //    reProject(pathX, itemsOrig, itemsRP);    
+//    reProject(pathX, itemsOrig, itemsRP);    
     
     
     //    distances(path, pathX, origItemMap, itemsRP);
     
   }
   
-  private static void svdOrig(List<Vector> itemsOrig) {
+  private static void svdOrig(List<NamedVector> itemsOrig) {
     Matrix origMatrix = setVectorList(itemsOrig);
     SingularValueDecomposition svd = new SingularValueDecomposition(origMatrix);
     double[] singulars = svd.getSingularValues();
@@ -136,12 +137,13 @@ public class SVProjector {
   /*
    * Use Ted Dunning's trick of projecting again, using the largest singular vectors
    */
-  private static void reProject(String pathX, List<Vector> itemsOrig, List<Vector> itemsRP)
+  private static void reProject(String pathX, List<NamedVector> itemsOrig, List<NamedVector> itemsRP)
       throws TasteException, IOException, FileNotFoundException {
     report("Reprojection:");
     Matrix q = getQ(itemsRP);
     VectorList itemsOrigQ = null;
     itemsOrigQ = setVectorList(itemsOrig);
+    Map<String,Integer> labels = itemsOrigQ.getRowLabelBindings();
     
     // SAMPLES x TARGET_DIMS
     Matrix origRPQ = q.transpose().times(itemsOrigQ);
@@ -152,10 +154,30 @@ public class SVProjector {
     
     report("Done");
     Matrix u = svd.getU();
-    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose());
+    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose(), labels);
   }
-  
-  private static VectorList setVectorList(List<Vector> itemsOrig) {
+
+  private static void reProjectAll(String pathX, List<NamedVector> itemsOrig)
+      throws TasteException, IOException, FileNotFoundException {
+    report("Reprojection:");
+    Matrix q = getQ(itemsOrig);
+    VectorList itemsOrigQ = null;
+    itemsOrigQ = setVectorList(itemsOrig);
+    Map<String,Integer> labels = itemsOrigQ.getRowLabelBindings();
+    
+    // SAMPLES x TARGET_DIMS
+    Matrix origRPQ = q.transpose().times(itemsOrigQ);
+    origRPQ = itemsOrigQ.times(q.transpose());
+    SingularValueDecomposition svd = new SingularValueDecomposition(origRPQ);
+    double[] singulars = svd.getSingularValues();
+    report("Singulars:\n");
+    System.out.println("\t" + Arrays.toString(singulars));
+    
+    report("Done");
+    Matrix u = svd.getU();
+    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose(), labels);
+  }
+  private static VectorList setVectorList(List<NamedVector> itemsOrig) {
     VectorList itemsOrigQ;
     itemsOrigQ = new VectorList(itemsOrig.size(), SOURCE_DIMENSIONS);
     for(int i = 0; i < itemsOrig.size(); i++)
@@ -164,7 +186,7 @@ public class SVProjector {
   }
   
   private static void distances(String path, String pathX,
-      List<Vector> origItemMap, List<Vector> itemsRP) throws IOException {
+      List<NamedVector> origItemMap, List<NamedVector> itemsRP) throws IOException {
     report("Distances:");
     origItemMap = decimate(origItemMap, SAMPLES);
     Matrix itemDistancesOrig = new DenseMatrix(SAMPLES, SAMPLES);
@@ -178,20 +200,65 @@ public class SVProjector {
     report("Done");
     System.out.println("Item distances matrix norms: orig = " + Algebra.getNorm(itemDistancesOrig) + 
         ", projected = " + Algebra.getNorm(itemDistancesRP));
-    printMatrix(path + "_items_distances.csv", itemDistancesOrig);
-    printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
-    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
-    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
+//    printMatrix(path + "_items_distances.csv", itemDistancesOrig);
+//    printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
+//    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
+//    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
   }
-  
-  private static Matrix getQ(List<Vector> itemsRP) {
-    Matrix rpMat = new VectorList(itemsRP.size(), itemsRP.get(0).size());
+
+  // Get orthonormal basis for input "matrix"
+  private static Matrix getQ(List<NamedVector> itemsRP) {
+    Matrix rpMat = new VectorList(SOURCE_DIMENSIONS, itemsRP.get(0).size());
     for(int i = 0; i < itemsRP.size(); i++) {
       rpMat.assignRow(i, itemsRP.get(i));
     }
     QRDecomposition decomp = new QRDecomposition(rpMat);
     Matrix q = decomp.getQ();
     return q;
+  }
+  
+  private static void projectVectors(
+      List<NamedVector> vecs, List<NamedVector> rVecs, Matrix rp) throws TasteException,
+      IOException, FileNotFoundException {
+    
+    Iterator<NamedVector> iter = vecs.iterator();
+    while(iter.hasNext()) {
+      NamedVector vid = iter.next();
+      NamedVector vr = new NamedVector(rp.times(vid), vid.getName());
+      rVecs.add(vr);
+    }
+  }
+  
+  private static void printVectors(String path, int dims,
+      List<NamedVector> rVecs, MetadataModel<String> itemNames) throws TasteException,
+      IOException, FileNotFoundException {
+    
+    File psFile = new File(path);
+    psFile.delete();
+    psFile.createNewFile();
+    PrintStream ps = new PrintStream(psFile);
+    int count = 1; // Excel starts at 1
+    Iterator<NamedVector> iter = rVecs.iterator();
+    // #,1,values...   1 is a hack for KNime
+    ps.print("id,name");
+    for(int i = 0; i < dims; i++) {
+      ps.print(",v" + i);
+    }
+    ps.println();
+    while(iter.hasNext()) {
+      Vector vr = iter.next();
+      NamedVector nv = (NamedVector) vr;
+      long id = Long.parseLong(nv.getName());
+      String itemName = itemNames.getData(id);
+      ps.print(id);
+      ps.print("," + itemName.trim().replaceAll(",", "\",\""));
+      for(int i = 0; i < dims; i++) {
+        ps.print(",");
+        ps.print(vr.get(i));
+      }
+      ps.println();
+    }
+    ps.close(); 
   }
   
   private static void findDistanceRatios(Matrix distancesOrig,
@@ -240,7 +307,7 @@ public class SVProjector {
   }
   
   // not normalized
-  private static void findDistances(List<Vector> fullMap,
+  private static void findDistances(List<NamedVector> fullMap,
       Matrix distances) {
     DistanceMeasure measure = new EuclideanDistanceMeasure();
     double total = 0;
@@ -252,17 +319,19 @@ public class SVProjector {
     }
   }
   
-  private static void printMatrix(String distanceMatrixPath,
-      Matrix distances) throws IOException {
-    File f = new File(distanceMatrixPath);
+  private static void printMatrix(String matrixPath,
+       Matrix matrix, Map<String,Integer> labels) throws IOException {
+    File f = new File(matrixPath);
     f.delete();
     f.createNewFile();
     PrintStream ps = new PrintStream(f);
-    for(int r = 0; r < distances.rowSize(); r++){
-      for(int c = 0; c < distances.columnSize(); c++) {
-        double distance = distances.get(r, c);
-        ps.print(distance);
-        if (c != distances.columnSize() - 1)
+    for(String label: labels.keySet()) {
+      int r = labels.get(label);
+      ps.print(r + "," + label.trim().replaceAll(",", "\",\"") + ",");
+      for(int c = 0; c < matrix.columnSize(); c++) {
+        double v = matrix.get(r, c);
+        ps.print(v);
+        if (c != matrix.columnSize() - 1)
           ps.print(",");
       }
       ps.println();
@@ -271,12 +340,12 @@ public class SVProjector {
     
   }
   
-  private static List<Vector> decimate(List<Vector> fullMap, int samples) {
+  private static List<NamedVector> decimate(List<NamedVector> fullMap, int samples) {
     Random rnd = new MurmurHashRandom(0);
     int size = fullMap.size();
     if (samples >= size)
       return fullMap;
-    List<Vector> sublist = new ArrayList<Vector>();
+    List<NamedVector> sublist = new ArrayList<NamedVector>();
     for(int i = 0; i < samples; i++) {
       sublist.add(fullMap.get(i));
     }
@@ -371,42 +440,6 @@ public class SVProjector {
       }
     }
     return rm;
-  }
-  
-  private static void projectVectors(
-      List<Vector> vecs, List<Vector> rVecs, Matrix rp) throws TasteException,
-      IOException, FileNotFoundException {
-    
-    Iterator<Vector> iter = vecs.iterator();
-    while(iter.hasNext()) {
-      Vector vid = iter.next();
-      Vector vr = rp.times(vid);
-      rVecs.add(vr);
-    }
-  }
-  
-  private static void printVectors(String path,
-      List<Vector> rVecs) throws TasteException,
-      IOException, FileNotFoundException {
-    
-    File psFile = new File(path);
-    psFile.delete();
-    psFile.createNewFile();
-    PrintStream ps = new PrintStream(psFile);
-    int count = 1; // Excel starts at 1
-    Iterator<Vector> iter = rVecs.iterator();
-    // #,1,values...   1 is a hack for KNime
-    while(iter.hasNext()) {
-      Vector vr = iter.next();
-      //      ps.print(count++);
-      //      ps.print(",1,");
-      for(int i = 0; i + 1 < vr.size(); i++) {
-        ps.print(vr.get(i));
-        ps.print(",");
-      }
-      ps.println(vr.get(vr.size() - 1));
-    }
-    ps.close(); 
   }
   
   private static double getMeanValue(PreferenceArray prefs) {

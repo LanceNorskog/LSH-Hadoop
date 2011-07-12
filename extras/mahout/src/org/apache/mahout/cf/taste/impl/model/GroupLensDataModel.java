@@ -68,6 +68,7 @@ public final class GroupLensDataModel extends FileDataModel {
     File[] files = ratingsFile.getParentFile().listFiles();
     for(File metadata: files) {
       if (metadata.getName().equals("movies.dat")) {
+        // TODO: only pull items that have ratings
         if (null != itemNames) {
           readMovies(metadata, itemNames, itemYears, itemGenres);
         }
@@ -82,7 +83,6 @@ public final class GroupLensDataModel extends FileDataModel {
       Long itemId = Long.parseLong(parts[0]);
       String movieName = parts[1];
       String[] genres = parts[2].split("\\|");
-      System.out.println(itemId + " -- " + movieName + " -- " + Arrays.toString(genres));
       int lparen = movieName.lastIndexOf('(');
       int year = Integer.parseInt(movieName.substring(lparen + 1, lparen + 5));
       if (null != itemNames)

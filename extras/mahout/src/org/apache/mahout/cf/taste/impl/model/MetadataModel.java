@@ -10,6 +10,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 
 /*
  * Store metadata for users or items. Allows richer exploration of recommendations.
+ * T can be an array.
  */
 
 public class MetadataModel<T> implements Serializable {
