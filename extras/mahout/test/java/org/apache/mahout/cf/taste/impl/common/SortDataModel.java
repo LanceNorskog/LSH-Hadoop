@@ -62,14 +62,77 @@ public class SortDataModel {
     ArrayList<Long> itemList = new ArrayList<Long>(model.getNumItems());
     Map<Long,Integer> itemCounts = new HashMap<Long,Integer>();
     Map<Long,Integer> userCounts = new HashMap<Long,Integer>();
-    int numPrefs = getUserCounts(model, userList, userCounts);
-    int total2 = getItemCounts(model, itemList, itemCounts);
-    sortPrefs(model.getUserIDs(), userList, userCounts);  
-    sortPrefs(model.getItemIDs(), itemList, itemCounts);  
-    printItems(itemList, itemCounts, movieNames);
+    int numPrefs = sorter.getUserCounts(model, userList, userCounts);
+    int total2 = sorter.getItemCounts(model, itemList, itemCounts);
+    sorter.sortPrefs(model.getUserIDs(), userList, userCounts);  
+    sorter.sortPrefs(model.getItemIDs(), itemList, itemCounts);  
+    //    sorter.printItems(itemList, itemCounts, movieNames);
+    GroupLensWriter modelWriter = new GroupLensWriter("/tmp/lsh_hadoop/gl_ratings.dat");
+    //    int items80 = sorter.findHighPercentile(itemList, itemCounts, numPrefs);
+    sorter.printRatings(model, modelWriter, userList, itemList, userCounts, itemCounts, 100);
+    modelWriter.close();
   }
   
-  private static int getUserCounts(DataModel model, ArrayList<Long> userList,
+  /* 
+   * index of highest user/item below 80th percentile of sums of ordered user/items
+   * aList[i] = user/items sorted by # of preferences
+   * counts.get(user/item) -> # of preferences
+   * return index of first over the line
+   */
+  //  private int findHighPercentile(ArrayList<Long> aList, Map<Long,Integer> counts, int numPrefs) {
+  //    int sum = 0;
+  //    int percentile = (int) (numPrefs * 0.8);
+  //    
+  //    for(int i = 0; i < aList.size(); i++) {
+  //      long id = aList.get(i);
+  //      int prefs = counts.get(id);
+  //      if (sum + prefs > percentile)
+  //        return i;
+  //    }
+  //    return counts.size() - 1;
+  //  }
+  
+  /* print X percentile of ratings, sign +1/-1 means 'least ratings' or 'most ratings' */
+  void printRatings(DataModel model, GroupLensWriter modelWriter, List<Long> userList, ArrayList<Long> itemList, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts, int percentile) throws TasteException {
+    int userI = 0;
+    int itemI = 0;
+    int userTotal = 0;
+    for(Integer count: userCounts.values()) {
+      userTotal += count;
+    }
+    int itemTotal = 0;
+    for(Integer count: itemCounts.values()) {
+      itemTotal += count;
+    }
+    int userMod = 1;
+    int itemMod = 1;
+    
+    while(userI < userList.size() && itemI < itemList.size()) {
+      long userID = userList.get(userI);
+      long itemID = itemList.get(itemI);
+      int userPrefs = userCounts.get(userID);
+      int itemPrefs = itemCounts.get(itemID);
+      if (userPrefs > itemPrefs) {
+        userI++;
+        modelWriter.writeUserPrefs(userID, itemI, itemList, model, userI);
+      } else {
+        modelWriter.writeItemPrefs(userI, itemID, userList, model, itemI);
+        itemI++;
+      }
+    }
+    while(userI < userList.size()) {
+      long userID = userList.get(userI);
+      modelWriter.writeUserPrefs(userID, itemI, itemList, model, userI);
+      userI++;
+    }
+    while(itemI < itemList.size()) {
+      long itemID = itemList.get(itemI);
+      modelWriter.writeItemPrefs(userI, itemID, userList, model, itemI);
+      itemI++;
+    }
+  }
+  
+  private int getUserCounts(DataModel model, ArrayList<Long> userList,
       Map<Long,Integer> userCounts) throws TasteException {
     int total = 0;
     LongPrimitiveIterator userIter = model.getUserIDs();
@@ -82,8 +145,8 @@ public class SortDataModel {
     }
     return total;
   }
-
-  private static int getItemCounts(DataModel model, ArrayList<Long> itemList,
+  
+  private int getItemCounts(DataModel model, ArrayList<Long> itemList,
       Map<Long,Integer> itemCounts) throws TasteException {
     int total = 0;
     LongPrimitiveIterator itemIter = model.getItemIDs();
@@ -94,16 +157,18 @@ public class SortDataModel {
       itemCounts.put(itemID, size);
       total += size;
     }
-     return total;
-  }
-
-  static void sortPrefs(LongPrimitiveIterator iter, ArrayList<Long> aList, Map<Long,Integer> counts)  {
-    ModelComparator userComparator = new ModelComparator(counts);
-    Collections.sort(aList, userComparator);
-    aList.hashCode();
+    return total;
   }
   
-  private static void printItems(ArrayList<Long> itemList,
+  /* 
+   * aList[i] = id in order of #prefs
+   */
+  void sortPrefs(LongPrimitiveIterator iter, ArrayList<Long> aList, Map<Long,Integer> counts)  {
+    ModelComparator userComparator = new ModelComparator(counts);
+    Collections.sort(aList, userComparator);
+  }
+  
+  private void printItems(ArrayList<Long> itemList,
       Map<Long,Integer> itemCounts, MetadataModel<String> movieNames) throws TasteException {
     int total = 0;
     for(int i = 0; i < itemList.size(); i++) {
@@ -115,5 +180,53 @@ public class SortDataModel {
     }
     System.out.println("Total prefs: " + total);
   }
+}
 
+/*
+ * Handle format for writing model out.
+ */
+class GroupLensWriter {
+  PrintStream out;
+  FastIDSet usersDone = new FastIDSet();
+  FastIDSet itemsDone = new FastIDSet();
+  int count = 0;
+  
+  GroupLensWriter(String file) throws IOException {
+    File ratings = new File(file);
+    if (ratings.isFile())
+      ratings.delete();
+    ratings.createNewFile();
+    out = new PrintStream(ratings);
+    out.println("rowid,user,item");
+  }
+  
+  void close() {
+    out.close();
+  }
+  
+  void write(long userID, long itemID, float pref) {
+    out.println(userID + "::" + itemID + "::" + pref);
+  }
+  
+  // hack to just write the indexes instead, for sanity reasons
+  
+  void writeUserPrefs(long userID, int itemI, List<Long> itemList, DataModel model, int userI) throws TasteException {
+    for(int i = 0; i < itemI; i++) {
+      Float preference = model.getPreferenceValue(userID, itemList.get(i));
+      if (null != preference)
+        out.println(count++ + "," + userI + "," + i);
+//      out.println(userID + "::" + itemList.get(i) + "::" + preference.floatValue());
+    }
+  }
+  
+  void writeItemPrefs(int userI, long itemID, List<Long> userList, DataModel model, int itemI) throws TasteException {
+    for(int i = 0; i < userI; i++) {
+      Long userID = userList.get(i);
+      Float preference = model.getPreferenceValue(userID, itemID);
+      if (null != preference)
+        out.println(count++ + "," + i + "," + itemI);
+//      out.println(userID + "::" + itemID + "::" + preference.floatValue());
+    }
+  }
+  
 }
