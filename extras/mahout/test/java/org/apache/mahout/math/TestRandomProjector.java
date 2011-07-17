@@ -22,14 +22,14 @@ public class TestRandomProjector extends MahoutTestCase {
     v.set(3, 3);
     v.set(4, 3);
     v.set(5, 3);
-    RandomProjector rp = new RandomProjectorLinear();
+    RandomProjectorConcept rp = new RandomProjectorLinear();
     Vector w = rp.times(v);
     w.hashCode();
   }
   
   @Test
   public void TestVectorLarge() {
-    RandomProjector rp = null;
+    RandomProjectorConcept rp = null;
     long time;
     rp = new RandomProjectorJDK();
     time = checkRatios(rp);
@@ -49,7 +49,7 @@ public class TestRandomProjector extends MahoutTestCase {
     System.out.println("\t all times in ms");
   }
   
-  long checkRatios(RandomProjector rp) {
+  long checkRatios(RandomProjectorConcept rp) {
     long time = 0;
     int large = 1000;
     DistanceMeasure measure = new EuclideanDistanceMeasure();
