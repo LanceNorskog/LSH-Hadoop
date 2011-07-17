@@ -5,31 +5,19 @@ import java.util.Random;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.common.distance.DistanceMeasure;
 import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
-import org.junit.Test;
 
-public class TestRandomProjector extends MahoutTestCase {
+/*
+ * Benchmark RandomProjector algorithms, including simple versions.
+ */
+
+public class RandomProjectorBenchmark {
   
-  @Test
-  public void TestMatrix() {
-    
+  public static void main(String[] args) {
+    RandomProjectorBenchmark benchmark = new RandomProjectorBenchmark();
+    benchmark.benchmarkAll();
   }
   
-  @Test
-  public void TestVectorSmall() {
-    Vector v = new DenseVector(10);
-    v.set(0, 3);
-    v.set(1, 3);
-    v.set(2, 3);
-    v.set(3, 3);
-    v.set(4, 3);
-    v.set(5, 3);
-    RandomProjector rp = new RandomProjectorLinear();
-    Vector w = rp.times(v);
-    w.hashCode();
-  }
-  
-  @Test
-  public void TestVectorLarge() {
+  public void benchmarkAll() {
     RandomProjectorConcept rp = null;
     runAlg(new RandomProjectorJDK(), "JDK: ");
     runAlg(new RandomProjectorLinear(), "Mersenne Twister: ");
@@ -43,52 +31,31 @@ public class TestRandomProjector extends MahoutTestCase {
   private void runAlg(RandomProjector rp, String kind) {
     long time;
     Random datagen = RandomUtils.getRandom(0);
-    time = checkRatios(rp, datagen);
-    time += checkRatios(rp, datagen);
-    time += checkRatios(rp, datagen);
-    time += checkRatios(rp, datagen);
+    time = projectVector(rp, datagen);
+    time += projectVector(rp, datagen);
+    time += projectVector(rp, datagen);
+    time += projectVector(rp, datagen);
     System.out.println(kind + time);
   }
   
-  long checkRatios(RandomProjector rp, Random rnd) {
-    long time = 0;
-    int large = 200;
-    DistanceMeasure measure = new EuclideanDistanceMeasure();
-    double[] d1 = new double[large];
-    double[] d2 = new double[large];
+  long projectVector(RandomProjector rp, Random rnd) {
+    int large = 2000;
+    
+    double[] values = new double[large];
     for(int i = 0; i < large; i++) {
-      d1[i] = rnd.nextDouble();
-      d2[i] = rnd.nextDouble();
+      values[i] = rnd.nextDouble();
     }
-    Vector v1 = new DenseVector(d1);
-    Vector v2 = new DenseVector(d2);
-    double cosreal1 = measure.distance(v1, v2);
+    Vector v1 = new DenseVector(values);
     long start = System.currentTimeMillis();
-    Vector w1 = rp.times(v1);
-    Vector w2 = rp.times(v2);
-    time += (System.currentTimeMillis() - start);
-    double cosrp1 = measure.distance(w1, w2);
-    double ratio1 = cosrp1 / cosreal1;
-    for(int i = 0; i < large; i++) {
-      d1[i] = rnd.nextDouble();
-      d2[i] = rnd.nextDouble();
-    }
-    v1 = new DenseVector(d1);
-    v2 = new DenseVector(d2);
-    double cosreal2 = measure.distance(v1, v2);
-    start = System.currentTimeMillis();
-    w1 = rp.times(v1);
-    w2 = rp.times(v2);
-    time += (System.currentTimeMillis() - start);
-    double cosrp2 = measure.distance(w1, w2);
-    double ratio2 = cosrp2 / cosreal2;
-    System.out.println("r1 v.s. r2: " + (ratio2/ratio1));
-//    assertEquals(1.0, ratio2/ratio1, 0.1);
-    return time;
+    rp.times(v1);
+    return System.currentTimeMillis() - start;
   }
   
 }
 
+/*
+ * These are simple implementations using various random algorithms.
+ */
 
 class RandomProjectorJDK extends RandomProjector {
   protected Random rnd = new MurmurHashRandom(0);

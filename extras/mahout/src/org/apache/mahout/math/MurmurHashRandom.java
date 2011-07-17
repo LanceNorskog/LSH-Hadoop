@@ -82,11 +82,4 @@ public class MurmurHashRandom extends Random {
     return value & masks[bits];
   }
   
-  // for some wacky reason, the parent returned -2!
-  @Override
-  public int nextInt(int n) {
-    int r = Math.abs(this.nextInt()) % n;
-    return r;
-  }
-
 }
