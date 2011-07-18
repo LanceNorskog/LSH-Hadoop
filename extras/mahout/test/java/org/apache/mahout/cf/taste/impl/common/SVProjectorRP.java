@@ -28,11 +28,12 @@ import org.apache.mahout.math.Matrix;
 import org.apache.mahout.math.MurmurHashRandom;
 import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.QRDecomposition;
+import org.apache.mahout.math.RandomProjector;
 import org.apache.mahout.math.SingularValueDecomposition;
 import org.apache.mahout.math.Vector;
 
 
-public class SVProjector {
+public class SVProjectorRP {
   
   static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
@@ -65,8 +66,9 @@ public class SVProjector {
     List<NamedVector> itemsOrig = new ArrayList<NamedVector>();
     List<NamedVector> itemsRP = new ArrayList<NamedVector>();
     LongPrimitiveIterator itemIter = model.getItemIDs();
+    report("(ms) for previous operation");
     report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
-    Matrix rp = getRandomMatrixGaussian(TARGET_DIMENSIONS, SOURCE_DIMENSIONS);
+    RandomProjector rp = RandomProjector.getProjector(false);
     
     report("Creating Item vecs: "+model.getNumItems());
     
@@ -87,11 +89,12 @@ public class SVProjector {
     
     report("Projecting Item vecs: "+SAMPLES);
     projectVectors(itemsOrig, itemsRP, rp);
-    report("\t");
+    report("");
     //        printVectors(path + "_items.csv", itemsOrig);
     printVectors(pathX + "_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
-    
-    List<NamedVector> repro = reProject(pathX, itemsOrig, itemsRP, itemsMetadata);    
+    report("Reprojecting");
+    List<NamedVector> repro = reProject(pathX, itemsOrig, itemsRP, itemsMetadata);
+    report("");
     printVectors(pathX + "_svd_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
     
     
@@ -223,7 +226,7 @@ public class SVProjector {
   }
   
   private static void projectVectors(
-      List<NamedVector> vecs, List<NamedVector> rVecs, Matrix rp) throws TasteException,
+      List<NamedVector> vecs, List<NamedVector> rVecs, RandomProjector rp) throws TasteException,
       IOException, FileNotFoundException {
     
     Iterator<NamedVector> iter = vecs.iterator();
@@ -262,7 +265,7 @@ public class SVProjector {
       ps.print("," + itemName.trim().replaceAll(",", "\",\""));
       for(int i = 0; i < dims; i++) {
         ps.print(",");
-        ps.print(Double.toString(vr.get(i)).substring(0, 6));
+        ps.print(Double.toString(vr.get(i) + 0.0000001).substring(0, 6));
       }
       ps.println();
     }

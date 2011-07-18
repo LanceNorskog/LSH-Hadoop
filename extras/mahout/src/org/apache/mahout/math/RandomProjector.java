@@ -19,6 +19,7 @@ package org.apache.mahout.math;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.Vector.Element;
@@ -39,15 +40,18 @@ import org.apache.mahout.math.Vector.Element;
  * Systems}, year = {2001}, pages = {274--281}, doi = {10.1145/375551.375608},
  * masid = {133250} }
  * 
+ * This is deterministic: twice with the same seed gets the same output.
+ * Dense and Sparse have exactly the same output.
  */
 
 public abstract class RandomProjector {
   
   static public RandomProjector getProjector(boolean sparse) {
-    if (sparse)
-      return new RandomProjector2of6();
-    else
-      return new RandomProjectorPlusMinus();
+    return new RandomProjectorJava();
+//    if (sparse)
+//      return new RandomProjector2of6();
+//    else
+//      return new RandomProjectorPlusMinus();
   }
   
   //  public Matrix times(Matrix other) {
@@ -72,18 +76,21 @@ public abstract class RandomProjector {
   public Vector times(Vector v) {
     int size = v.size();
     Vector w = v.like();
+    resetSeed();
     
     if (v.isDense()) {
-      for (int i = 0; i < size; i++) {
-        double d = v.get(i);
+      for (int r = 0; r < size; r++) {
+        double d = v.get(r);
         if (d != 0) {
-          double sum = sumRow(i, size, d);
+          double sum = sumRow(r, size, d);
           if (sum != 0)
-            w.setQuick(i, sum);
+            w.setQuick(r, sum);
         } 
+        bumpSeed(size);
       }
     } else {
       Iterator<Element> iter = v.iterateNonZero();
+      int previous = 0;
       while(iter.hasNext()) {
         Element e = iter.next();
         int i = e.index();
@@ -93,13 +100,21 @@ public abstract class RandomProjector {
           if (sum != 0)
             w.setQuick(i, sum);
         } 
+        // have to maintain seed bumps to match how dense works.
+        bumpSeed(size * (i - previous));
+        previous = i;
       }
     }
+    resetSeed();
     return w;
   }
   
   protected abstract double sumRow(int r, int len, double d);
-
+  
+  protected abstract void bumpSeed(int size);
+  
+  protected abstract void resetSeed();
+  
 }
 
 /*
@@ -118,13 +133,15 @@ public abstract class RandomProjector {
 class RandomProjector2of6 extends RandomProjector {
   final private int masks[] = new int[32];
   final private ByteBuffer buf;
-  final private int seed;
+  private int seed;
+  final private int originalSeed;
   
   public RandomProjector2of6() {
     this(RandomUtils.getRandom().nextInt());
   }
   
   public RandomProjector2of6(int seed) {
+    this.originalSeed = seed;
     this.seed = seed;
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
@@ -144,6 +161,8 @@ class RandomProjector2of6 extends RandomProjector {
     for(int i = 0; i < len; i += 22) {
       long x = MurmurHash.hash64A(buf, (seed + r +i) * len);
       // you cannot modulo a long!
+      // 6^24 < 2^63, so this could have another 2 samples.
+      // 
       int z = Math.abs((int) x);
       for(int y = 0; y < 11 && i + y < len; y++) {
         int z6 = z % 6;
@@ -159,7 +178,17 @@ class RandomProjector2of6 extends RandomProjector {
     }
     return sum * d;
   }
-
+  
+  @Override
+  protected void bumpSeed(int size) {
+    seed += size;
+  }
+  
+  @Override
+  protected void resetSeed() {
+    seed = originalSeed;
+  }
+  
 }
 
 /*
@@ -170,7 +199,8 @@ class RandomProjector2of6 extends RandomProjector {
 class RandomProjectorPlusMinus extends RandomProjector {
   final private int masks[] = new int[32];
   final private ByteBuffer buf;
-  final private int seed;
+  final private int origSeed;
+  private int seed;
   
   public RandomProjectorPlusMinus() {
     this(RandomUtils.getRandom().nextInt());
@@ -184,6 +214,7 @@ class RandomProjectorPlusMinus extends RandomProjector {
       masks[i] = mask;
       mask = (mask << 1) | 1;
     }
+    this.origSeed = seed;
     this.seed = seed;
   }
   
@@ -191,7 +222,7 @@ class RandomProjectorPlusMinus extends RandomProjector {
   protected double sumRow(int r, int len, double d) {
     double sum = 0;
     for(int i = 0; i < len; i += 64) {
-      long x = MurmurHash.hash64A(buf, (seed + r +i) * len);
+      long x = MurmurHash.hash64A(buf, seed + i);
       // harvest 64th bit
       if (x > 0)
         sum++;
@@ -209,4 +240,41 @@ class RandomProjectorPlusMinus extends RandomProjector {
     return sum * d;
   }
   
+  @Override
+  protected void bumpSeed(int size) {
+    seed += size;
+  }
+  
+  @Override
+  protected void resetSeed() {
+    seed = origSeed;    
+  }
+  
+}
+
+class RandomProjectorJava extends RandomProjector {
+  protected Random rnd = new MurmurHashRandom(0);
+  private final int origSeed = 0;
+  private int seed = 0;
+  
+  @Override
+  protected double sumRow(int r, int len, double d) {
+    double sum = 0;
+    rnd.setSeed(seed);
+    for(int i = 0; i < len; i ++) {
+      sum += d * rnd.nextDouble();
+    }
+    
+    return sum;
+  }
+  
+  @Override
+  protected void bumpSeed(int size) {
+    seed += size;
+  }
+  
+  @Override
+  protected void resetSeed() {
+    seed = origSeed;
+  }
 }
