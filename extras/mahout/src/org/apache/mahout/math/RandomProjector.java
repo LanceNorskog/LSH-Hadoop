@@ -32,6 +32,8 @@ import org.apache.mahout.math.Vector.Element;
  * Database-friendly random projections: Johnson-Lindenstrauss with binary coins
  * Achlioptas, 2001
  * 
+ * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.84.4546&rep=rep1&type=pdf
+ * 
  * @inproceedings{ author = {Dimitris Achlioptas}, title = {Database-friendly
  * random projections}, booktitle = {Symposium on Principles of Database
  * Systems}, year = {2001}, pages = {274--281}, doi = {10.1145/375551.375608},
@@ -43,7 +45,7 @@ public abstract class RandomProjector {
   
   static public RandomProjector getProjector(boolean sparse) {
     if (sparse)
-      return new RandomProjector2of6Sparse();
+      return new RandomProjector2of6();
     else
       return new RandomProjectorPlusMinus();
   }
@@ -110,7 +112,7 @@ public abstract class RandomProjector {
  * +1/-1 and 2/6. You cannot do modulo on a long, only an int. 6^11 < 2^31 <
  * 6^12, and so we pull 11 6's from the high int and 11 6's from the low int.
  * 
- * Small chance of returned 0, dropping with vector length.
+ * Use this with Sparse data, as it has a better (but still small) chance of returning 0.
  */
 
 class RandomProjector2of6 extends RandomProjector {
@@ -206,53 +208,5 @@ class RandomProjectorPlusMinus extends RandomProjector {
     }
     return sum * d;
   }
-
-}
-
-class RandomProjector2of6Sparse extends RandomProjector {
-  final private int masks[] = new int[32];
-  final private ByteBuffer buf;
-  final private int seed;
-  private long bits = 0;
   
-  public RandomProjector2of6Sparse() {
-    this(RandomUtils.getRandom().nextInt());
-  }
-  
-  public RandomProjector2of6Sparse(int seed) {
-    this.seed = seed;
-    byte[] bits = new byte[8];
-    buf = ByteBuffer.wrap(bits);
-    int mask = 1;
-    for(int i = 0; i < 32; i++) {
-      masks[i] = mask;
-      mask = (mask << 1) | 1;
-    }
-  }
-  
-  static double six[] = {1,-1,0,0,0,0};
-  
-  @Override
-  protected double sumRow(int r, int len, double d) {
-    double sum = 0;
-    //  6^11 < 2^31 < 6^12
-    for(int i = 0; i < len; i += 22) {
-      long x = MurmurHash.hash64A(buf, (seed + r +i) * len);
-      // you cannot modulo a long!
-      int z = Math.abs((int) x);
-      for(int y = 0; y < 11 && i + y < len; y++) {
-        int z6 = z % 6;
-        sum += six[z6];
-        z /= 6;
-      }
-      z = Math.abs((int) x>>>32);
-      for(int y = 0; y < 11 && i + y < len; y++) {
-        int z6 = z % 6;
-        sum += six[z6];
-        z /= 6;
-      }
-    }
-    return sum * d;
-  }
-
 }

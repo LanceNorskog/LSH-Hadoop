@@ -36,7 +36,7 @@ public class TestRandomProjector extends MahoutTestCase {
   @Test
   public void testFactory() {
     assertTrue(RandomProjector.getProjector(false) instanceof RandomProjectorPlusMinus);
-    assertTrue(RandomProjector.getProjector(true) instanceof RandomProjector2of6Sparse);
+    assertTrue(RandomProjector.getProjector(true) instanceof RandomProjector2of6);
   }
   
   @Test
@@ -52,8 +52,32 @@ public class TestRandomProjector extends MahoutTestCase {
   @Test
   public void testVector2of6Sparse() {
     runMany(new RandomProjector2of6(), new RVectorSparse(), "2of6: ");
+    runSparse(new RandomProjector2of6(), "2of6:");
   }
   
+  private void runSparse(RandomProjector rp, String kind) {
+    int large = 50;
+    int[] index = {3, 15, 22};
+    double[] orig = {8, 10, 43};
+    double[] xformed = {16, 0, -258};
+    Vector v = new RandomAccessSparseVector(large);
+    for(int i = 0; i < index.length; i++) {
+      v.setQuick(index[i], orig[i]);
+    }
+    Vector w = rp.times(v);
+    int cursor = 0;
+    for(int i = 0; i < large; i++) {
+      double d = w.getQuick(i);
+      if (cursor < index.length && i == index[cursor]) {
+        double expected = xformed[cursor];
+        assertEquals("index: " + i + "cursor: " + cursor, xformed[cursor], d, EPSILON);
+        cursor++;
+      } else {
+        assertEquals("index: " + i, 0, d, Double.MIN_VALUE);
+      }
+    }
+  }
+
   @Test
   public void testVectorPlusMinusSparse() {
     runMany(new RandomProjectorPlusMinus(), new RVectorSparse(), "+1/-1: ");
