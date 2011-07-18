@@ -3,8 +3,6 @@ package org.apache.mahout.math;
 import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
-import org.apache.mahout.common.distance.DistanceMeasure;
-import org.apache.mahout.common.distance.EuclideanDistanceMeasure;
 
 /*
  * Benchmark RandomProjector algorithms, including simple versions.
@@ -18,12 +16,11 @@ public class RandomProjectorBenchmark {
   }
   
   public void benchmarkAll() {
-    RandomProjectorConcept rp = null;
     runAlg(new RandomProjectorJDK(), "JDK: ");
     runAlg(new RandomProjectorLinear(), "Mersenne Twister: ");
     runAlg(new RandomProjectorPlusminus(), "+1/-1 (MurmurHash): ");
     runAlg(new RandomProjectorSqrt3(), "Sqrt3 (MurmurHash): ");
-    runAlg(new RandomProjectorAch(), "Sqrt3 (optimized MmH): ");
+    runAlg(new RandomProjector2of6(), "Sqrt3 (optimized MmH): ");
     runAlg(new RandomProjectorPM_murmur(), "+1/-1 (optimized MmH): ");
     System.out.println("\t all times in ms");
   }
