@@ -35,6 +35,7 @@ import org.apache.mahout.math.Vector;
 
 public class SVProjectorRP {
   
+  private static final int HEAT_CAP = 8;
   static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
   static int TARGET_DIMENSIONS = 2;
@@ -68,7 +69,7 @@ public class SVProjectorRP {
     LongPrimitiveIterator itemIter = model.getItemIDs();
     report("(ms) for previous operation");
     report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
-    RandomProjector rp = RandomProjector.getProjector(false);
+    RandomProjector rp = RandomProjector.getProjector(SOURCE_DIMENSIONS, TARGET_DIMENSIONS, 0, false);
     
     report("Creating Item vecs: "+model.getNumItems());
     
@@ -76,29 +77,29 @@ public class SVProjectorRP {
       long itemID = itemIter.nextLong();
       itemsOrig.add((NamedVector) svf.projectItemDense(itemID, itemID + ""));
     }
-//    report("SVD full items: ");
-//    svdOrig(itemsOrig);
+    //    report("SVD full items: ");
+    //    svdOrig(itemsOrig);
     
     printVectors(path + "_all_items.csv", SOURCE_DIMENSIONS, itemsOrig, itemsMetadata);
     // Decimate down to SAMPLES # vectors
     itemsOrig = decimate(itemsOrig, SAMPLES);
     report("SVD "+ SAMPLES + " items: ");
-    		
-//    svdOrig(itemsOrig);
+    
+    //    svdOrig(itemsOrig);
     itemsRP = decimate(itemsRP, SAMPLES);
     
     report("Projecting Item vecs: "+SAMPLES);
     projectVectors(itemsOrig, itemsRP, rp);
     report("");
-    //        printVectors(path + "_items.csv", itemsOrig);
+    printVectors(path + "_items.csv", SOURCE_DIMENSIONS, itemsOrig, itemsMetadata);
     printVectors(pathX + "_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
     report("Reprojecting");
     List<NamedVector> repro = reProject(pathX, itemsOrig, itemsRP, itemsMetadata);
     report("");
-    printVectors(pathX + "_svd_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
+    printVectors(pathX + "_svd_items.csv", TARGET_DIMENSIONS, repro, itemsMetadata);
     
     
-    //    distances(path, pathX, origItemMap, itemsRP);
+    distances(path, pathX, itemsOrig, itemsRP);
     
   }
   
@@ -163,7 +164,7 @@ public class SVProjectorRP {
     report("Done");
     return repro;
   }
-
+  
   private static void reProjectAll(String pathX, List<NamedVector> itemsOrig)
       throws TasteException, IOException, FileNotFoundException {
     report("Reprojection:");
@@ -208,12 +209,12 @@ public class SVProjectorRP {
     report("Done");
     System.out.println("Item distances matrix norms: orig = " + Algebra.getNorm(itemDistancesOrig) + 
         ", projected = " + Algebra.getNorm(itemDistancesRP));
-//    printMatrix(path + "_items_distances.csv", itemDistancesOrig);
-//    printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
-//    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
-//    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
+    printMatrix(path + "_items_distances.csv", itemDistancesOrig, itemsRP, null);
+    printMatrix(pathX + "_items_distances.csv", itemDistancesRP, itemsRP, null);
+    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio, itemsRP, null);
+    printDistanceRatios(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
   }
-
+  
   // Get orthonormal basis for input "matrix"
   private static Matrix getQ(List<NamedVector> itemsRP) {
     Matrix rpMat = new DenseMatrix(SOURCE_DIMENSIONS, itemsRP.get(0).size());
@@ -294,7 +295,7 @@ public class SVProjectorRP {
     }
   }
   
-  private static void printDistancesRatio(String distancesPath,
+  private static void printDistanceRatios(String distancesPath,
       Matrix distancesFull, Matrix distancesP) throws IOException {
     File f = new File(distancesPath);
     f.delete();
@@ -304,12 +305,15 @@ public class SVProjectorRP {
     int count = 0;
     for(int row = 0; row < distancesFull.numRows(); row++) {
       for(int col = 0; col < distancesFull.numCols(); col++) {
-        ps.print(count + "," + row + "," + col + ",");
         double full = distancesFull.get(row, col);
         double projected = distancesP.get(row, col);
-        double ratio = Double.NaN;
-        if (! Double.isNaN(full) && !Double.isNaN(projected) && full != 0 && projected != 0)
-          ratio = full / projected;
+        double ratio = Math.log(Math.abs(full / projected));
+        if (Double.isInfinite(ratio) || Double.isNaN(ratio)) {
+          continue; // leave white spot
+        } else if (ratio > HEAT_CAP) {
+          ratio = HEAT_CAP;
+        }
+        ps.print(count + "," + row + "," + col + ",");
         ps.println(full + "," + projected + "," + ratio);
         count++;
       }
@@ -331,7 +335,7 @@ public class SVProjectorRP {
   }
   
   private static void printMatrix(String matrixPath,
-       Matrix matrix, List<NamedVector> itemsOrig, MetadataModel itemNames) throws IOException {
+      Matrix matrix, List<NamedVector> itemsOrig, MetadataModel itemNames) throws IOException {
     File f = new File(matrixPath);
     f.delete();
     f.createNewFile();
@@ -361,21 +365,21 @@ public class SVProjectorRP {
       sublist.add(fullMap.get(i));
     }
     return sublist;
-//    int n = samples;
-//    System.out.println("Decimating: " + fullMap.size());
-//    while(n < size) {
-//      int r = rnd.nextInt(n);
-//      if (r < samples) {
-//        int spot = rnd.nextInt(samples);
-//        sublist.set(spot, fullMap.get(n));
-//        System.out.print(spot + "|");
-//      } else
-//        System.out.print("|");
-//
-//      n++;
-//    }
-//    System.out.println();
-//    return sublist;
+    //    int n = samples;
+    //    System.out.println("Decimating: " + fullMap.size());
+    //    while(n < size) {
+    //      int r = rnd.nextInt(n);
+    //      if (r < samples) {
+    //        int spot = rnd.nextInt(samples);
+    //        sublist.set(spot, fullMap.get(n));
+    //        System.out.print(spot + "|");
+    //      } else
+    //        System.out.print("|");
+    //
+    //      n++;
+    //    }
+    //    System.out.println();
+    //    return sublist;
   }
   
   static long tod = 0;

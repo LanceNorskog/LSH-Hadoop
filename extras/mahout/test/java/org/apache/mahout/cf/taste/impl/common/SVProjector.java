@@ -34,6 +34,7 @@ import org.apache.mahout.math.Vector;
 
 public class SVProjector {
   
+  private static final int HEAT_CAP = 15;
   static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
   static int TARGET_DIMENSIONS = 2;
@@ -81,6 +82,7 @@ public class SVProjector {
     // Decimate down to SAMPLES # vectors
     itemsOrig = decimate(itemsOrig, SAMPLES);
     report("SVD "+ SAMPLES + " items: ");
+            printVectors(path + "_items.csv", SOURCE_DIMENSIONS, itemsOrig, itemsMetadata);
     		
 //    svdOrig(itemsOrig);
     itemsRP = decimate(itemsRP, SAMPLES);
@@ -88,14 +90,13 @@ public class SVProjector {
     report("Projecting Item vecs: "+SAMPLES);
     projectVectors(itemsOrig, itemsRP, rp);
     report("\t");
-    //        printVectors(path + "_items.csv", itemsOrig);
     printVectors(pathX + "_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
     
     List<NamedVector> repro = reProject(pathX, itemsOrig, itemsRP, itemsMetadata);    
-    printVectors(pathX + "_svd_items.csv", TARGET_DIMENSIONS, itemsRP, itemsMetadata);
+    printVectors(pathX + "_svd_items.csv", TARGET_DIMENSIONS, repro, itemsMetadata);
     
     
-    //    distances(path, pathX, origItemMap, itemsRP);
+        distances(path, pathX, itemsOrig, itemsRP);
     
   }
   
@@ -179,7 +180,7 @@ public class SVProjector {
     
     report("Done");
     Matrix u = svd.getU();
-    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose(), itemsOrig, null);
+    printMatrix(pathX + "_svd_items.csv", origRPQ.transpose(), itemsOrig);
   }
   
   private static Matrix getMatrix(List<NamedVector> itemsOrig) {
@@ -191,24 +192,25 @@ public class SVProjector {
   }
   
   private static void distances(String path, String pathX,
-      List<NamedVector> origItemMap, List<NamedVector> itemsRP) throws IOException {
+      List<NamedVector> itemsOrig, List<NamedVector> itemsRP) throws IOException {
     report("Distances:");
-    origItemMap = decimate(origItemMap, SAMPLES);
+    itemsOrig = decimate(itemsOrig, SAMPLES);
     Matrix itemDistancesOrig = new DenseMatrix(SAMPLES, SAMPLES);
     Matrix itemDistancesRP = new DenseMatrix(SAMPLES, SAMPLES);
     Matrix itemDistancesRatio = new DenseMatrix(SAMPLES, SAMPLES);
     report("Calculating Item distances: "+SAMPLES);
-    findDistances(origItemMap, itemDistancesOrig);
+    findDistances(itemsOrig, itemDistancesOrig);
     findDistances(itemsRP, itemDistancesRP);
     report("Calculating Item distances: "+SAMPLES);
     findDistanceRatios(itemDistancesOrig,itemDistancesRP, itemDistancesRatio);
     report("Done");
     System.out.println("Item distances matrix norms: orig = " + Algebra.getNorm(itemDistancesOrig) + 
         ", projected = " + Algebra.getNorm(itemDistancesRP));
-//    printMatrix(path + "_items_distances.csv", itemDistancesOrig);
-//    printMatrix(pathX + "_items_distances.csv", itemDistancesRP);
-//    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio);
-//    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
+    printMatrix(path + "_items_distances.csv", itemDistancesOrig, itemsOrig);
+    printMatrix(pathX + "_items_distances.csv", itemDistancesRP, itemsOrig);
+    
+    printMatrix(path + "_items_distance_ratio_matrix.csv", itemDistancesRatio, itemsOrig);
+    printDistancesRatio(pathX + "_items_distances.csv", itemDistancesOrig, itemDistancesRP);
   }
 
   // Get orthonormal basis for input "matrix"
@@ -281,12 +283,23 @@ public class SVProjector {
     //      }
     //    }
     //    double mean = total / (distancesOrig.numRows() * distancesOrig.numCols());
+    double maxRatio = -1;
+    for(int r = 0; r < SAMPLES; r++) {
+      for(int c = 0; c < SAMPLES; c++) {
+        double ratio = distancesOrig.get(r, c) / distancesRP.get(r, c);
+        if (! Double.isNaN(ratio) && ! Double.isInfinite(ratio))
+          maxRatio = Math.max(maxRatio,  ratio);
+        ; 
+      }
+    }
     for(int r = 0; r < SAMPLES; r++) {
       for(int c = 0; c < SAMPLES; c++) {
         double ratio = distancesOrig.get(r, c) / distancesRP.get(r, c);
         if (Double.isNaN(ratio) || Double.isInfinite(ratio))
           ratio = 1;
-        distancesRatio.set(r, c, ratio); 
+        if (ratio / maxRatio > 1.000001)
+          distancesOrig.hashCode();
+        distancesRatio.set(r, c, ratio / maxRatio); 
       }
     }
   }
@@ -301,12 +314,15 @@ public class SVProjector {
     int count = 0;
     for(int row = 0; row < distancesFull.numRows(); row++) {
       for(int col = 0; col < distancesFull.numCols(); col++) {
-        ps.print(count + "," + row + "," + col + ",");
         double full = distancesFull.get(row, col);
         double projected = distancesP.get(row, col);
-        double ratio = Double.NaN;
-        if (! Double.isNaN(full) && !Double.isNaN(projected) && full != 0 && projected != 0)
-          ratio = full / projected;
+        double ratio = Math.log(Math.abs(full / projected));
+        if (Double.isInfinite(ratio) || Double.isNaN(ratio)) {
+          continue;
+        } else if (ratio > HEAT_CAP) {
+          ratio = HEAT_CAP;
+        }
+        ps.print(count + "," + row + "," + col + ",");
         ps.println(full + "," + projected + "," + ratio);
         count++;
       }
@@ -328,7 +344,7 @@ public class SVProjector {
   }
   
   private static void printMatrix(String matrixPath,
-       Matrix matrix, List<NamedVector> itemsOrig, MetadataModel itemNames) throws IOException {
+       Matrix matrix, List<NamedVector> itemsOrig) throws IOException {
     File f = new File(matrixPath);
     f.delete();
     f.createNewFile();
