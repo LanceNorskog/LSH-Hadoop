@@ -1,0 +1,82 @@
+One thousand samples:
+Gaussian:
+JDK: ms=0, stdev=1.0157683734769785
+MurmurHash: ms=0, stdev=0.9883048482496847
+MersenneTwister: ms=0, stdev=0.9961478707382406
+
+Double:
+JDK: ms=0, stdev=0.2893204461048427
+MurmurHash: ms=16, stdev=0.5791621322788497
+MersenneTwister: ms=0, stdev=0.29185780262878214
+
+Float:
+JDK: ms=0, stdev=0.28623171654611246
+MurmurHash: ms=0, stdev=0.5827953148515433
+MersenneTwister: ms=0, stdev=0.2909804323913653
+
+Integer:
+JDK: ms=0, stdev=1.2418032099632275E9
+MurmurHash: ms=0, stdev=1.225829840028731E9
+MersenneTwister: ms=0, stdev=1.2276972029407618E9
+
+Long:
+JDK: ms=0, stdev=5.3202455896312504E18
+MurmurHash: ms=0, stdev=5.2981554002192343E18
+MersenneTwister: ms=0, stdev=5.2994435377554596E18
+
+Integer modulo 100:
+JDK: ms=0, stdev=28.491557922880826
+MurmurHash: ms=0, stdev=29.320277175593915
+MersenneTwister: ms=0, stdev=29.036496381659443
+
+Boolean ? 1.0 : 0.0
+JDK: ms=0, stdev=0.5001861515337926
+MurmurHash: ms=0, stdev=0.43551541152257056
+MersenneTwister: ms=0, stdev=0.4997206426802086
+
+---------------------------------------
+Ten million samples:
+
+Gaussian:
+JDK: ms=2543, stdev=1.0001180935555765
+MurmurHash: ms=6257, stdev=1.0009940490376485
+Mahout: ms=3777, stdev=0.999810097085045
+
+Double:
+JDK: ms=905, stdev=0.28870854862827516
+MurmurHash: ms=937, stdev=0.5770125940365741
+Mahout: ms=1826, stdev=0.28875267364574486
+
+Float:
+JDK: ms=515, stdev=0.2886823952158988
+MurmurHash: ms=469, stdev=0.5768005171070313
+Mahout: ms=937, stdev=0.28873690710148775
+
+Integer:
+JDK: ms=468, stdev=1.239795904277938E9
+MurmurHash: ms=501, stdev=1.2416877618207314E9
+Mahout: ms=922, stdev=1.239816087201577E9
+
+Long:
+JDK: ms=920, stdev=5.3247559783611187E18
+MurmurHash: ms=923, stdev=5.3186229044699228E18
+Mahout: ms=1795, stdev=5.3245104808575959E18
+
+Integer modulo 100:
+JDK: ms=592, stdev=28.86960033103415
+MurmurHash: ms=1155, stdev=28.933780090517196
+Mahout: ms=1033, stdev=28.875441444416726
+
+Boolean ? 1.0 : 0.0
+JDK: ms=530, stdev=0.5000000231852073
+MurmurHash: ms=547, stdev=0.43212663926345407
+Mahout: ms=1001, stdev=0.5000000229749767
+
+
+
+
+
+
+
+
+
