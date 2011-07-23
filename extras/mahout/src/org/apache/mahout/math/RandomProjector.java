@@ -52,12 +52,10 @@ public abstract class RandomProjector {
   int zeroes = 0;
   
   static public RandomProjector getProjector(int r, int c, int seed, boolean sparse) {
-    RandomProjector rp = new RandomProjector2of6(r, c, seed);
-    return rp;
-    //    if (sparse)
-    //      return new RandomProjector2of6();
-    //    else
-    //      return new RandomProjectorPlusMinus();
+    if (sparse)
+      return new RandomProjector2of6(r, c, seed);
+    else
+      return new RandomProjectorPlusMinus(r, c, seed);
   }
   
   public Vector times(Vector v) {
@@ -78,12 +76,12 @@ public abstract class RandomProjector {
       }
       return w;
     } else {
-      int size = v.getNumNondefaultElements();
-      int[] indexes = new int[size];
-      double[] values = new double[size];
+      int sparse = v.getNumNondefaultElements();
+      int[] indexes = new int[sparse];
+      double[] values = new double[sparse];
       getMap(v, indexes, values);
       
-      Vector w = new RandomAccessSparseVector(size);
+      Vector w = new RandomAccessSparseVector(card[COL]);
       for (int c = 0; c < card[COL]; c++) {
         double sum = sumRow(indexes, values);
         if (sum != 0) {
@@ -156,20 +154,14 @@ class RandomProjector2of6 extends RandomProjector {
     double sum = 0;
     //  6^11 < 2^31 < 6^12
     int length = v.size();
-    for(int i = 0; i < length; i += 22) {
+    for(int i = 0; i < length; i += 24) {
       long x = MurmurHash.hash64A(buf, seed + i);
       // you cannot modulo a long!
-      // 6^24 < 2^63, so this could have another 2 samples.
+      // 6^24 < 2^63 < 6^25.
       // 
-      int z = Math.abs((int) x);
-      for(int y = 0; y < 11 && i + y < length; y++) {
-        int z6 = z % 6;
-        sum += six[z6] * v.getQuick(i + y);
-        z /= 6;
-      }
-      z = Math.abs((int) x>>>32);
-      for(int y = 11; y < 22 && i + y < length; y++) {
-        int z6 = z % 6;
+      long z = Math.abs(x);
+      for(int y = 0; y < 24 && i + y < length; y++) {
+        int z6 = (int) (z % 6);
         sum += six[z6] * v.getQuick(i + y);
         z /= 6;
       }
@@ -179,19 +171,17 @@ class RandomProjector2of6 extends RandomProjector {
   
   @Override
   protected double sumRow(int[] indexes, double[] values) {
-    //    for(int i = 0; i < indexes.length; i++) {
-    //      int index = indexes[i];
-    //      int bit = index % 22;
-    //      int block = index - bit;
-    //      long x = Math.abs(MurmurHash.hash64A(buf, seed + block));
-    //      if (x & (1 << bit)) {
-    //        
-    //      }
-    //      
-    //      
-    //    }
-    // TODO Auto-generated method stub
-    return 0;
+    double sum = 0;
+    for(int i = 0; i < indexes.length; i++) {
+      int index = indexes[i];
+      int offset = index % 24;
+      int block = index - offset;
+      long x = MurmurHash.hash64A(buf, seed + block);
+      x = Math.abs(x);
+      int z6 = (int)((x / (6 * offset)) % 6);
+      sum += six[z6] * values[i];
+    }
+    return sum;
   }
   
   @Override
@@ -302,9 +292,11 @@ class RandomProjectorJava extends RandomProjector {
   @Override
   protected double sumRow(Vector v) {
     double sum = 0;
-    rnd.setSeed(seed);
-    for(int i = 0; i < card[ROW]; i ++) {
-      sum += v.getQuick(i) * rnd.nextDouble();
+    for(int i = 0;i < v.size(); i ++) {
+      rnd.setSeed(seed + i);
+      long next = rnd.nextLong();
+      rnd.setSeed(next);
+      sum += v.getQuick(i) / rnd.nextDouble();
     }
     
     return sum;
@@ -315,9 +307,12 @@ class RandomProjectorJava extends RandomProjector {
     double sum = 0;
     for(int i = 0; i < indexes.length; i++) {
       int index = indexes[i];
-      rnd.setSeed(seed + index);
-      if (values[i] != 0)
-        sum += values[i] * rnd.nextDouble();
+      if (values[i] != 0) {
+        rnd.setSeed(seed + index);
+        long next = rnd.nextLong();
+        rnd.setSeed(next);
+        sum += values[i] / rnd.nextDouble();
+      }
     }
     return sum;
   }

@@ -12,32 +12,13 @@ public class TestRandomProjector extends MahoutTestCase {
   static double[] orig = {8, 10, 43};
   static double[] xformed_2of6 = {16, 0, -258};
   static double[] xformed_plusminus = {25,-41,-25};
-  static double[] xformed_java = {25,-61,-41};
+  static double[] xformed_java = {100.78128815655742, 100.78128722061669, 105.70396068105019};
   
   @Test
   public void TestMatrix() {
     
   }
   
-  //  @Test
-  //  public void testVectorSmall() {
-  //    double CLOSE = 0.01;
-  //    double[] values = {1, 2, 3, 4, 0, 100, 101, 102, 103, 104};
-  //    double[] values26 = {205.0, 100.0, -97.0, -104.0, 0.0, -213.0, 105.0, -5.0, 6.0, 0.0};
-  //    double[] valuesPlusMinus = {-4.0, 0.0, 0.0, 0.0, -2.0, 0.0, 0.0, 0.0, -2.0, 0.0};
-  //    Vector v = new DenseVector(values);
-  //    RandomProjector rp = new RandomProjector2of6(10, 10, 0);
-  //    Vector w = rp.times(v);
-  //    for(int i = 0; i < 10; i++)
-  //      assertEquals("2of6[" + i + "]", values26[i], w.get(i), EPSILON);
-  //    
-  //    rp = new RandomProjectorPlusMinus(10, 10, 0);
-  //    w = rp.times(v);
-  //    for(int i = 0; i < 10; i++)
-  //      assertEquals("+1/-1[" + i + "]", valuesPlusMinus[i], w.get(i), EPSILON);
-  //  }
-  
-  @Test
   public void testFactory() {
     assertTrue(RandomProjector.getProjector(1,1,1,false) instanceof RandomProjectorPlusMinus);
     assertTrue(RandomProjector.getProjector(1,1,1,true) instanceof RandomProjector2of6);
@@ -81,7 +62,6 @@ public class TestRandomProjector extends MahoutTestCase {
         assertEquals(kind + "index: " + i , expected, d, EPSILON);
     }
   }
-  
   
   // test pairwise distance several times with different random numbers
   private void runPairwise(RandomProjector rp, RVector rv, String kind) {
