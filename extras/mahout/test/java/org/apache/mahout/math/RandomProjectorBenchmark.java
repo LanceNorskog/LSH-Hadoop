@@ -21,7 +21,7 @@ public class RandomProjectorBenchmark {
     runAlg(new RandomProjectorPlusminus(), "+1/-1 (MurmurHash): ");
     runAlg(new RandomProjectorSqrt3(), "Sqrt3 (MurmurHash): ");
     runAlg(new RandomProjector2of6(), "Sqrt3 (optimized MmH): ");
-    runAlg(new RandomProjectorPM_murmur(), "+1/-1 (optimized MmH): ");
+    runAlg(new RandomProjectorPlusMinus(), "+1/-1 (optimized MmH): ");
     System.out.println("\t all times in ms");
   }
 
@@ -98,7 +98,7 @@ class RandomProjectorSqrt3 extends RandomProjector {
   
 }
 
-class RandomProjectorPlusminus extends RandomProjector {
+class RandomProjectorPM extends RandomProjector {
   protected Random rnd = new MurmurHashRandom(0);
   
   double sumRow(int r, int len, double d) {

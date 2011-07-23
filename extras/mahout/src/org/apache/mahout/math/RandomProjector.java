@@ -23,6 +23,7 @@ import java.util.Random;
 
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.Vector.Element;
+import org.apache.mahout.math.map.OpenIntDoubleHashMap;
 
 /**
  * Random Projector: efficient implementation of projecting a vector or matrix with a random matrix.  
@@ -48,6 +49,7 @@ public abstract class RandomProjector {
   static int ROW = 0;
   static int COL = 1;
   final int[] card = new int[2];
+  int zeroes = 0;
   
   static public RandomProjector getProjector(int r, int c, int seed, boolean sparse) {
     RandomProjector rp = new RandomProjector2of6(r, c, seed);
@@ -58,57 +60,58 @@ public abstract class RandomProjector {
     //      return new RandomProjectorPlusMinus();
   }
   
-  //  public Matrix times(Matrix other) {
-  //    int[] c = size();
-  //    int[] o = other.size();
-  //    if (c[COL] != o[ROW]) {
-  //      throw new CardinalityException(c[COL], o[ROW]);
-  //    }
-  //    Matrix result = like(c[ROW], o[COL]);
-  //    for (int row = 0; row < c[ROW]; row++) {
-  //      for (int col = 0; col < o[COL]; col++) {
-  //        double sum = 0;
-  //        for (int k = 0; k < c[COL]; k++) {
-  //          sum += getQuick(row, k) * other.getQuick(k, col);
-  //        }
-  //        result.setQuick(row, col, sum);
-  //      }
-  //    }
-  //    return result;
-  //  }
-  
   public Vector times(Vector v) {
-    int size = v.size();
     resetSeed();
     
     if (v.isDense()) {
+      int size = v.size();
       Vector w = new DenseVector(card[COL]);
       for (int c = 0; c < card[COL]; c++) {
         
         double sum = sumRow(v);
-        //        if (sum != 0)
-        w.setQuick(c, sum);
+        if (sum != 0) {
+          w.setQuick(c, sum);
+        } else {
+          zeroes++;
+        }
         bumpSeed(size);
       }
       return w;
-      //    } else {
-      //      Iterator<Element> iter = v.iterateNonZero();
-      //      int previous = 0;
-      //      while(iter.hasNext()) {
-      //        Element e = iter.next();
-      //        int i = e.index();
-      //        double d = e.get();
-      //        if (d != 0) {
-      //          double sum = sumRow(i, size, d);
-      //          if (sum != 0)
-      //            w.setQuick(i, sum);
-      //        } 
-      //        // have to maintain seed bumps to match how dense works.
-      //        bumpSeed(size * (i - previous));
-      //        previous = i;
-      //      }
-    } else return null;
+    } else {
+      int size = v.getNumNondefaultElements();
+      int[] indexes = new int[size];
+      double[] values = new double[size];
+      getMap(v, indexes, values);
+      
+      Vector w = new RandomAccessSparseVector(size);
+      for (int c = 0; c < card[COL]; c++) {
+        double sum = sumRow(indexes, values);
+        if (sum != 0) {
+          w.setQuick(c, sum);
+        } else {
+          zeroes++;
+        }
+        bumpSeed(v.size());
+      }
+      return w;
+    }
   }
+  
+  private void getMap(Vector v, int[] indexes, double[] values) {
+    Iterator<Element> iter = v.iterateNonZero();
+    int index = 0;
+    while(iter.hasNext()) {
+      Element e = iter.next();
+      int i = e.index();
+      indexes[index] = i;
+      values[index] = e.get();
+      index++;
+    }
+    if (index != indexes.length)
+      throw new IllegalStateException("Vector class " + v.getClass().getCanonicalName() + " does not do getNumNonDefaultElements correctly");
+  }
+  
+  protected abstract double sumRow(int[] indexes, double[] values);
   
   protected abstract double sumRow(Vector v);
   
@@ -132,7 +135,7 @@ public abstract class RandomProjector {
  */
 
 class RandomProjector2of6 extends RandomProjector {
-  final private int masks[] = new int[32];
+  //  final private int masks[] = new int[32];
   final private ByteBuffer buf;
   private int seed;
   final private int originalSeed;
@@ -144,11 +147,6 @@ class RandomProjector2of6 extends RandomProjector {
     this.seed = seed;
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
-    int mask = 1;
-    for(int i = 0; i < 32; i++) {
-      masks[i] = mask;
-      mask = (mask << 1) | 1;
-    }
   }
   
   static double six[] = {1,-1,0,0,0,0};
@@ -180,6 +178,23 @@ class RandomProjector2of6 extends RandomProjector {
   }
   
   @Override
+  protected double sumRow(int[] indexes, double[] values) {
+    //    for(int i = 0; i < indexes.length; i++) {
+    //      int index = indexes[i];
+    //      int bit = index % 22;
+    //      int block = index - bit;
+    //      long x = Math.abs(MurmurHash.hash64A(buf, seed + block));
+    //      if (x & (1 << bit)) {
+    //        
+    //      }
+    //      
+    //      
+    //    }
+    // TODO Auto-generated method stub
+    return 0;
+  }
+  
+  @Override
   protected void bumpSeed(int size) {
     seed += size;
   }
@@ -188,6 +203,7 @@ class RandomProjector2of6 extends RandomProjector {
   protected void resetSeed() {
     seed = originalSeed;
   }
+  
   
 }
 
@@ -231,11 +247,31 @@ class RandomProjectorPlusMinus extends RandomProjector {
       x = Math.abs(x);
       for(int b = 0; b < 16 && b + i < length; b++) {
         if (((1<<b) & x) != 0)
-          sum += v.getQuick(i);
+          sum += v.getQuick(i + b);
         else
-          sum -= v.getQuick(i);
+          sum -= v.getQuick(i + b);
       }
     }
+    return sum;
+  }
+  
+  @Override
+  protected double sumRow(int[] indexes, double[] values) {
+    double sum = 0;
+    for(int i = 0; i < indexes.length; i++) {
+      int index = indexes[i];
+      int bit = index % 16;
+      int block = index - bit;
+      long x = Math.abs(MurmurHash.hash64A(buf, seed + block));
+      int mask = 1 << bit;
+      if ((x & mask) != 0) {
+        sum += values[i];
+      } else {
+        sum -= values[i];
+        zeroes++;
+      }
+    }
+    
     return sum;
   }
   
@@ -275,6 +311,18 @@ class RandomProjectorJava extends RandomProjector {
   }
   
   @Override
+  protected double sumRow(int[] indexes, double[] values) {
+    double sum = 0;
+    for(int i = 0; i < indexes.length; i++) {
+      int index = indexes[i];
+      rnd.setSeed(seed + index);
+      if (values[i] != 0)
+        sum += values[i] * rnd.nextDouble();
+    }
+    return sum;
+  }
+  
+  @Override
   protected void bumpSeed(int size) {
     seed += size;
   }
@@ -283,4 +331,5 @@ class RandomProjectorJava extends RandomProjector {
   protected void resetSeed() {
     seed = origSeed;
   }
+  
 }
