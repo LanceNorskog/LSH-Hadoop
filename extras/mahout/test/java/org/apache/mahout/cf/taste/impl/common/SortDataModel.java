@@ -106,26 +106,37 @@ public class SortDataModel {
     }
     int userMod = 1;
     int itemMod = 1;
+    int numUsers = userList.size();
+    int numItems = itemList.size();
+    if (numUsers > numItems)
+      userMod = numUsers/numItems;
+    else if (numItems > numUsers)
+      itemMod = numItems/numUsers;
+    System.out.println("userMod/itemMod: " + userMod + "," + itemMod);
     
-    while(userI < userList.size() && itemI < itemList.size()) {
+    while(userI < numUsers && itemI < numItems) {
       long userID = userList.get(userI);
       long itemID = itemList.get(itemI);
       int userPrefs = userCounts.get(userID);
       int itemPrefs = itemCounts.get(itemID);
       if (userPrefs > itemPrefs) {
-        userI++;
-        modelWriter.writeUserPrefs(userID, itemI, itemList, model, userI);
+        for(int x = 0; x < userMod; x++) {
+          modelWriter.writeUserPrefs(userID, itemI, itemList, model, userI); // last for number hack
+          userI++;
+        }
       } else {
-        modelWriter.writeItemPrefs(userI, itemID, userList, model, itemI);
-        itemI++;
+        for(int x = 0; x < itemMod; x++) {
+          modelWriter.writeItemPrefs(userI, itemID, userList, model, itemI); // last for number hack
+          itemI++;
+        }
       }
     }
-    while(userI < userList.size()) {
+    while(userI < numUsers) {
       long userID = userList.get(userI);
       modelWriter.writeUserPrefs(userID, itemI, itemList, model, userI);
       userI++;
     }
-    while(itemI < itemList.size()) {
+    while(itemI < numItems) {
       long itemID = itemList.get(itemI);
       modelWriter.writeItemPrefs(userI, itemID, userList, model, itemI);
       itemI++;
@@ -168,18 +179,18 @@ public class SortDataModel {
     Collections.sort(aList, userComparator);
   }
   
-  private void printItems(ArrayList<Long> itemList,
-      Map<Long,Integer> itemCounts, MetadataModel<String> movieNames) throws TasteException {
-    int total = 0;
-    for(int i = 0; i < itemList.size(); i++) {
-      long itemid = itemList.get(i);
-      int size = itemCounts.get(itemid);
-      String name = movieNames.getData(itemid);
-      System.out.println("item, #, name: " + itemid + "," + size + "," + name);
-      total += size;
-    }
-    System.out.println("Total prefs: " + total);
-  }
+//  private void printItems(ArrayList<Long> itemList,
+//      Map<Long,Integer> itemCounts, MetadataModel<String> movieNames) throws TasteException {
+//    int total = 0;
+//    for(int i = 0; i < itemList.size(); i++) {
+//      long itemid = itemList.get(i);
+//      int size = itemCounts.get(itemid);
+//      String name = movieNames.getData(itemid);
+//      System.out.println("item, #, name: " + itemid + "," + size + "," + name);
+//      total += size;
+//    }
+//    System.out.println("Total prefs: " + total);
+//  }
 }
 
 /*
@@ -215,7 +226,7 @@ class GroupLensWriter {
       Float preference = model.getPreferenceValue(userID, itemList.get(i));
       if (null != preference)
         out.println(count++ + "," + userI + "," + i);
-//      out.println(userID + "::" + itemList.get(i) + "::" + preference.floatValue());
+      //      out.println(userID + "::" + itemList.get(i) + "::" + preference.floatValue());
     }
   }
   
@@ -225,7 +236,7 @@ class GroupLensWriter {
       Float preference = model.getPreferenceValue(userID, itemID);
       if (null != preference)
         out.println(count++ + "," + i + "," + itemI);
-//      out.println(userID + "::" + itemID + "::" + preference.floatValue());
+      //      out.println(userID + "::" + itemID + "::" + preference.floatValue());
     }
   }
   
