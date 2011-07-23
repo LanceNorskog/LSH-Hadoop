@@ -24,8 +24,10 @@ import org.apache.mahout.math.MurmurHash;
 
 /*
  * MurmurHash implementation of Java.lang.Random.
- * Random moves forward an int at a time, and MurmurHash generates a long,
+ * Random moves forward an int at a time, 
+ * and MurmurHash generates a long,
  * so return the long one int at a time.
+ * Passes simple randomness tests, but not verified.
  */
 public class MurmurHashRandom extends Random {
   private int masks[] = new int[32];
@@ -68,18 +70,15 @@ public class MurmurHashRandom extends Random {
   
   @Override
   protected int next(int bits) {
-    if (bits > 31) {
-      bits = 31;
-    }
     if (counter++ % 2 == 0) {
-      int shortcut = murmurSeed[0] & masks[bits];
+      int shortcut = (int) (murmurSeed[0] & ((1L << bits) -1));
       return shortcut;
     }
     int value = murmurSeed[1];
     long dual = MurmurHash.hash64A(buf, murmurSeed[0] ^ murmurSeed[1]);
     murmurSeed[0] = (int) dual;
     murmurSeed[1] = (int) (dual >> 32);
-    return value & masks[bits];
+    return (int) (value & ((1L << bits) -1));
   }
   
 }
