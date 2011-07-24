@@ -18,6 +18,8 @@
 package org.apache.mahout.math;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Random;
 
@@ -25,46 +27,61 @@ import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.Vector.Element;
 import org.apache.mahout.math.map.OpenIntDoubleHashMap;
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
 /**
  * Random Projector: efficient implementation of projecting a vector or matrix with a random matrix.  
- * It's much much easier to do this directly, even though it is a kind of matrix.
  * 
+ * Determinism contract:
+ *     1) the same seed does the same operation.
+ *     2) the same value is returned for sparse and dense inputs 
+ *      
  * These classes use a wonderful result from:
  * 
- * Database-friendly random projections: Johnson-Lindenstrauss with binary coins
- * Achlioptas, 2001
- * 
- * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.84.4546&rep=rep1&type=pdf
+ *    Database-friendly random projections: Johnson-Lindenstrauss with binary coins
+ *      Achlioptas, 2001
+ *    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.84.4546&rep=rep1&type=pdf
  * 
  * @inproceedings{ author = {Dimitris Achlioptas}, title = {Database-friendly
  * random projections}, booktitle = {Symposium on Principles of Database
  * Systems}, year = {2001}, pages = {274--281}, doi = {10.1145/375551.375608},
  * masid = {133250} }
- * 
- * This is deterministic: twice with the same seed gets the same output.
- * Dense and Sparse have exactly the same output.
+ *     
+ * These classes use MurmurHash directly to generate multiple random values.
+ * Three implementations:
+ *     2of6: uses the +1,-1,0,0,0,0 result in Achlioptas.
+ *         Used for Dense as it generates 64 values per batch
+ *     PlusMinus: uses the +1/-1 result in Achlioptas.
+ *         Used for Sparse as it many more 0-valued outputs
+ *     JDK: uses the Java JDK random generator as a reference implementation.
+ *         Just for experiments.
+ *         
+ *  The sparse implementation caches the positions and values.
  */
 
 public abstract class RandomProjector {
-  static int ROW = 0;
-  static int COL = 1;
-  final int[] card = new int[2];
   int zeroes = 0;
   
-  static public RandomProjector getProjector(int r, int c, int seed, boolean sparse) {
-    if (sparse)
-      return new RandomProjector2of6(r, c, seed);
-    else
-      return new RandomProjectorPlusMinus(r, c, seed);
+  static public RandomProjector getProjector(boolean sparse) {
+    int seed = RandomUtils.getRandom().nextInt();
+    return getProjector(seed, sparse); 
   }
   
-  public Vector times(Vector v) {
+  static public RandomProjector getProjector(int seed, boolean sparse) {
+    new RandomProjectorJava(seed);
+    if (sparse)
+      return new RandomProjector2of6(seed);
+    else
+      return new RandomProjectorPlusMinus(seed);
+  }
+  
+  public Vector times(Vector v, int resultSize) {
     resetSeed();
     
     if (v.isDense()) {
       int size = v.size();
-      Vector w = new DenseVector(card[COL]);
-      for (int c = 0; c < card[COL]; c++) {
+      Vector w = new DenseVector(resultSize);
+      for (int c = 0; c < resultSize; c++) {
         
         double sum = sumRow(v);
         if (sum != 0) {
@@ -81,8 +98,8 @@ public abstract class RandomProjector {
       double[] values = new double[sparse];
       getMap(v, indexes, values);
       
-      Vector w = new RandomAccessSparseVector(card[COL]);
-      for (int c = 0; c < card[COL]; c++) {
+      Vector w = new RandomAccessSparseVector(resultSize);
+      for (int c = 0; c < resultSize; c++) {
         double sum = sumRow(indexes, values);
         if (sum != 0) {
           w.setQuick(c, sum);
@@ -113,38 +130,28 @@ public abstract class RandomProjector {
   
   protected abstract double sumRow(Vector v);
   
-  protected abstract void bumpSeed(int size);
+  protected abstract void bumpSeed(int bump);
   
   protected abstract void resetSeed();
   
 }
 
 /*
- * 
- * Random projection does not require a full-range random number in each cell.
- * It only requires either a random +1/-1 in every cell, OR {+1, -1, 0, 0, 0, 0}
- * These two classes implement Achlioptas's results.
- * 
- * These classes generate random bits via MurmurHash and use them to generate
- * +1/-1 and 2/6. You cannot do modulo on a long, only an int. 6^11 < 2^31 <
- * 6^12, and so we pull 11 6's from the high int and 11 6's from the low int.
- * 
- * Use this with Sparse data, as it has a better (but still small) chance of returning 0.
+ * Generate +1,-1,0,0,0,0 as multipliers
+ * Use this with Sparse data, as it has a much higher chance of returning 0.
  */
 
 class RandomProjector2of6 extends RandomProjector {
-  //  final private int masks[] = new int[32];
   final private ByteBuffer buf;
   private int seed;
   final private int originalSeed;
   
-  public RandomProjector2of6(int r, int c, int seed) {
-    card[ROW] = r;
-    card[COL] = c;
-    this.originalSeed = seed;
-    this.seed = seed;
+  public RandomProjector2of6(int seed) {
+    this.originalSeed = seed ^ 0xc6a4a793;
+    this.seed = originalSeed;
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
+    MurmurHash.hash64A(buf, seed);    // burp MurmurHash- setSeed doesn't work the first time
   }
   
   static double six[] = {1,-1,0,0,0,0};
@@ -152,17 +159,17 @@ class RandomProjector2of6 extends RandomProjector {
   @Override
   protected double sumRow(Vector v) {
     double sum = 0;
-    //  6^11 < 2^31 < 6^12
+    //  6^24 < 2^63 < 6^25
     int length = v.size();
-    for(int i = 0; i < length; i += 24) {
-      long x = MurmurHash.hash64A(buf, seed + i);
-      // you cannot modulo a long!
-      // 6^24 < 2^63 < 6^25.
-      // 
+//    System.out.println("sumRows dense: ");
+    for(int index = 0; index < length; index += 24) {
+      long x = MurmurHash.hash64A(buf, seed + index);
       long z = Math.abs(x);
-      for(int y = 0; y < 24 && i + y < length; y++) {
-        int z6 = (int) (z % 6);
-        sum += six[z6] * v.getQuick(i + y);
+      for(int offset = 0; offset < 24 && index + offset < length; offset++) {
+        int z6 = (int) (z % 6L);
+//        if (v.getQuick(index + offset) > 0)
+//          System.out.println("\t" + (index + offset) + ": " + z6 + ", out of: " + z);
+        sum += six[z6] * v.getQuick(index + offset);
         z /= 6;
       }
     }
@@ -172,14 +179,22 @@ class RandomProjector2of6 extends RandomProjector {
   @Override
   protected double sumRow(int[] indexes, double[] values) {
     double sum = 0;
+//    System.out.println("sumRow sparse: ");
     for(int i = 0; i < indexes.length; i++) {
       int index = indexes[i];
       int offset = index % 24;
-      int block = index - offset;
+      int block = (index / 24) * 24;
+
       long x = MurmurHash.hash64A(buf, seed + block);
-      x = Math.abs(x);
-      int z6 = (int)((x / (6 * offset)) % 6);
-      sum += six[z6] * values[i];
+      long z = Math.abs(x);
+//      System.out.println("\t offset:" + offset + ", block: " + block + ", z: " + z);
+      while (offset > 0) {
+        z /= 6;
+        offset--;
+      }
+      int z6 = (int) (z % 6L);
+//      System.out.println("\t" + index + ": " + z6 + ", out of: " + z);
+      sum += six[(int) z6] * values[i];
     }
     return sum;
   }
@@ -194,32 +209,25 @@ class RandomProjector2of6 extends RandomProjector {
     seed = originalSeed;
   }
   
-  
 }
 
 /*
  * Create and use 64 random bits, and generate +1/-1 for each cell.
- * Twice as fast as above for dense rows. All returns are non-zero.
+ * Twice as fast as 2of6 for dense rows. 
+ * 1/d chance of zero value, only even numbers.
  */
 
 class RandomProjectorPlusMinus extends RandomProjector {
-  final private int masks[] = new int[32];
   final private ByteBuffer buf;
   final private int origSeed;
   private int seed;
   
-  public RandomProjectorPlusMinus(int r, int c, int seed) {
-    card[ROW] = r;
-    card[COL] = c;
+  public RandomProjectorPlusMinus(int seed) {
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
-    int mask = 1;
-    for(int i = 0; i < 32; i++) {
-      masks[i] = mask;
-      mask = (mask << 1) | 1;
-    }
-    this.origSeed = seed;
-    this.seed = seed;
+    this.origSeed = seed ^ 0xc6a4a793;
+    this.seed = origSeed;
+    MurmurHash.hash64A(buf, seed);    // burp MurmurHash - see above
   }
   
   @Override
@@ -228,15 +236,15 @@ class RandomProjectorPlusMinus extends RandomProjector {
     double sum = 0;
     for(int i = 0; i < length; i += 16) {
       long x = MurmurHash.hash64A(buf, seed + i);
+      // use 1st -> 63rd bit
+      x = Math.abs(x);
       // harvest 64th bit
       //      if (x > 0)
       //        sum++;
       //      else
       //        sum--;
-      // use 1st -> 63rd bit
-      x = Math.abs(x);
       for(int b = 0; b < 16 && b + i < length; b++) {
-        if (((1<<b) & x) != 0)
+        if ((x & (1<<b)) != 0)
           sum += v.getQuick(i + b);
         else
           sum -= v.getQuick(i + b);
@@ -253,8 +261,7 @@ class RandomProjectorPlusMinus extends RandomProjector {
       int bit = index % 16;
       int block = index - bit;
       long x = Math.abs(MurmurHash.hash64A(buf, seed + block));
-      int mask = 1 << bit;
-      if ((x & mask) != 0) {
+      if ((x & (1 << bit)) != 0) {
         sum += values[i];
       } else {
         sum -= values[i];
@@ -278,13 +285,11 @@ class RandomProjectorPlusMinus extends RandomProjector {
 }
 
 class RandomProjectorJava extends RandomProjector {
-  protected Random rnd = new MurmurHashRandom(0);
+  protected Random rnd = new Random();
   private final int origSeed;
   private int seed;
   
-  RandomProjectorJava(int r, int c, int seed) {
-    super.card[ROW] = r;
-    super.card[COL] = c;
+  RandomProjectorJava(int seed) {
     origSeed = seed;
     this.seed = seed;
   }
