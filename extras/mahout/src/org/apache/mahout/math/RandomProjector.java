@@ -24,6 +24,7 @@ import org.apache.commons.math.random.MersenneTwister;
 import org.apache.commons.math.random.RandomGenerator;
 import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.Vector.Element;
+import org.apache.mahout.vectorizer.encoders.MurmurHash;
 
 /**
  * Random Projector: efficient implementation of projecting a vector or matrix with a random matrix.  
@@ -254,8 +255,6 @@ class RandomProjectorPlusMinus extends RandomProjector {
         sum -= values[i];
       }
     }
-    if (cached > 2)
-      System.out.println("Cached: " + cached);
     return sum;
   }
   
