@@ -24,15 +24,15 @@ import org.apache.mahout.math.MurmurHash;
 
 /*
  * MurmurHash implementation of Java.lang.Random.
- * Random moves forward an int at a time, 
- * and MurmurHash generates a long,
- * so return the long one int at a time.
- * Passes simple randomness tests, but not verified.
+ * The Mahout default, Mersenne Twister, generates
+ * hundreds of numbers at once, and setSeed() is 
+ * not useable. 
+ * 
+ * Use this only if you want to do setSeed().
  */
 public class MurmurHashRandom extends Random {
-  private int masks[] = new int[32];
-  
   private static final long serialVersionUID = 1L;
+
   private int murmurSeed[] = new int[2];
   private int counter = 0;
   private ByteBuffer buf;
@@ -42,27 +42,25 @@ public class MurmurHashRandom extends Random {
     this (++seedUniquifier + System.nanoTime());
   }
   
+  private static volatile long seedUniquifier = 8682522807148012L;;
   public MurmurHashRandom(long seed) {
-    int mask = 1;
-    for(int i = 0; i < 32; i++) {
-      masks[i] = mask;
-      mask = (mask << 1) | 1;
-    }
     setMurmurHashSeed(seed);
   }
   
-  private static volatile long seedUniquifier = 8682522807148012L;;
   
   @Override
   public void setSeed(long seed) {
     setMurmurHashSeed(seed);
   }
-
+  
+  // if a zero goes in, MurmurHash becomes zero permanently.
   private void setMurmurHashSeed(long seed) {
-    // if these are in the constructors, they have not yet happened. Weird.
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
+    // MurmurHash needs to be burped when it gets a new byte array
+    MurmurHash.hash64A(buf, (int) seedUniquifier);   
     murmurSeed = new int[2];
+    seed += seedUniquifier;
     murmurSeed[0] = (int) MurmurHash.hash64A(buf, (int) (seed >> 32));
     murmurSeed[1] = (int) MurmurHash.hash64A(buf, (int) seed);
     counter = 0;

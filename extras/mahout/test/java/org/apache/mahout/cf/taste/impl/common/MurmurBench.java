@@ -6,7 +6,7 @@ import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.MurmurHashRandom;
 
 public class MurmurBench {
-  static int HUGE = 1000;
+  static int HUGE = 1000000;
   static int count = 0;
   
   /**
@@ -30,7 +30,7 @@ public class MurmurBench {
   private static void check(String kind, double[] big, Random rnd) {
     long last = System.currentTimeMillis();
     for(int i = 0; i < HUGE; i++)
-      big[(i % 1) == 0 ? i : (HUGE -1) -i] = rnd.nextFloat();
+      big[(i % 1) == 0 ? i : (HUGE -1) -i] = rnd.nextDouble();
     long bench = System.currentTimeMillis() - last;
     System.out.println(kind + ": ms=" + bench + ", stdev=" + stdev(big));
   }
