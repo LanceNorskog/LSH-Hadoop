@@ -20,13 +20,14 @@ package org.apache.mahout.math;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import org.apache.mahout.math.MurmurHash;
+import org.apache.mahout.common.RandomUtils;
+import org.apache.mahout.vectorizer.encoders.MurmurHash;
+
 
 /*
- * MurmurHash implementation of Java.lang.Random.
- * The Mahout default, Mersenne Twister, generates
- * hundreds of numbers at once, and setSeed() is 
- * not useable. 
+ * MurmurHash implementation of Java.lang.Random. 
+ * Not as good as MersenneTwister, but MT does not
+ * do setSeed() gracefully.
  * 
  * Use this only if you want to do setSeed().
  */
@@ -39,18 +40,19 @@ public class MurmurHashRandom extends Random {
   
   // lifted from parent
   public MurmurHashRandom() {
-    this (++seedUniquifier + System.nanoTime());
+    this (RandomUtils.getRandom().nextLong());
   }
   
+  // MurmurHash gives nothing but 0 if you give 0 as the seed
   private static volatile long seedUniquifier = 8682522807148012L;;
-  public MurmurHashRandom(long seed) {
-    setMurmurHashSeed(seed);
-  }
   
+  public MurmurHashRandom(long seed) {
+    setMurmurHashSeed(seed + seedUniquifier);
+  }
   
   @Override
   public void setSeed(long seed) {
-    setMurmurHashSeed(seed);
+    setMurmurHashSeed(seed + seedUniquifier);
   }
   
   // if a zero goes in, MurmurHash becomes zero permanently.
