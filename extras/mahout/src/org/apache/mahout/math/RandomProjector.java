@@ -19,6 +19,7 @@ package org.apache.mahout.math;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.Random;
 
 import org.apache.commons.math.random.MersenneTwister;
 import org.apache.commons.math.random.RandomGenerator;
@@ -46,10 +47,12 @@ import org.apache.mahout.vectorizer.encoders.MurmurHash;
  *     
  * These classes use MurmurHash directly to generate multiple random values.
  * Three implementations:
- *     2of6: uses the +1,-1,0,0,0,0 result in Achlioptas.
- *         Used for Dense as it generates 64 values per batch
  *     PlusMinus: uses the +1/-1 result in Achlioptas.
- *         Used for Sparse as it many more 0-valued outputs
+ *         Turns out to be faster for both sparse and dense.
+ *     2of6: uses the +1,-1,0,0,0,0 result in Achlioptas.
+ *         Slower on my hardware.
+ *     Mersenne Twister: uses a twister from commons.math.random.
+ *         Here to convince you that MT is tooooooo sloooooow.
  *     JDK: uses the Java JDK random generator as a reference implementation.
  *         Just for experiments.
  *         
@@ -57,17 +60,19 @@ import org.apache.mahout.vectorizer.encoders.MurmurHash;
  */
 
 public abstract class RandomProjector {
+  // stolen from MT source- used to avoid wacky MurmurHash problem with seed of 0
+  static int PERTURB = 1812433253;
   
-  static public RandomProjector getProjector(boolean sparse) {
+  static public RandomProjector getProjector() {
     int seed = RandomUtils.getRandom().nextInt();
-    return getProjector(seed, sparse); 
+    return getProjector(seed); 
   }
   
-  static public RandomProjector getProjector(int seed, boolean sparse) {
-    new RandomProjectorMersenne(seed);
-    if (sparse)
-      return new RandomProjector2of6(seed);
-    else
+  static public RandomProjector getProjector(int seed) {
+    
+    if (seed == -1)
+      return new RandomProjectorJDK(seed);
+    else 
       return new RandomProjectorPlusMinus(seed);
   }
   
@@ -127,81 +132,8 @@ public abstract class RandomProjector {
 }
 
 /*
- * Generate +1,-1,0,0,0,0 as multipliers
- * Use this with Sparse data, as it has a much higher chance of returning 0.
- */
-
-class RandomProjector2of6 extends RandomProjector {
-  final private ByteBuffer buf;
-  private int seed;
-  final private int originalSeed;
-  
-  public RandomProjector2of6(int seed) {
-    this.originalSeed = seed ^ 0xc6a4a793;
-    this.seed = originalSeed;
-    byte[] bits = new byte[8];
-    buf = ByteBuffer.wrap(bits);
-    MurmurHash.hash64A(buf, seed);    // burp MurmurHash- setSeed doesn't work the first time
-  }
-  
-  static double six[] = {1,-1,0,0,0,0};
-  
-  @Override
-  protected double sumRow(Vector v) {
-    double sum = 0;
-    //  6^24 < 2^63 < 6^25
-    int length = v.size();
-    //    System.out.println("sumRows dense: ");
-    for(int index = 0; index < length; index += 24) {
-      long x = MurmurHash.hash64A(buf, seed + index);
-      long z = Math.abs(x);
-      for(int offset = 0; offset < 24 && index + offset < length; offset++) {
-        int z6 = (int) (z % 6L);
-        //        if (v.getQuick(index + offset) > 0)
-        //          System.out.println("\t" + (index + offset) + ": " + z6 + ", out of: " + z);
-        sum += six[z6] * v.getQuick(index + offset);
-        z /= 6;
-      }
-    }
-    return sum;
-  }
-  
-  @Override
-  protected double sumRow(int[] indexes, double[] values) {
-    double sum = 0;
-    //    System.out.println("sumRow sparse: ");
-    for(int i = 0; i < indexes.length; i++) {
-      int index = indexes[i];
-      int offset = index % 24;
-      int block = (index / 24) * 24;
-      
-      long x = MurmurHash.hash64A(buf, seed + block);
-      long z = Math.abs(x);
-      //      System.out.println("\t offset:" + offset + ", block: " + block + ", z: " + z);
-      while (offset > 0) {
-        z /= 6;
-        offset--;
-      }
-      int z6 = (int) (z % 6L);
-      //      System.out.println("\t" + index + ": " + z6 + ", out of: " + z);
-      sum += six[(int) z6] * values[i];
-    }
-    return sum;
-  }
-  
-  @Override
-  protected void bumpSeed(int size) {
-    seed += size;
-  }
-  
-  @Override
-  protected void resetSeed() {
-    seed = originalSeed;
-  }
-  
-}
-
-/*
+ * Faster of the two Achlioptas-inspired implementations.
+ * 
  * Create and use 64 random bits, and generate +1/-1 for each cell.
  */
 
@@ -213,7 +145,7 @@ class RandomProjectorPlusMinus extends RandomProjector {
   public RandomProjectorPlusMinus(int seed) {
     byte[] bits = new byte[8];
     buf = ByteBuffer.wrap(bits);
-    this.origSeed = seed ^ 0xc6a4a793;
+    this.origSeed = seed + PERTURB;
     this.seed = origSeed;
     MurmurHash.hash64A(buf, seed);    // burp MurmurHash - see above
   }
@@ -222,13 +154,13 @@ class RandomProjectorPlusMinus extends RandomProjector {
   protected double sumRow(Vector v) {
     int length = v.size();
     double sum = 0;
-    for(int i = 0; i < length; i += 64) {
-      long bits = MurmurHash.hash64A(buf, seed + i);
-      for(int b = 0; b < 64 && b + i < length; b++) {
+    for(int block = 0; block < length; block += 64) {
+      long bits = MurmurHash.hash64A(buf, seed + block);
+      for(int b = 0; b < 64 && b + block < length; b++) {
         if ((bits & (1<<b)) != 0)
-          sum += v.getQuick(i + b);
+          sum += v.getQuick(block + b);
         else
-          sum -= v.getQuick(i + b);
+          sum -= v.getQuick(block + b);
       }
     }
     return sum;
@@ -237,7 +169,6 @@ class RandomProjectorPlusMinus extends RandomProjector {
   @Override
   protected double sumRow(int[] indexes, double[] values) {
     double sum = 0;
-    int cached = 0;
     int block = -1;
     long bits = 0;
     for(int i = 0; i < indexes.length; i++) {
@@ -246,9 +177,7 @@ class RandomProjectorPlusMinus extends RandomProjector {
       if (block != index - bit) {
         block = index - bit;
         bits = MurmurHash.hash64A(buf, seed + block);
-      } else {
-        cached++;
-      }
+      } 
       if ((bits & (1 << bit)) != 0) {
         sum += values[i];
       } else {
@@ -270,13 +199,104 @@ class RandomProjectorPlusMinus extends RandomProjector {
   
 }
 
+/*
+ * The other Achlioptas-inspired implementation.
+ * 
+ * Generate +1,-1,0,0,0,0 as multipliers
+ * 
+ * This is slower on dense because it uses 24 values 
+ * instead of 64 values per block, and it includes 23 divides
+ * per block. It is slower on sparse because it requires a
+ * average of 11.5 divides per block. 
+ * .
+ * This may be faster than +1/-1 on your hardware.
+ * 
+ * This will help with very very sparse vectors.
+ * For a vector with 5 values, about 12% of the output values
+ * will be zero. With 10 values, 2% are zero.
+ */
+
+class RandomProjector2of6 extends RandomProjector {
+  final private ByteBuffer buf;
+  private int seed;
+  final private int originalSeed;
+  
+  public RandomProjector2of6(int seed) {
+    this.originalSeed = seed + PERTURB;
+    this.seed = originalSeed;
+    byte[] bits = new byte[8];
+    buf = ByteBuffer.wrap(bits);
+    MurmurHash.hash64A(buf, seed);    // burp MurmurHash- setSeed doesn't work the first time
+  }
+  
+  
+  @Override
+  protected double sumRow(Vector v) {
+    double sum = 0;
+    //  6^24 < 2^63 < 6^25
+    int length = v.size();
+    for(int block = 0; block < length; block += 24) {
+      long x = MurmurHash.hash64A(buf, seed + block);
+      long z = Math.abs(x);
+      for(int offset = 0; offset < 24 && block + offset < length; offset++) {
+        int z6 = (int) (z % 6L);
+        if (z6 == 0)
+          sum += v.getQuick(block + offset);
+        else if (z6 == 1)
+          sum -= v.getQuick(block + offset);
+        z /= 6;
+      }
+    }
+    return sum;
+  }
+  
+  @Override
+  protected double sumRow(int[] indexes, double[] values) {
+    double sum = 0;
+    for(int i = 0; i < indexes.length; i++) {
+      int index = indexes[i];
+      int offset = index % 24;
+      int block = (index / 24) * 24;
+      
+      long x = MurmurHash.hash64A(buf, seed + block);
+      long z = Math.abs(x);
+      while (offset > 0) {
+        z /= 6;
+        offset--;
+      }
+      int z6 = (int) (z % 6L);
+      if (z6 == 0)
+        sum += values[i];
+      else if (z6 == 1)
+        sum -= values[i];
+    }
+    return sum;
+  }
+  
+  @Override
+  protected void bumpSeed(int size) {
+    seed += size;
+  }
+  
+  @Override
+  protected void resetSeed() {
+    seed = originalSeed;
+  }
+  
+}
+
+/*
+ * Unuseably slow- here so you can convince yourself not to use it. 
+ * Seed-setting moved- does not generate same value for sparse and dense.
+ * Otherwise, takes longer than the heat death of the universe.
+ */
 class RandomProjectorMersenne extends RandomProjector {
   protected RandomGenerator rnd = new MersenneTwister();
   private final int origSeed;
   private int seed;
   
   RandomProjectorMersenne(int seed) {
-    origSeed = seed;
+    origSeed = seed + PERTURB;
     this.seed = seed;
   }
   
@@ -285,7 +305,6 @@ class RandomProjectorMersenne extends RandomProjector {
     double sum = 0;
     rnd.setSeed(seed);
     for(int i = 0;i < v.size(); i ++) {
-      //      rnd.setSeed(seed + i);
       sum += v.getQuick(i) / rnd.nextDouble();
     }
     
@@ -297,9 +316,56 @@ class RandomProjectorMersenne extends RandomProjector {
     double sum = 0;
     rnd.setSeed(seed);
     for(int i = 0; i < indexes.length; i++) {
+      if (values[i] != 0) {
+        sum += values[i] / rnd.nextDouble();
+      }
+    }
+    return sum;
+  }
+  
+  @Override
+  protected void bumpSeed(int size) {
+    seed += size;
+  }
+  
+  @Override
+  protected void resetSeed() {
+    seed = origSeed;
+  }
+}
+
+/*
+ * Here for reference/experimentation. Slower than Achlioptas algorithms.
+ * Might be not as good results.
+ */
+class RandomProjectorJDK extends RandomProjector {
+  protected Random rnd = new Random();
+  private final int origSeed;
+  private int seed;
+  
+  RandomProjectorJDK(int seed) {
+    origSeed = seed + PERTURB;
+    this.seed = origSeed;
+  }
+  
+  @Override
+  protected double sumRow(Vector v) {
+    double sum = 0;
+    for(int i = 0;i < v.size(); i ++) {
+      rnd.setSeed(seed + i);
+      sum += v.getQuick(i) / rnd.nextDouble();
+    }
+    
+    return sum;
+  }
+  
+  @Override
+  protected double sumRow(int[] indexes, double[] values) {
+    double sum = 0;
+    for(int i = 0; i < indexes.length; i++) {
       int index = indexes[i];
       if (values[i] != 0) {
-        //        rnd.setSeed(seed + index);
+        rnd.setSeed(seed + index);
         sum += values[i] / rnd.nextDouble();
       }
     }

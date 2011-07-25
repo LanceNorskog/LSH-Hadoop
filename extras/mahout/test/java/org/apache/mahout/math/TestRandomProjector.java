@@ -15,8 +15,8 @@ public class TestRandomProjector extends MahoutTestCase {
   static double[] xformed_mersenne_dense = {1938.2953375898057, 1191.1401953767372, 864.044432886567};
   
   public void testFactory() {
-    assertTrue(RandomProjector.getProjector(false) instanceof RandomProjectorPlusMinus);
-    assertTrue(RandomProjector.getProjector(true) instanceof RandomProjector2of6);
+    assertTrue(RandomProjector.getProjector() instanceof RandomProjectorPlusMinus);
+    assertTrue(RandomProjector.getProjector() instanceof RandomProjector2of6);
   }
   
   @Test

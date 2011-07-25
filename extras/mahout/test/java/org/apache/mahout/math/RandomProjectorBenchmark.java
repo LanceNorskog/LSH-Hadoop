@@ -9,6 +9,8 @@ import org.apache.mahout.common.RandomUtils;
  */
 
 public class RandomProjectorBenchmark {
+  static int LARGE = 1000;
+  static int SPARSE = 10;
   
   public static void main(String[] args) {
     RandomProjectorBenchmark benchmark = new RandomProjectorBenchmark();
@@ -16,102 +18,53 @@ public class RandomProjectorBenchmark {
   }
   
   public void benchmarkAll() {
-    runAlg(new RandomProjectorJDK(), "JDK: ");
-    runAlg(new RandomProjectorLinear(), "Mersenne Twister: ");
-    runAlg(new RandomProjectorPlusminus(), "+1/-1 (MurmurHash): ");
-    runAlg(new RandomProjectorSqrt3(), "Sqrt3 (MurmurHash): ");
-    runAlg(new RandomProjector2of6(), "Sqrt3 (optimized MmH): ");
-    runAlg(new RandomProjectorPlusMinus(), "+1/-1 (optimized MmH): ");
+    if (LARGE < 1000)
+      runAlg(new RandomProjectorMersenne(0), "Mersenne: ");
+    runAlg(new RandomProjectorJDK(0), "JDK (optimized MmH): ");
+    runAlg(new RandomProjector2of6(0), "2of6 (optimized MmH): ");
+    runAlg(new RandomProjectorPlusMinus(0), "+1/-1 (optimized MmH): ");
     System.out.println("\t all times in ms");
   }
 
   private void runAlg(RandomProjector rp, String kind) {
     long time;
     Random datagen = RandomUtils.getRandom(0);
-    time = projectVector(rp, datagen);
-    time += projectVector(rp, datagen);
-    time += projectVector(rp, datagen);
-    time += projectVector(rp, datagen);
-    System.out.println(kind + time);
+    time = projectVectorDense(rp, datagen);
+    time += projectVectorDense(rp, datagen);
+    time += projectVectorDense(rp, datagen);
+    time += projectVectorDense(rp, datagen);
+    System.out.println(kind + "dense: " + time);
+    time = projectVectorSparse(rp, datagen);
+    time += projectVectorSparse(rp, datagen);
+    time += projectVectorSparse(rp, datagen);
+    time += projectVectorSparse(rp, datagen);
+    System.out.println(kind + "sparse: " + time);
   }
   
-  long projectVector(RandomProjector rp, Random rnd) {
-    int large = 2000;
-    
-    double[] values = new double[large];
-    for(int i = 0; i < large; i++) {
+  long projectVectorDense(RandomProjector rp, Random rnd) {
+    double[] values = new double[LARGE];
+    for(int i = 0; i < LARGE; i++) {
       values[i] = rnd.nextDouble();
     }
     Vector v1 = new DenseVector(values);
     long start = System.currentTimeMillis();
-    rp.times(v1);
+    rp.times(v1, 10);
     return System.currentTimeMillis() - start;
   }
   
-}
-
-/*
- * These are simple implementations using various random algorithms.
- */
-
-class RandomProjectorJDK extends RandomProjector {
-  protected Random rnd = new MurmurHashRandom(0);
-  
-  double sumRow(int r, int len, double d) {
-    double sum = 0;
-    for(int i = 0; i < len; i ++) {
-      sum += d * rnd.nextDouble();
+  long projectVectorSparse(RandomProjector rp, Random rnd) {
+    double[] values = new double[SPARSE];
+    for(int i = 0; i < SPARSE; i++) {
+      values[i] = rnd.nextDouble();
     }
-    return sum;
-  }
-}
-
-class RandomProjectorLinear extends RandomProjector {
-  protected Random rnd = new Random(0);
-  
-  double sumRow(int r, int len, double d) {
-    Random rnd = org.apache.mahout.common.RandomUtils.getRandom(r * 100000);
-    double sum = 0;
-    for(int i = 0; i < len; i ++) {
-      sum += d * rnd.nextDouble();
+    Vector v1 = new RandomAccessSparseVector(LARGE);
+    for(int i = 0; i < SPARSE; i++) {
+      v1.setQuick(rnd.nextInt(LARGE), values[i]);
     }
-    return sum;
-  }
-}
-
-
-class RandomProjectorSqrt3 extends RandomProjector {
-  protected Random rnd = new MurmurHashRandom(0);
-  
-  double sumRow(int r, int len, double d) {
-    rnd.setSeed(r * 100000);
-    double sum = 0;
-    for(int i = 0; i < len; i ++) {
-      int x = rnd.nextInt(6);
-      if (x == 0)
-        sum += d;
-      else if (x == 1)
-        sum -= d;
-    }
-    return sum * Math.sqrt(3);
-  }
-  
-}
-
-class RandomProjectorPM extends RandomProjector {
-  protected Random rnd = new MurmurHashRandom(0);
-  
-  double sumRow(int r, int len, double d) {
-    rnd.setSeed(r * 100000);
-    double sum = 0;
-    for(int i = 0; i < len; i ++) {
-      int x = rnd.nextInt(2);
-      if (x == 0)
-        sum += d;
-      else if (x == 1)
-        sum -= d;
-    }
-    return sum;
+    long start = System.currentTimeMillis();
+    Vector v = rp.times(v1, LARGE);
+//    System.out.println("Density: " + v.getNumNondefaultElements());
+    return System.currentTimeMillis() - start;
   }
   
 }
