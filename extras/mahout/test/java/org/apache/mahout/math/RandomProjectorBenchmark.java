@@ -9,8 +9,8 @@ import org.apache.mahout.common.RandomUtils;
  */
 
 public class RandomProjectorBenchmark {
-  static int LARGE = 1000;
-  static int SPARSE = 10;
+  static int LARGE = 100000;
+  static int SPARSE = 100;
   
   public static void main(String[] args) {
     RandomProjectorBenchmark benchmark = new RandomProjectorBenchmark();
@@ -20,7 +20,7 @@ public class RandomProjectorBenchmark {
   public void benchmarkAll() {
     if (LARGE < 1000)
       runAlg(new RandomProjectorMersenne(0), "Mersenne: ");
-    runAlg(new RandomProjectorJDK(0), "JDK (optimized MmH): ");
+    runAlg(new RandomProjectorJDK(0), "JDK: ");
     runAlg(new RandomProjector2of6(0), "2of6 (optimized MmH): ");
     runAlg(new RandomProjectorPlusMinus(0), "+1/-1 (optimized MmH): ");
     System.out.println("\t all times in ms");

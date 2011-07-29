@@ -10,9 +10,9 @@ import org.junit.Test;
 public class TestRandomProjector extends MahoutTestCase {
   static int[] index = {3, 15, 22, 23, 24, 25, 62, 63, 64, 65};
   static double[] orig = {8, 10, 43, 2, 3, 4, 100, 101, 102, 103};
-  static double[] xformed_2of6 = {-89, 156, 100};
-  static double[] xformed_plusminus = {-150.0, 226, 256};
-  static double[] xformed_mersenne_dense = {1938.2953375898057, 1191.1401953767372, 864.044432886567};
+  static double[] xformed_2of6 = {-5, -13, 116};
+  static double[] xformed_plusminus = {266, 262, -156};
+  static double[] xformed_jdk = {1133.759463713984, 1345.1046648866545, 1415.3709508101479};
   
   public void testFactory() {
     assertTrue(RandomProjector.getProjector() instanceof RandomProjectorPlusMinus);
@@ -35,9 +35,9 @@ public class TestRandomProjector extends MahoutTestCase {
   
   @Test
   public void testVectorPlusJDK() {
-    runPairwise(new RandomProjectorMersenne(0), "Mersenne pairwise: ");
-    // mersenne sparse is too slow to test
-    runModes(new RandomProjectorMersenne(0), xformed_mersenne_dense, false, "Mersenne dense: ");
+    runPairwise(new RandomProjectorJDK(0), "JDK pairwise: ");
+    runModes(new RandomProjectorJDK(0), xformed_jdk, false, "JDK dense: ");
+    runModes(new RandomProjectorJDK(0), xformed_jdk, true, "JDK sparse: ");
   }
   
   private void runModes(RandomProjector rp, double[] xformed, boolean sparse, String kind) {
@@ -47,7 +47,7 @@ public class TestRandomProjector extends MahoutTestCase {
       v.setQuick(index[i], orig[i]);
     }
     Vector w = rp.times(v, xformed.length);
-    System.out.println("w = " + w.toString());
+//    System.out.println("w = " + w.toString());
     for(int i = 0; i < w.size(); i++) {
       double d = w.getQuick(i);
       double expected = xformed[i];

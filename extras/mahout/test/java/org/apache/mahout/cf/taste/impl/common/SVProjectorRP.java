@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.swing.text.html.parser.TagElement;
+
 import org.apache.mahout.cf.taste.common.TasteException;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 import org.apache.mahout.cf.taste.impl.model.GroupLensDataModel;
@@ -38,7 +40,7 @@ public class SVProjectorRP {
   private static final int HEAT_CAP = 8;
   static int SOURCE_DIMENSIONS = 200;
   static int SAMPLES = 200;
-  static int TARGET_DIMENSIONS = 2;
+  static int TARGET_DIMENSIONS = 20;
   
   /**
    * @param args
@@ -69,7 +71,7 @@ public class SVProjectorRP {
     LongPrimitiveIterator itemIter = model.getItemIDs();
     report("(ms) for previous operation");
     report("Creating Random Matrix: " + TARGET_DIMENSIONS + "x" + SOURCE_DIMENSIONS);
-    RandomProjector rp = RandomProjector.getProjector(SOURCE_DIMENSIONS, TARGET_DIMENSIONS, 0, false);
+    RandomProjector rp = RandomProjector.getProjector(0);
     
     report("Creating Item vecs: "+model.getNumItems());
     
@@ -233,7 +235,7 @@ public class SVProjectorRP {
     Iterator<NamedVector> iter = vecs.iterator();
     while(iter.hasNext()) {
       NamedVector vid = iter.next();
-      NamedVector vr = new NamedVector(rp.times(vid), vid.getName());
+      NamedVector vr = new NamedVector(rp.times(vid, TARGET_DIMENSIONS), vid.getName());
       rVecs.add(vr);
     }
   }
