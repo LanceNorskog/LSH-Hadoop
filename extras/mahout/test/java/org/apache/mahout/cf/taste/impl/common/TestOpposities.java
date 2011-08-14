@@ -13,7 +13,7 @@ public class TestOpposities {
   private static final String[] BOYS = new String[] {"ben","tom","john","fred"};
   
   static double[][] tv = {
-    {5, 5, 0, 5},
+    {5,5,0,5},
     {5,0,3,4},
     {3,4,0,3},
     {0,0,5,3},
@@ -36,8 +36,8 @@ public class TestOpposities {
     System.out.println("Singular values: " + Arrays.toString(sValues));
     System.out.println("Vtranspose2 matrix: ");
     printMatrix(vt, BOYS, new String[6]);
-//    System.out.println("covariance matrix:");
-//    printMatrix(svd.getCovariance(0.0001), 4, 4);
+    //    System.out.println("covariance matrix:");
+    //    printMatrix(svd.getCovariance(0.0001), 4, 4);
     Matrix bob = new DenseMatrix(new double[][] {{5,5,0,0,0,5}});
     Matrix love = new DenseMatrix(new double[][] {{5,5,5,5,5,5}});
     Matrix hate = new DenseMatrix(new double[][] {{1,1,1,1,1,1}});
@@ -46,19 +46,26 @@ public class TestOpposities {
     newUser(svd, u, "Hate", hate);
     
   }
-
+  
   private static void newUser(SingularValueDecomposition svd, Matrix u,
       String name, Matrix bob) {
     Matrix bobXu = bob.times(u);
     System.out.println(name +" * u matrix:");
     printMatrix(bobXu, 1, 2);
-    Matrix s = svd.getS();
+    Matrix s = getSingularValuesDiagonalInverse(svd);
+    Matrix bobXuXsingular = bobXu.times(s);
+    System.out.println(name + " * u * singular inverse: ");
+    printMatrix(bobXuXsingular, 1, 2);
+  }
+  
+  private static Matrix getSingularValuesDiagonalInverse(
+      SingularValueDecomposition svd) {
+    Matrix s;
+    s = svd.getS();
     for(int i = 0; i < s.numRows(); i++) {
       s.set(i,  i, 1/s.get(i, i));
     }
-    Matrix bobXuXsingular = bobXu.times(s);
-    System.out.println(name + " * u * singular values: ");
-    printMatrix(bobXuXsingular, 1, 2);
+    return s;
   }
   
   private static void printMatrix(Matrix m, String[] rowLabels, String[] colLabels) {
@@ -95,13 +102,11 @@ public class TestOpposities {
     }
   }
   
-  
   private static String dub(double dub) {
     String s = Double.toString(dub);
     if (s.length() > 6)
       return s.substring(0, 6);
     return s;
   }
-    
-
+  
 }

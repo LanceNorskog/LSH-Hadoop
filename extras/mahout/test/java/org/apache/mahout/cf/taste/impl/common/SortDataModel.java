@@ -31,11 +31,13 @@ import org.apache.mahout.math.NamedVector;
 import org.apache.mahout.math.QRDecomposition;
 import org.apache.mahout.math.SingularValueDecomposition;
 import org.apache.mahout.math.Vector;
-import org.apache.mahout.math.VectorList;
 
 /*
  * Sort data model matrix by number of preferences, both user and item.
  */
+
+// TODO: Add feature in output for pref is real or just default 3.0
+// TODO: Assign color or something to this in diagrams
 
 public class SortDataModel {
   
@@ -62,8 +64,8 @@ public class SortDataModel {
     ArrayList<Long> itemList = new ArrayList<Long>(model.getNumItems());
     Map<Long,Integer> itemCounts = new HashMap<Long,Integer>();
     Map<Long,Integer> userCounts = new HashMap<Long,Integer>();
-    int numPrefs = sorter.getUserCounts(model, userList, userCounts);
-    int total2 = sorter.getItemCounts(model, itemList, itemCounts);
+    int numUserPrefs = sorter.getUserCounts(model, userList, userCounts);
+    int numItemPrefs = sorter.getItemCounts(model, itemList, itemCounts);
     sorter.sortPrefs(model.getUserIDs(), userList, userCounts);  
     sorter.sortPrefs(model.getItemIDs(), itemList, itemCounts);  
     //    sorter.printItems(itemList, itemCounts, movieNames);
@@ -175,22 +177,22 @@ public class SortDataModel {
    * aList[i] = id in order of #prefs
    */
   void sortPrefs(LongPrimitiveIterator iter, ArrayList<Long> aList, Map<Long,Integer> counts)  {
-    ModelComparator userComparator = new ModelComparator(counts);
+    ModelComparator<Long> userComparator = new ModelComparator<Long>(counts);
     Collections.sort(aList, userComparator);
   }
   
-//  private void printItems(ArrayList<Long> itemList,
-//      Map<Long,Integer> itemCounts, MetadataModel<String> movieNames) throws TasteException {
-//    int total = 0;
-//    for(int i = 0; i < itemList.size(); i++) {
-//      long itemid = itemList.get(i);
-//      int size = itemCounts.get(itemid);
-//      String name = movieNames.getData(itemid);
-//      System.out.println("item, #, name: " + itemid + "," + size + "," + name);
-//      total += size;
-//    }
-//    System.out.println("Total prefs: " + total);
-//  }
+  //  private void printItems(ArrayList<Long> itemList,
+  //      Map<Long,Integer> itemCounts, MetadataModel<String> movieNames) throws TasteException {
+  //    int total = 0;
+  //    for(int i = 0; i < itemList.size(); i++) {
+  //      long itemid = itemList.get(i);
+  //      int size = itemCounts.get(itemid);
+  //      String name = movieNames.getData(itemid);
+  //      System.out.println("item, #, name: " + itemid + "," + size + "," + name);
+  //      total += size;
+  //    }
+  //    System.out.println("Total prefs: " + total);
+  //  }
 }
 
 /*
