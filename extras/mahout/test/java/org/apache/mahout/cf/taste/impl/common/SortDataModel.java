@@ -177,8 +177,8 @@ public class SortDataModel {
    * aList[i] = id in order of #prefs
    */
   void sortPrefs(LongPrimitiveIterator iter, ArrayList<Long> aList, Map<Long,Integer> counts)  {
-    ModelComparator<Long> userComparator = new ModelComparator<Long>(counts);
-    Collections.sort(aList, userComparator);
+    ModelComparator modelComparator = new ModelComparator(counts);
+    Collections.sort(aList, modelComparator);
   }
   
   //  private void printItems(ArrayList<Long> itemList,
