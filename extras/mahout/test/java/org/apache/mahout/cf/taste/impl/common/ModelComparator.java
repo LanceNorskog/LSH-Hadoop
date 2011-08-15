@@ -34,8 +34,8 @@ public class ModelComparator implements Comparator<Long> {
 
    @Override
   public int compare(Long arg0, Long arg1) {
-//   return -1 * intComparator.compare(counts.get(arg0), counts.get(arg1));
-   return intComparator.compare((int) arg0.intValue(), (Integer) arg1.intValue());
+   return -1 * intComparator.compare(counts.get(arg0), counts.get(arg1));
+//   return intComparator.compare((int) arg0.intValue(), (Integer) arg1.intValue());
   }
 
 }

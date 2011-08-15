@@ -68,33 +68,16 @@ public class SortDataModel {
     
     sorter.sortPrefs(model.getUserIDs(), userList, userCounts);  
     sorter.sortPrefs(model.getItemIDs(), itemList, itemCounts);  
-    //    sorter.printItems(itemList, itemCounts, movieNames);
     GroupLensWriter modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_raw.dat");
-    //    int items80 = sorter.findHighPercentile(itemList, itemCounts, numPrefs);
     sorter.printRawRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
     modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_upward.dat");
-    sorter.printSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
+    sorter.printDualSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
+    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_user.dat");
+    sorter.printUserSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
+    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_item.dat");
+    sorter.printItemSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
     modelWriter.close();
   }
-  
-  /* 
-   * index of highest user/item below 80th percentile of sums of ordered user/items
-   * aList[i] = user/items sorted by # of preferences
-   * counts.get(user/item) -> # of preferences
-   * return index of first over the line
-   */
-  //  private int findHighPercentile(ArrayList<Long> aList, Map<Long,Integer> counts, int numPrefs) {
-  //    int sum = 0;
-  //    int percentile = (int) (numPrefs * 0.8);
-  //    
-  //    for(int i = 0; i < aList.size(); i++) {
-  //      long id = aList.get(i);
-  //      int prefs = counts.get(id);
-  //      if (sum + prefs > percentile)
-  //        return i;
-  //    }
-  //    return counts.size() - 1;
-  //  }
   
   /* print all ratings in .dat format, as per DataModel order */
   private void printRawRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userList, ArrayList<Long> itemList, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
@@ -104,27 +87,25 @@ public class SortDataModel {
       LongPrimitiveIterator itemIter = model.getItemIDs();
       while(itemIter.hasNext()) {
         long itemID = itemIter.nextLong();
-        modelWriter.write(userID, itemID);
+        modelWriter.write(0, 0, userID, itemID);
       }
     }
   }
   
   /* print ratings in user/item count sorted order - neither goes backwards in count */
   // walk corners plus and plus
-  private void printSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
+  private void printDualSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
     int userI = 0;
     int itemI = 0;
-    int count = 0;
-    int square = Math.max(userSorted.size(), itemSorted.size());
     
     while(true) {
       for(int u = 0; u < userI; u++) {
-        modelWriter.write(userSorted.get(u), itemSorted.get(itemI));
+        modelWriter.write(u, itemI, userSorted.get(u), itemSorted.get(itemI));
       }
       for(int i = 0; i < itemI; i++) {
-        modelWriter.write(userSorted.get(userI), itemSorted.get(i));
+        modelWriter.write(userI, i, userSorted.get(userI), itemSorted.get(i));
       }
-      modelWriter.write(userSorted.get(userI), itemSorted.get(itemI));
+      modelWriter.write(userI, itemI, userSorted.get(userI), itemSorted.get(itemI));
       userI++;
       if (userI == userSorted.size())
         break;
@@ -135,17 +116,34 @@ public class SortDataModel {
     if (userI == userSorted.size()) {
       for(int i = itemI + 1; i < itemSorted.size(); i++) {
         for(int u = 0; u < userI; u++) {
-          modelWriter.write(userSorted.get(u), itemSorted.get(i));
+          modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
         }
-//        modelWriter.write(userSorted.get(userI), itemSorted.get(i));
       }
     } else if (itemI == itemSorted.size()) {
-      for(int u = userI; u < userSorted.size(); u++) {
-        modelWriter.write(userSorted.get(u), itemSorted.get(itemI - 1));
+      for(int u = itemI + 1; u < userSorted.size(); u++) {
+        for(int i = 0; i < userI; i++) {
+          modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
+        }
       }
-    } else
-    this.hashCode();
-    
+    } 
+  }
+  
+  /* print ratings in user order */
+  private void printUserSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
+    for(int u = 0; u < userSorted.size(); u++) {
+      for(int i = 0; i < itemSorted.size(); i++) {
+        modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
+      }
+    }
+  }
+  
+  /* print ratings in user order */
+  private void printItemSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
+    for(int i = 0; i < itemSorted.size(); i++) {
+      for(int u = 0; u < userSorted.size(); u++) {
+        modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
+      }
+    }
   }
   
   private int getUserCounts(DataModel model, ArrayList<Long> userList,
@@ -183,7 +181,6 @@ public class SortDataModel {
     ModelComparator modelComparator = new ModelComparator(counts);
     Collections.sort(aList, modelComparator);
   }
-  
 }
 
 /*
@@ -203,46 +200,21 @@ class GroupLensWriter {
       ratings.delete();
     ratings.createNewFile();
     out = new PrintStream(ratings);
+    out.println("ucount,icount,user,item,pref,rowid");
   }
   
   void close() {
     out.close();
   }
   
-  void write(long userID, long itemID) {
-    try {
-      Float pref = model.getPreferenceValue(userID, itemID);
-      if (pref == null)
-        pref = 1.0f;
-      out.println(userID + "::" + itemID + "::" + pref); // + "::" + count++);
-    } catch (TasteException e) {
-      
-    }
-  }
-  
-  void writeSimple(int userI, int itemI, long userID, long itemID) {
+  void write(int userI, int itemI, long userID, long itemID) {
     try {
       Float pref = model.getPreferenceValue(userID, itemID);
       if (pref != null)
-        out.println(userI + "::" + itemI + "::" + pref + "::" + count++);
+        out.println(userI + "," + itemI + "," + userID + "," + itemID + "," + pref + "," + count++);
     } catch (TasteException e) {
       
     }
   }
   
-  // sort by user, like input
-  
-  /*  void writeUserPrefs(long userID, int itemI, List<Long> itemList, DataModel model, int userI) throws TasteException {
-    for(int i = 0; i < itemI; i++) {
-      Long itemID = itemList.get(i);
-      write(userID, itemID);
-    }
-  }
-  
-  void writeItemPrefs(int userI, long itemID, List<Long> userList, DataModel model, int itemI) throws TasteException {
-    for(int i = 0; i < userI; i++) {
-      Long userID = userList.get(i);
-      write(userID, itemID);
-    }
-  }*/
 }
