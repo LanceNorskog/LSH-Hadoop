@@ -1,12 +1,14 @@
 package org.apache.mahout.cf.taste.impl.model;
 
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.math.Arrays;
 
 /*
  * Store metadata for users or items. Allows richer exploration of recommendations.
@@ -15,6 +17,7 @@ import org.apache.mahout.cf.taste.common.TasteException;
 
 public class MetadataModel<T> implements Serializable {
   
+  private static final long serialVersionUID = 1L;
   private final Map<Long,T> data;
   private final String label;
   
@@ -32,7 +35,7 @@ public class MetadataModel<T> implements Serializable {
   }
   
   /*
-   * Search for subvalue in array of values 
+   * Search for subvalue in array of values
    */
   public boolean containsSubValue(long key, T sub) {
     T array = data.get(key);
