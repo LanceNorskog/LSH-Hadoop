@@ -1,9 +1,10 @@
 package working;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.math.geometry.Rotation;
+import org.apache.commons.math.geometry.Vector3D;
 import org.apache.mahout.math.CardinalityException;
 import org.apache.mahout.math.DenseMatrix;
 import org.apache.mahout.math.DenseVector;
@@ -12,23 +13,25 @@ import org.apache.mahout.math.SingularValueDecomposition;
 import org.apache.mahout.math.Vector;
 
 /*
- * Calculate the optimal (minimal RMS Error) rotation matrix for two matched lists of vectors
+ * Calculate the optimal (minimal RMS Error) rotation matrix for 
+ * two matched lists of vectors. 
  * Works for all dimensions.
  * http://en.wikipedia.org/wiki/Kabsch_algorithm
+ * http://cnx.org/content/m11608/latest/#MatrixAlignment
  * 
  * Assume small dimensions. Rotating 100k dimension vectors is a bit silly.
- * And the covariance matrix is not tractable anyway.
+ * And the SVD of the covariance matrix is not tractable anyway.
+ * 
+ * Algorithm stolen from molecule-matching world for visualization projects.
  */
 
-public class KabshRotation {
+public class KabschRotation {
   private final int numVectors;
   private final int dimensions;
-  private final List<Vector> aVecs;
-  private final List<Vector> bVecs;
   private final Matrix rotation;
   
   // two sets of points. May require translation to centroid
-  public KabshRotation(List<Vector> first, List<Vector> second, boolean translate, boolean normalize) {
+  public KabschRotation(List<Vector> first, List<Vector> second, boolean translate) {
     if (first.size() != second.size() || first.size() < 2)
       throw new UnsupportedOperationException("KabshRotation: lists of points must be the same length");
     numVectors = first.size();
@@ -40,35 +43,34 @@ public class KabshRotation {
     if (translate) {
       List<Vector> aTmp = new ArrayList<Vector>(numVectors);
       List<Vector> bTmp = new ArrayList<Vector>(numVectors);
-      translateVectors(aFinal, aTmp);
-      translateVectors(bFinal, bTmp);
+      centerVectors(aFinal, aTmp);
+      centerVectors(bFinal, bTmp);
       aFinal = aTmp;
       bFinal = bTmp;
     }
-    if (normalize) {
-      List<Vector> aTmp = new ArrayList<Vector>(numVectors);
-      List<Vector> bTmp = new ArrayList<Vector>(numVectors);
-      normalizeVectors(aFinal, aTmp);
-      normalizeVectors(bFinal, bTmp);
-      aFinal = aTmp;
-      bFinal = bTmp;
-    } 
-    this.aVecs = aFinal;
-    this.bVecs = bFinal;
-    Matrix left = getBaseMatrix(aVecs).transpose();
-    Matrix right = getBaseMatrix(bVecs);
+    Matrix left = getBaseMatrix(aFinal).transpose();
+    Matrix right = getBaseMatrix(bFinal);
     Matrix covariance = left.times(right);
     double covarDet = covariance.determinant();
     SingularValueDecomposition svd = new SingularValueDecomposition(covariance);
-    System.out.println("Covariance Determinant: " + covarDet);
     double sign = Math.signum(covarDet);
     Matrix mSign = new DenseMatrix(dimensions, dimensions);
     for(int d = 0; d < dimensions -1; d++)
       mSign.set(d,  d, 1.0);
     mSign.set(dimensions -1, dimensions -1, sign);
-    // Note: this matches covariance matrix within 0.00000001, SVD and "times order" is correct
-    Matrix c = svd.getU().times(svd.getS()).times(svd.getV().transpose());
     this.rotation = svd.getV().times(mSign).times(svd.getU().transpose());
+  }
+  
+  public Matrix getRotation() {
+    return rotation;
+  }
+
+  public static void centerVectors(List<Vector> from, List<Vector> to) {
+    Vector centroid = getCentroid(from);
+    for(Vector v: from) {
+      Vector xlated = v.minus(centroid);
+      to.add(xlated);
+    }
   }
   
   private void checkDimensions(List<Vector> vecs) {
@@ -78,38 +80,13 @@ public class KabshRotation {
     }
   }
   
-  private void translateVectors(List<Vector> from, List<Vector> to) {
-    Vector centroid = getCentroid(from);
-    for(Vector v: from) {
-      Vector xlated = v.minus(centroid);
-      to.add(xlated);
-    }
-  }
-  
-  private void normalizeVectors(List<Vector> from, List<Vector> to) {
-    double maxNorm = getMaxNorm(from);
-    for(Vector v: from) {
-      Vector normal = v.divide(maxNorm);
-      to.add(normal);
-    }
-  }
-  
-  private Vector getCentroid(List<Vector> from) {
-    Vector sum = new DenseVector(dimensions);
+  private static Vector getCentroid(List<Vector> from) {
+    Vector sum = new DenseVector(from.get(0).size());
     for(Vector v: from) {
       v.addTo(sum);
     }
-    Vector centroid = sum.divide(numVectors);
+    Vector centroid = sum.divide(from.size());
     return centroid;
-  }
-  
-  private double getMaxNorm(List<Vector> from) {
-    double max = Double.MIN_VALUE;
-    for(Vector v: from) {
-      double norm = v.getLengthSquared();
-      max = Math.max(max, norm);
-    }
-    return Math.sqrt(max);
   }
   
   // and back comes our old friend the VectorList matrix
@@ -132,33 +109,50 @@ public class KabshRotation {
     double[] left3 = {-1, -9, 3};
     double[] left4 = {-2, -9, 12};
     double[] left5 = {-3, -9, -9};
+    
     aVecs.add(new DenseVector(left1));
     aVecs.add(new DenseVector(left2));
     aVecs.add(new DenseVector(left3));
     aVecs.add(new DenseVector(left4));
     aVecs.add(new DenseVector(left5));
-    double[] right1 = {9,14,12};
-    double[] right2 = {6,3,8};
-    double[] right3 = {-2,-18,-3};
-    double[] right4 = {-1,-18,-4};
-    double[] right5 = {-0,-18,-5};
+    
+    Vector centroid = KabschRotation.getCentroid(aVecs);
+    for(int i = 0; i < 5; i++) {
+      
+    }
+    
+    Vector3D axis = new Vector3D(0.7, 0.3, 0.2);
+    Rotation mangler = new Rotation(axis, 0.7);
+    
+    double[] right1 = rotate(mangler, left1);
+    double[] right2 = rotate(mangler, left2);
+    double[] right3 = rotate(mangler, left3);
+    double[] right4 = rotate(mangler, left4);
+    double[] right5 = rotate(mangler, left5);
+
     bVecs.add(new DenseVector(right1));
     bVecs.add(new DenseVector(right2));
     bVecs.add(new DenseVector(right3));
     bVecs.add(new DenseVector(right4));
     bVecs.add(new DenseVector(right5));
-    KabshRotation kr = new KabshRotation(aVecs, bVecs, true, false);
+    
+    KabschRotation kr = new KabschRotation(aVecs, bVecs, true);
     // kr.aVecs and kr.bVecs are both translated to their centroids, and normalized
     System.out.println("Rotate all left set vectors and compare to right set. Deltas should be 0.00001 or smaller.");
-    for(int i = 0; i < kr.numVectors; i++) {
-      Vector a = kr.aVecs.get(i);
-      Vector b = kr.bVecs.get(i);
-      Vector v2 = kr.rotation.times(a);
-      Vector delta = v2.minus(b);
-      System.out.print("Rotate #" + i + " -> " + a.toString());
-      System.out.println(" To " + b.toString());
-      System.out.println("Delta #" + i + " -> " + delta.toString());
-      System.out.println();
-    }
+//    for(int i = 0; i < kr.numVectors; i++) {
+//      Vector a = kr.aVecs.get(i);
+//      Vector b = kr.bVecs.get(i);
+//      Vector v2 = kr.getRotation().times(a);
+//      Vector delta = v2.minus(b);
+//      System.out.print("Rotate #" + i + " -> " + a.toString());
+//      System.out.println(" To " + b.toString());
+//      System.out.println("Delta #" + i + " -> " + delta.toString());
+//      System.out.println();
+//    }
+  }
+
+  private static double[] rotate(Rotation mangler, double[] left1) {
+    Vector3D out = mangler.applyTo(new Vector3D(left1[0], left1[1], left1[2]));
+    return new double[]{out.getX(), out.getY(), out.getZ()};
   }
 }
