@@ -27,8 +27,9 @@ public final class SeesawFunction implements DoubleFunction {
     this.top = top;
   }
 
-  @Override
   public double apply(double arg1) {
     return top - arg1;
   }
+  
+  
 }
