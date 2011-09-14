@@ -77,61 +77,50 @@ public class SamplingDataModel implements DataModel {
     defaultPref = value;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getItemIDs()
-   */
   @Override
   public LongPrimitiveIterator getItemIDs() throws TasteException {
     return delegate.getItemIDs();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getItemIDsFromUser(long)
-   */
   @Override
   public FastIDSet getItemIDsFromUser(long userID) throws TasteException {
     return delegate.getItemIDsFromUser(userID);
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getMaxPreference()
-   */
   @Override
   public float getMaxPreference() {
     // problem: what if we don't return anything at minimum?
     return delegate.getMaxPreference();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getMinPreference()
-   */
   @Override
   public float getMinPreference() {
     // problem: what if we don't return anything at minimum?
     return delegate.getMinPreference();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getNumItems()
-   */
   @Override
   public int getNumItems() throws TasteException {
     return delegate.getNumItems();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getNumUsers()
-   */
   @Override
   public int getNumUsers() throws TasteException {
     return delegate.getNumUsers();
   }
+  
+  public int getNumUsersWithPreferenceFor(long itemID) throws TasteException {
+    long[] itemIDs = {itemID};
+    return getNumUsersWithPreferenceFor(itemIDs);
+  }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getNumUsersWithPreferenceFor(long[])
-   */
-  @Override
-  public int getNumUsersWithPreferenceFor(long... itemIDs)
+  public int getNumUsersWithPreferenceFor(long itemID1, long itemID2)
+      throws TasteException {
+    long[] itemIDs = {itemID1, itemID2};
+    return getNumUsersWithPreferenceFor(itemIDs);
+  }
+    
+  private int getNumUsersWithPreferenceFor(long[] itemIDs)
   throws TasteException {
     int count = 0;
     LongPrimitiveIterator users = userIDMap.keySetIterator(); // delegate.getUserIDs();
@@ -151,9 +140,6 @@ public class SamplingDataModel implements DataModel {
     return count;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getPreferenceTime(long, long)
-   */
   @Override
   public Long getPreferenceTime(long userID, long itemID) throws TasteException {
     if (! prefExists(userID, itemID)) {
@@ -162,9 +148,6 @@ public class SamplingDataModel implements DataModel {
     return delegate.getPreferenceTime(userID, itemID);
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getPreferenceValue(long, long)
-   */
   @Override
   public Float getPreferenceValue(long userID, long itemID)
   throws TasteException {
@@ -180,9 +163,6 @@ public class SamplingDataModel implements DataModel {
     return delegate.getPreferenceValue(userID, itemID);
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getPreferencesForItem(long)
-   */
   @Override
   public PreferenceArray getPreferencesForItem(long itemID)
   throws TasteException {
@@ -208,9 +188,6 @@ public class SamplingDataModel implements DataModel {
     return sampled;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getPreferencesFromUser(long)
-   */
   @Override
   public PreferenceArray getPreferencesFromUser(long userID)
   throws TasteException {
@@ -237,43 +214,28 @@ public class SamplingDataModel implements DataModel {
     return sampled;
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#getUserIDs()
-   */
   @Override
   public LongPrimitiveIterator getUserIDs() throws TasteException {
     // ahah!
     return userIDMap.keySetIterator();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#hasPreferenceValues()
-   */
   @Override
   public boolean hasPreferenceValues() {
     return delegate.hasPreferenceValues();
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#removePreference(long, long)
-   */
   @Override
   public void removePreference(long userID, long itemID) throws TasteException {
     delegate.removePreference(userID, itemID);
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.model.DataModel#setPreference(long, long, float)
-   */
   @Override
   public void setPreference(long userID, long itemID, float value)
   throws TasteException {
     delegate.setPreference(userID, itemID, value);
   }
 
-  /* (non-Javadoc)
-   * @see org.apache.mahout.cf.taste.common.Refreshable#refresh(java.util.Collection)
-   */
   @Override
   public void refresh(Collection<Refreshable> alreadyRefreshed) {
     delegate.refresh(alreadyRefreshed);
@@ -342,5 +304,7 @@ public class SamplingDataModel implements DataModel {
     boolean value = itemBits.get(itemIndex);
     return value;
   }
+
+
 
 }

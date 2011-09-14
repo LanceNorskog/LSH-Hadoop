@@ -7,26 +7,27 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.example.grouplens.GroupLensDataModel;
 import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
-import org.apache.mahout.cf.taste.impl.model.GroupLensDataModel;
-import org.apache.mahout.cf.taste.impl.model.MetadataModel;
+import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
 import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.model.PreferenceArray;
 
 /*
  * Sort data model matrix by number of preferences, both user and item.
  */
 
 // TODO: Add feature in output for pref is real or just default 3.0
+// TODO: Count number of pref/nonpref per user
+// TODO: Count number pref/nonpref per item
 // TODO: Assign color or something to this in diagrams
 
 public class SortDataModel {
   
-  static int SOURCE_DIMENSIONS = 200;
-  static int SAMPLES = 200;
-  static int TARGET_DIMENSIONS = 2;
   final private DataModel model;
   
   public SortDataModel(DataModel model) {
@@ -39,27 +40,34 @@ public class SortDataModel {
     
     if (args.length != 1)
       throw new TasteException("Usage: grouplens.dat");
-    MetadataModel<String> movieNames = new MetadataModel<String>(new HashMap<Long,String>(), "movies");
-    model = new GroupLensDataModel(new File(args[0]), movieNames, null, null);
+//    MetadataModel<String> movieNames = new MetadataModel<String>(new HashMap<Long,String>(), "movies");
+    model = new GroupLensDataModel(new File(args[0]));
     sorter = new SortDataModel(model);
     ArrayList<Long> userList = new ArrayList<Long>(model.getNumUsers());
     ArrayList<Long> itemList = new ArrayList<Long>(model.getNumItems());
     Map<Long,Integer> itemCounts = new HashMap<Long,Integer>();
     Map<Long,Integer> userCounts = new HashMap<Long,Integer>();
-    int numUserPrefs = sorter.getUserCounts(model, userList, userCounts);
-    int numItemPrefs = sorter.getItemCounts(model, itemList, itemCounts);
+    Map<Long,Integer> userPrefYes = new HashMap<Long,Integer>();
+    Map<Long,Integer> itemPrefYes = new HashMap<Long,Integer>();
+    Map<Long,Integer> userPrefNo = new HashMap<Long,Integer>();
+    Map<Long,Integer> itemPrefNo = new HashMap<Long,Integer>();
+    int numUserPrefs = sorter.getUserCounts(model, userList, userCounts, userPrefYes, userPrefNo);
+    int numItemPrefs = sorter.getItemCounts(model, itemList, itemCounts, itemPrefYes, itemPrefNo);
     
     sorter.sortPrefs(model.getUserIDs(), userList, userCounts);  
     sorter.sortPrefs(model.getItemIDs(), itemList, itemCounts);  
     GroupLensWriter modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_raw.dat");
-    sorter.printRawRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
-    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_upward.dat");
-    sorter.printDualSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
-    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_user.dat");
-    sorter.printUserSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
-    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_item.dat");
-    sorter.printItemSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
-    modelWriter.close();
+//    sorter.printRawRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
+//    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_upward.dat");
+//    sorter.printDualSortedRatings(model, modelWriter, userList, itemList, userCounts, itemCounts);
+//    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_user.dat");
+//    sorter.printUserSortedRatings(modelWriter, userList, itemList, userCounts, itemCounts);
+//    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_ratings_item.dat");
+//    sorter.printItemSortedRatings(modelWriter, userList, itemList, userCounts, itemCounts);
+    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_users.dat");
+    sorter.printRatingCounts(modelWriter, userList, userPrefYes, userPrefNo);
+    modelWriter = new GroupLensWriter(model, "/tmp/lsh_hadoop/gl_items.dat");
+    sorter.printRatingCounts(modelWriter, itemList, itemPrefYes, itemPrefNo);
   }
   
   /* print all ratings in .dat format, as per DataModel order */
@@ -112,7 +120,7 @@ public class SortDataModel {
   }
   
   /* print ratings in user order */
-  private void printUserSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
+  private void printUserSortedRatings(GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
     for(int u = 0; u < userSorted.size(); u++) {
       for(int i = 0; i < itemSorted.size(); i++) {
         modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
@@ -121,7 +129,7 @@ public class SortDataModel {
   }
   
   /* print ratings in user order */
-  private void printItemSortedRatings(GroupLensDataModel model, GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
+  private void printItemSortedRatings(GroupLensWriter modelWriter, ArrayList<Long> userSorted, ArrayList<Long> itemSorted, Map<Long,Integer> userCounts, Map<Long,Integer> itemCounts) throws TasteException {
     for(int i = 0; i < itemSorted.size(); i++) {
       for(int u = 0; u < userSorted.size(); u++) {
         modelWriter.write(u, i, userSorted.get(u), itemSorted.get(i));
@@ -129,34 +137,66 @@ public class SortDataModel {
     }
   }
   
+  /* print rating counts: total,  */
+  private void printRatingCounts(GroupLensWriter modelWriter, List<Long> ids, Map<Long,Integer> prefCountYes, Map<Long,Integer> prefCountNo) throws TasteException {
+    for(Long id: ids) {
+      Integer yes = prefCountYes.get(id);
+      Integer no = prefCountNo.get(id);
+      if (yes == null)
+        yes = 0;
+      if (no == null)
+        no = 0;
+      modelWriter.write(id, yes + no, yes, no);
+    }
+  }
+  
   private int getUserCounts(DataModel model, ArrayList<Long> userList,
-      Map<Long,Integer> userCounts) throws TasteException {
+      Map<Long,Integer> userCounts, Map<Long,Integer> userPrefYes, Map<Long,Integer> userPrefNo) throws TasteException {
     int total = 0;
     LongPrimitiveIterator userIter = model.getUserIDs();
     while(userIter.hasNext()) {
       long userID = userIter.nextLong();
-      int size = model.getPreferencesFromUser(userID).length();
-      userList.add(userID);
-      userCounts.put(userID, size);
+      PreferenceArray prefs = model.getPreferencesFromUser(userID);
+      int size = fillCounters(userList, userCounts, userPrefYes, userPrefNo, userID, prefs);
       total += size;
     }
     return total;
   }
-  
+
   private int getItemCounts(DataModel model, ArrayList<Long> itemList,
-      Map<Long,Integer> itemCounts) throws TasteException {
+      Map<Long,Integer> itemCounts, Map<Long,Integer> itemPrefYes, Map<Long,Integer> itemPrefNo) throws TasteException {
     int total = 0;
     LongPrimitiveIterator itemIter = model.getItemIDs();
     while(itemIter.hasNext()) {
       long itemID = itemIter.nextLong();
-      int size = model.getPreferencesForItem(itemID).length();
-      itemList.add(itemID);
-      itemCounts.put(itemID, size);
+      PreferenceArray prefs = model.getPreferencesForItem(itemID);
+      int size = fillCounters(itemList, itemCounts, itemPrefYes, itemPrefNo, itemID, prefs);
       total += size;
     }
     return total;
   }
   
+  private int fillCounters(ArrayList<Long> userList,
+      Map<Long,Integer> userCounts, Map<Long,Integer> userPrefYes,
+      Map<Long,Integer> userPrefNo, long userID, PreferenceArray prefs) {
+    int size = prefs.length();
+    userList.add(userID);
+    userCounts.put(userID, size);
+    int yes = 0;
+    int no = 0;
+    for(int i = 0; i < size; i++) {
+      double pref = prefs.getValue(i);
+      if (pref == 3.0)
+        no++;
+      else
+        yes++;
+    }
+    userPrefYes.put(userID, yes);
+    userPrefNo.put(userID, no);
+    return size;
+  }
+  
+
   /* 
    * aList[i] = id in order of #prefs
    */
@@ -175,6 +215,7 @@ class GroupLensWriter {
   PrintStream out;
   int count = 0;
   final DataModel model;
+  boolean needHeader = true;
   
   GroupLensWriter(DataModel model, String file) throws IOException {
     this.model = model;
@@ -183,14 +224,25 @@ class GroupLensWriter {
       ratings.delete();
     ratings.createNewFile();
     out = new PrintStream(ratings);
-    out.println("ucount,icount,user,item,pref,rowid");
   }
   
+  public void write(long id, int total, int yes, int no) {
+    if (needHeader)
+      out.println("id,total,rated,unrated,percent,masked");
+    needHeader = false;
+    double percent = (yes*1.0)/total;
+    out.println(id + "," + total + "," + yes + "," + no + "," + percent + "," + (total < 10 ? 0 : percent));
+    
+  }
+
   void close() {
     out.close();
   }
   
   void write(int userI, int itemI, long userID, long itemID) {
+    if (needHeader)
+      out.println("ucount,icount,user,item,pref,rowid");
+    needHeader = false;
     try {
       Float pref = model.getPreferenceValue(userID, itemID);
       if (pref != null)

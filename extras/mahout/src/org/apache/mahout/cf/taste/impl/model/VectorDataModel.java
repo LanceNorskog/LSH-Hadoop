@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 
+import org.apache.mahout.cf.taste.common.NoSuchItemException;
 import org.apache.mahout.cf.taste.common.NoSuchUserException;
 import org.apache.mahout.cf.taste.common.Refreshable;
 import org.apache.mahout.cf.taste.common.TasteException;
@@ -60,7 +61,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
     long[] la = getSortedLongArray(items);
     return new LongPrimitiveArrayIterator(la);
   }
-
+  
   private long[] getSortedLongArray(FastByIDMap<Vector> keys) {
     long[] la = new long[keys.size()];
     int i = 0;
@@ -96,24 +97,14 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   }
   
   @Override
-  public int getNumUsersWithPreferenceFor(long... itemIDs)
-  throws TasteException {
-    for(long itemID: itemIDs) {
-      if (items.containsKey(itemID))
-        return getNumUsers();
-    }
-    return 0;
-  }
-  
-  @Override
   public Long getPreferenceTime(long userID, long itemID)
-  throws TasteException {
+      throws TasteException {
     throw new UnsupportedOperationException();
   }
   
   @Override
   public Float getPreferenceValue(long userID, long itemID)
-  throws TasteException {
+      throws TasteException {
     Vector u = users.get(userID);
     Vector i = items.get(itemID);
     if (null == u)
@@ -144,7 +135,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   
   @Override
   public PreferenceArray getPreferencesForItem(long itemID)
-  throws TasteException {
+      throws TasteException {
     GenericUserPreferenceArray pa = new GenericUserPreferenceArray(users.size());
     if (! items.containsKey(itemID))
       return null;
@@ -163,7 +154,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   
   @Override
   public PreferenceArray getPreferencesFromUser(long userID)
-  throws TasteException {
+      throws TasteException {
     if (null == users.get(userID))
       throw new TasteException("UserID nonexistent: " + userID);
     PreferenceArray prefs = getPreferencesFromUserPoint(userID);
@@ -172,7 +163,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   }
   
   private PreferenceArray getPreferencesFromUserPoint(long userID)
-  throws NoSuchUserException {
+      throws NoSuchUserException {
     int prefIndex = 0;
     Vector v = users.get(userID);
     if (null == v)
@@ -201,7 +192,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   
   @Override
   public void removePreference(long userID, long itemID)
-  throws TasteException {
+      throws TasteException {
     // cannot recalculate values
     throw new UnsupportedOperationException();
     
@@ -209,7 +200,7 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   
   @Override
   public void setPreference(long userID, long itemID, float value)
-  throws TasteException {
+      throws TasteException {
     // cannot recalculate values
     throw new UnsupportedOperationException();
     
@@ -225,60 +216,75 @@ public class VectorDataModel extends AbstractDataModel implements UserSimilarity
   public int getDimensions() {
     return dimensions;
   }
-
+  
   
   /* ItemSimilarity methods */
-    @Override
-    public double[] itemSimilarities(long itemID1, long[] itemID2s)
-        throws TasteException {
-      requireItems();
-      double[] prefs = new double[itemID2s.length];
-      for(int i = 0; i < itemID2s.length; i++) {
-        float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
-        prefs[i] = (double) distance;
-      }
-      return prefs;
+  @Override
+  public double[] itemSimilarities(long itemID1, long[] itemID2s)
+      throws TasteException {
+    requireItems();
+    double[] prefs = new double[itemID2s.length];
+    for(int i = 0; i < itemID2s.length; i++) {
+      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2s[i]));
+      prefs[i] = (double) distance;
     }
+    return prefs;
+  }
   
-    @Override
-    public double itemSimilarity(long itemID1, long itemID2)
-        throws TasteException {
-      requireItems();
-      float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
-      return (double) distance;
-    }
+  @Override
+  public double itemSimilarity(long itemID1, long itemID2)
+      throws TasteException {
+    requireItems();
+    float distance = getPreferenceValuePoint(items.get(itemID1), items.get(itemID2));
+    return (double) distance;
+  }
   
   
-    // this requires a distance value - perhaps could give it in constructor?
-    @Override
-    public long[] allSimilarItemIDs(long itemID) throws TasteException {
-      requireItems();
-      throw new UnsupportedOperationException();
-    }
-
-    /* UserSimilarity methods */
-    @Override
-    public double userSimilarity(long userID1, long userID2)
-        throws TasteException {
-      requireUsers();
-      float distance = getPreferenceValuePoint(items.get(userID1), items.get(userID2));
-      return (double) distance;
-    }
-
-    @Override
-    public void setPreferenceInferrer(PreferenceInferrer inferrer) {
-      throw new UnsupportedOperationException();
-      
-    }
+  // this requires a distance value - perhaps could give it in constructor?
+  @Override
+  public long[] allSimilarItemIDs(long itemID) throws TasteException {
+    requireItems();
+    throw new UnsupportedOperationException();
+  }
+  
+  /* UserSimilarity methods */
+  @Override
+  public double userSimilarity(long userID1, long userID2)
+      throws TasteException {
+    requireUsers();
+    float distance = getPreferenceValuePoint(items.get(userID1), items.get(userID2));
+    return (double) distance;
+  }
+  
+  @Override
+  public void setPreferenceInferrer(PreferenceInferrer inferrer) {
+    throw new UnsupportedOperationException();
     
-    private void requireUsers() {
-      if (users.size() == 0)
-        throw new UnsupportedOperationException("VectorDataModel: UserSimilarity method requires user vectors");
-    }
+  }
   
-    private void requireItems() {
-      if (items.size() == 0)
-        throw new UnsupportedOperationException("VectorDataModel: ItemSimilarity method requires item vectors");
-    }
+  private void requireUsers() {
+    if (users.size() == 0)
+      throw new UnsupportedOperationException("VectorDataModel: UserSimilarity method requires user vectors");
+  }
   
+  private void requireItems() {
+    if (items.size() == 0)
+      throw new UnsupportedOperationException("VectorDataModel: ItemSimilarity method requires item vectors");
+  }
+  
+  @Override
+  public int getNumUsersWithPreferenceFor(long itemID) throws TasteException {
+    if (items.containsKey(itemID))
+      return getNumUsers();
+    throw new NoSuchItemException();
+  }
+  
+  @Override
+  public int getNumUsersWithPreferenceFor(long itemID1, long itemID2)
+      throws TasteException {
+    if (items.containsKey(itemID1) && items.containsKey(itemID2))
+      return getNumUsers();
+  throw new NoSuchItemException();
+}
+
 }
