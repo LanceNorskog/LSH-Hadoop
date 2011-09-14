@@ -17,6 +17,7 @@
 
 package org.apache.mahout.math.stats;
 
+import org.apache.mahout.common.RandomUtils;
 import org.apache.mahout.math.MahoutTestCase;
 import org.junit.Test;
 
@@ -116,20 +117,54 @@ public final class OnlineSummarizerTest extends MahoutTestCase {
   }
   
   @Test
-  public void testRangeCut() throws Exception {
-    OnlineSummarizer summ = new OnlineSummarizer(0.50);
-    for(int i = 500; i > 0; i--)
-      summ.add(i);
+  public void testRangeCut50() throws Exception {
+    double cut = 0.50;
+    OnlineSummarizer summ = fillSummarizer(cut);
     System.out.println("testCut: " + summ.toString());
-    assertEquals(1, summ.getMin(), 0.01);
-    assertEquals(203, summ.getQuartile(1), 1.0);
-    assertEquals(237, summ.getMedian(), 1.0);
-    assertEquals(271, summ.getQuartile(3), 1.0);
-    assertEquals(500, summ.getMax(), 0.01);
-    assertEquals(0, summ.add(0.0000000001));
+    assertEquals(0, summ.getMin(), 0.01);
+    assertEquals(125.2019, summ.getQuartile(1), 1.0);
+    assertEquals(239.4398, summ.getMedian(), 1.0);
+    assertEquals(376.545, summ.getQuartile(3), 1.0);
+    assertEquals(499.0, summ.getMax(), 0.01);
+    assertEquals(1, summ.add(0.0000000001));
     assertEquals(1, summ.add(25));
     assertEquals(3, summ.add(260));
     assertEquals(4, summ.add(600));
+  }
+
+  @Test
+  public void testRangeCut98() throws Exception {
+    double cut = 0.95;
+    OnlineSummarizer summ = fillSummarizer(cut);
+    System.out.println("testCut: " + summ.toString());
+    assertEquals(0, summ.getMin(), 0.01);
+    assertEquals(218.816, summ.getQuartile(1), 1.0);
+    assertEquals(239.4398, summ.getMedian(), 1.0);
+    assertEquals(279.262, summ.getQuartile(3), 1.0);
+    assertEquals(499.0, summ.getMax(), 0.01);
+    assertEquals(1, summ.add(0.0000000001));
+    assertEquals(1, summ.add(25));
+    assertEquals(3, summ.add(260));
+    assertEquals(4, summ.add(600));
+  }
+
+  private OnlineSummarizer fillSummarizer(double cut) throws Exception {
+    OnlineSummarizer summ = new OnlineSummarizer(cut);
+    int[] scrambled = new int[500];
+    for(int i = 0; i < 500; i++) {
+      scrambled[i] = i;
+    }    
+    Random rnd = RandomUtils.getRandom();
+    for(int i = 0; i < 500000; i++) {
+      int a = rnd.nextInt(500);
+      int b = rnd.nextInt(500);
+      int tmp = scrambled[a];
+      scrambled[a] = scrambled[b];
+      scrambled[b] = tmp;
+    }
+    for(int i = 0; i < 500; i++)
+      summ.add(scrambled[i]);
+    return summ;
   }
 
 }
