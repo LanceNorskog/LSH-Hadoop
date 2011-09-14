@@ -19,7 +19,7 @@ public class TestBernoulliSampler extends MahoutTestCase {
   @Test
   public void testBasics() {
     Random rnd = RandomUtils.getRandom();
-    Sampler<Integer> samp = new BernoulliSampler<Integer>(50.0, rnd);
+    Sampler samp = new BernoulliSampler<Integer>(50.0, rnd);
     samp.addSample(1);
     samp.addSample(2);
     samp.addSample(3);

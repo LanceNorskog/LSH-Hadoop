@@ -26,7 +26,7 @@ import org.apache.mahout.math.function.DoubleFunction;
  *    Test DoubleFunction against sample's X: Y must be above slice boundary Y.
  */
 
-public class SliceSampler1D<T> extends Sampler<T> {
+public class SliceSampler1D<T> {
   final SampleFunction<T> mapSample;
   final DoubleFunction mapX;
   final Random rnd;
@@ -48,20 +48,9 @@ public class SliceSampler1D<T> extends Sampler<T> {
     this.highX = highX;
   }
   
-  @Override
-  public void addSample(T sample) {
-    throw new UnsupportedOperationException();
-  }
-  
-  @Override
-  public Iterator<T> getSamples(boolean flush) {
-    throw new UnsupportedOperationException();
-  }
-  
   /*
    * Do one pass of "pull a sample within a sliding window"
    */
-  @Override
   public boolean isSampled(T sample) {
     double x = nextX();
     double slice = mapX.apply(x);
@@ -77,10 +66,6 @@ public class SliceSampler1D<T> extends Sampler<T> {
     double range = highX - lowX;
     double r = rnd.nextDouble() * range;
     return lowX + r;
-  }
-  
-  @Override
-  public void stop() {
   }
   
 }

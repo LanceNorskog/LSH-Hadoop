@@ -197,9 +197,9 @@ public class OnlineSummarizer {
     return "[" + 
     pair("count", getCount()) + pair("sd", getSD()) + pair("mean", getMean()) + 
     pair("min", getMin()) + 
-    pair(Integer.toString((int)(bias*50)) + "%", getQuartile(1)) + 
+    pair(Integer.toString((int)(50 - bias*50)) + "%", getQuartile(1)) + 
     pair("median", getMedian()) +
-    pair(Integer.toString(100 - ((int) ((bias*50)))) + "%", getQuartile(3)) + 
+    pair(Integer.toString(50 + ((int) ((bias*50)))) + "%", getQuartile(3)) + 
     pair("max", getMax()) + "]";
   }
   

@@ -1,33 +1,65 @@
 package org.apache.mahout.math.stats;
 
-import java.util.Iterator;
-
 /*
- * Injectable implementations of sampling.
- * Usable in both map/reduce and online jobs.
- * This class really has two different uses:
- * 1) tell me if I would drop this sample at this time, and
- * 2) store this sample for me and perhaps give it back.
+ * Decide whether the given sample, in the current state, would be accepted.
  * 
- * getSamples() returns the entire currently available sample stream.
- * 
+ * Default implementation: Systematic Sampling.
+ *  Assuming a random input stream, select every Nth sample.
+ * Various subclasses:
+ *  Bernoulli Sampling: select the sample when n == random() % n
+ *  Slice Sampling: select random value X when sample matches a random function 
+ *  
+ *  Use peek() and pushback() to avoid changes to the internal state.
  */
 
-public abstract class Sampler<T> {
-
-  /* Add a new sample */
-  public abstract void addSample(T sample);
+public class Sampler {
+  boolean last = false;
+  boolean lastSample = false;
+  final int n;
+  int current = 0;
   
-  /* Are there any samples? */
-  // what if it reads from a separate thread?
-//  public abstract boolean hasSamples();
+  public Sampler() {
+    n = 0;
+  }
   
-  /* Return current set of samples. */
-  public abstract Iterator<T> getSamples(boolean flush);
-
-  /* would this sample be added at this moment? */
-  public abstract boolean isSampled(T sample);
+  public Sampler(int n) {
+    this.n = n;
+  }
   
-  /* stop operations. Iterators now end. */
-  public abstract void stop();
+  /* Is sampled? */
+  public final boolean isSampled() {
+    if (last) {
+      last = false;
+      return lastSample;
+    }
+    return true;
+  }
+  
+  // allow checking without ticking over
+  public final void pushback(boolean sample) {
+    last = true;
+    lastSample = sample;
+  }
+  
+  /*
+   * Return next without ticking over.
+   */
+  public final boolean peek() {
+    last = true;
+    lastSample = sample();
+    return lastSample;
+  }
+  
+  /*
+   * Fetch next sample. Sampling state always ticks over. 
+   */
+  protected boolean sample() {
+    current++;
+    if (current == n) {
+      current = 0;
+      return true;
+    }
+    return false;
+  }
+  
 }

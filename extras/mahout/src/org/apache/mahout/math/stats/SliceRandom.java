@@ -22,8 +22,8 @@ public class SliceRandom extends Random {
   // constant for all samples
   final double width;   // starting width
   //  final double slice;   // output of func(nextX)
-  int repeats;  // total 2nd through N through the loop
-  int skip;     // number of discontinuities
+  int repeats = 0;  // total 2nd through N through the loop
+  int skip = 0;     // number of discontinuities
   
   /*
    * mapper: function on a type

@@ -13,15 +13,13 @@ import java.util.Random;
  * Distribution can change while iterating. 
  */
 
-public class ReservoirSampler<T> extends Sampler<T> {
+public class ReservoirSampler extends Sampler{
   final int length;
-  List<T> stored;
   final Random rnd;
   long nextIndex;
   long counter = 1;
 
   public ReservoirSampler(int length, Random rnd) {
-    stored = new ArrayList<T>(length);
     this.length = length;
     this.rnd = rnd;
     counter = 1;   // don't fill at first
@@ -29,34 +27,7 @@ public class ReservoirSampler<T> extends Sampler<T> {
   }
   
   @Override
-  public void addSample(T sample) {
-    if (counter <= length) {
-      stored.add(sample);
-    } else if (check()){
-      stored.set((int) nextIndex, sample);
-      stage();
-    }
-    counter++;
-  }
-  
-  @SuppressWarnings("unchecked")   // there's some way to do genericized empty list
-  @Override
-  public Iterator<T> getSamples(boolean flush) {
-    if (null == stored)
-      return (Iterator<T>) Collections.emptyList().iterator();
-    Iterator<T> it = stored.iterator();
-    if (flush) 
-      stored = new ArrayList<T>(length);
-    return it;
-  }
-  
-  @Override
-  public void stop() {
-    stored = null;
-  }
-  
-  @Override
-  public boolean isSampled(T sample) {
+  protected boolean sample() {
       boolean val = check();
       stage();
       return val;
