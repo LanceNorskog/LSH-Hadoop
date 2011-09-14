@@ -5,7 +5,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
 	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/mahoutlibs"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-math"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-core"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/mahout-examples"/>
