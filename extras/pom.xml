@@ -52,7 +52,7 @@ random mahout experiments</description>
   <dependency>
   	<groupId>org.apache.hadoop</groupId>
   	<artifactId>hadoop-core</artifactId>
-  	<version>0.20.203.0</version>
+  	<version>0.20.204.0</version>
   </dependency>
   </dependencies>
 </project>
