@@ -83,7 +83,7 @@ public class KabschRotation {
   private static Vector getCentroid(List<Vector> from) {
     Vector sum = new DenseVector(from.get(0).size());
     for(Vector v: from) {
-      v.addTo(sum);
+      sum = sum.plus(v);
     }
     Vector centroid = sum.divide(from.size());
     return centroid;

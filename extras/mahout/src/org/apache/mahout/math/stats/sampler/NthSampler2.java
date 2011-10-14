@@ -12,7 +12,7 @@ package org.apache.mahout.math.stats.sampler;
  *  Use peek() and pushback() to avoid changes to the internal state.
  */
 
-public class NthSampler {
+public class NthSampler2 {
   final int n;
   boolean last = false;
   boolean lastSample = false;
@@ -22,7 +22,7 @@ public class NthSampler {
   /*
    * Systematic sampling: take every Nth sample
    */
-  public NthSampler(int n, int start) {
+  public NthSampler2(int n, int start) {
     this.n = n;
     current = start;
     stage();

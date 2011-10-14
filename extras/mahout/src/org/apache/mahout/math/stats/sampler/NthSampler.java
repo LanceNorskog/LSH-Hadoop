@@ -22,6 +22,11 @@ public class NthSampler {
   /*
    * Systematic sampling: take every Nth sample
    */
+  
+  public NthSampler(int n) {
+    this(n, 0);
+  }
+  
   public NthSampler(int n, int start) {
     this.n = n;
     current = start;

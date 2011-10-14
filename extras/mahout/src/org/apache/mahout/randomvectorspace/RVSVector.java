@@ -18,12 +18,6 @@ public class RVSVector implements Vector {
   }
   
   @Override
-  public void addTo(Vector v) {
-    throw new UnsupportedOperationException();
-    
-  }
-  
-  @Override
   public double aggregate(DoubleDoubleFunction aggregator, DoubleFunction map) {
     throw new UnsupportedOperationException();
   }

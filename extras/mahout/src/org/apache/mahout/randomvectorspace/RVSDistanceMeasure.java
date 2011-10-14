@@ -22,17 +22,21 @@ public class RVSDistanceMeasure implements DistanceMeasure {
   }
   
   @Override
-  public void configure(Configuration config) {
-  }
-  
-  @Override
-  public void createParameters(String prefix, Configuration jobConf) {
-  }
-  
-  @Override
   public Collection<Parameter<?>> getParameters() {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public void createParameters(String prefix, Configuration jobConf) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void configure(Configuration config) {
+    // TODO Auto-generated method stub
+    
   }
   
 }

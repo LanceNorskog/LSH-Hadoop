@@ -9,7 +9,7 @@ import org.apache.mahout.common.RandomUtils;
  * Known as not very stable, and does not give a fixed number of samples.
  * There are tricks to avoid doing random each time, but this is not really important.
  */
-public class BernoulliSampler {
+public class BernoulliSampler2 {
   final double percent;
   final Random rnd;
   private double nextRnd;
@@ -17,12 +17,12 @@ public class BernoulliSampler {
   int current = 0;
   
   
-  public BernoulliSampler(double percent) {
+  public BernoulliSampler2(double percent) {
     this.percent = percent;
     rnd = RandomUtils.getRandom();
   }
   
-  public BernoulliSampler(double percent, Random rnd) {
+  public BernoulliSampler2(double percent, Random rnd) {
     this.percent = percent;
     this.rnd = rnd;
     stage();
